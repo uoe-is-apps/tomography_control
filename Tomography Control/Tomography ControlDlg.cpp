@@ -173,4 +173,5 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
 	// TODO: Add your control notification handler code here
 	// Send the "ncal" command to the table controller
+
 }

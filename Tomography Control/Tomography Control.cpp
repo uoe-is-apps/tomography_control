@@ -67,9 +67,9 @@ BOOL CTomographyControlApp::InitInstance()
 	// such as the name of your company or organization
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 
-	CTomographyControlDlg dlg;
-	m_pMainWnd = &dlg;
-	INT_PTR nResponse = dlg.DoModal();
+	CTomographyControlDlg controlDialogue;
+	m_pMainWnd = &controlDialogue;
+	INT_PTR nResponse = controlDialogue.DoModal();
 	if (nResponse == IDOK)
 	{
 		// TODO: Place code here to handle when the dialog is
