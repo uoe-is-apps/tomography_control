@@ -64,6 +64,8 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_INITIALISE_TABLE, &CTomographyControlDlg::OnBnClickedButtonInitialiseTable)
+	ON_BN_CLICKED(IDC_BUTTON_TABLE_NRESET, &CTomographyControlDlg::OnBnClickedButtonTableNreset)
+	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
 END_MESSAGE_MAP()
 
 
@@ -157,4 +159,18 @@ HCURSOR CTomographyControlDlg::OnQueryDragIcon()
 void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 {
 	// TODO: Add your control notification handler code here
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonTableNreset()
+{
+	// TODO: Add your control notification handler code here
+	// Send the "nreset" command to the table controller
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonTableNcal()
+{
+	// TODO: Add your control notification handler code here
+	// Send the "ncal" command to the table controller
 }

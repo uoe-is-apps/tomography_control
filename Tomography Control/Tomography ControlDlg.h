@@ -31,4 +31,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButtonInitialiseTable();
+	afx_msg void OnBnClickedButtonTableNreset();
+	afx_msg void OnBnClickedButtonTableNcal();
 };
