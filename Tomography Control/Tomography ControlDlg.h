@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "afxwin.h"
 
 
 class CTableAndCameraControl
@@ -35,6 +36,7 @@ protected:
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
+	virtual BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
@@ -43,6 +45,9 @@ public:
 	afx_msg void OnBnClickedButtonInitialiseTable();
 	afx_msg void OnBnClickedButtonTableNreset();
 	afx_msg void OnBnClickedButtonTableNcal();
-	CString m_TableCommandOutput;
 	afx_msg void OnBnClickedButtonClearTableDisplay();
+	
+	CString m_TableCommand;
+	CString m_TableCommandOutput;
+	CEdit m_TableCommandControl;
 };

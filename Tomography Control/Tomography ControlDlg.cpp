@@ -52,6 +52,7 @@ END_MESSAGE_MAP()
 CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_TableCommandOutput(_T(""))
+	, m_TableCommand(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -60,6 +61,8 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_TableCommandOutput);
+	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommandControl);
+	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommand);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -158,6 +161,24 @@ HCURSOR CTomographyControlDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+// Catch return keypresses on table command field
+BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
+{
+    if (pMsg->message == WM_KEYDOWN &&
+        pMsg->wParam == VK_RETURN/*  &&
+        GetFocus() == this -> m_TableCommandControl */)
+    {
+		// Take a copy of the command, then wipe the field
+		char *command = (char*)alloca(sizeof(char) * (this -> m_TableCommand.GetLength() + 1));
+		strcpy(command, (LPCTSTR)m_TableCommand);
+		this -> m_TableCommand.Empty();
+
+		this -> tableAndCameraControl -> SendTableCommand(this, command);
+		this -> m_TableCommand.Empty();
+        return TRUE; // this doesn't need processing anymore
+    }
+    return FALSE; // all other cases still need default processing
+}
 
 
 void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
