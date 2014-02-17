@@ -9,10 +9,3 @@
 #endif
 
 #include "resource.h"		// main symbols
-
-class CTableAndCameraControl
-{
-public:
-	CTableAndCameraControl();
-	void SendTableCommand(char* command);
-};

@@ -3,9 +3,9 @@
 //
 
 #include "stdafx.h"
-#include "Table And Camera Control.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "Table And Camera Control.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -51,6 +51,7 @@ END_MESSAGE_MAP()
 
 CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
+	, m_TableCommandOutput(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -58,6 +59,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_TableCommandOutput);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -67,6 +69,7 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_INITIALISE_TABLE, &CTomographyControlDlg::OnBnClickedButtonInitialiseTable)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NRESET, &CTomographyControlDlg::OnBnClickedButtonTableNreset)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
+	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
 END_MESSAGE_MAP()
 
 
@@ -160,19 +163,26 @@ HCURSOR CTomographyControlDlg::OnQueryDragIcon()
 void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 {
 	// TODO: Add your control notification handler code here
+	// Get filename from browser
+	// Load file from disk
+	// Foreach line, send to table
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
-	// TODO: Add your control notification handler code here
-	// Send the "nreset" command to the table controller
+	this -> tableAndCameraControl -> SendTableCommand(this, "nreset");
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
-	// TODO: Add your control notification handler code here
-	// Send the "ncal" command to the table controller
+	this -> tableAndCameraControl -> SendTableCommand(this, "ncal");
+}
 
+
+void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
+{
+	this -> m_TableCommandOutput.Empty();
+	this -> UpdateData(FALSE);
 }

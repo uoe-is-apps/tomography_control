@@ -5,6 +5,13 @@
 #pragma once
 
 
+class CTableAndCameraControl
+{
+public:
+	CTableAndCameraControl();
+	void SendTableCommand(CDialogEx* dialog, char* command);
+};
+
 // CTomographyControlDlg dialog
 class CTomographyControlDlg : public CDialogEx
 {
@@ -36,4 +43,6 @@ public:
 	afx_msg void OnBnClickedButtonInitialiseTable();
 	afx_msg void OnBnClickedButtonTableNreset();
 	afx_msg void OnBnClickedButtonTableNcal();
+	CString m_TableCommandOutput;
+	afx_msg void OnBnClickedButtonClearTableDisplay();
 };

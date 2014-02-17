@@ -3,9 +3,9 @@
 //
 
 #include "stdafx.h"
-#include "Table And Camera Control.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "Table And Camera Control.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
