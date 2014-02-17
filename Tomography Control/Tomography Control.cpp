@@ -3,6 +3,7 @@
 //
 
 #include "stdafx.h"
+#include "Table And Camera Control.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 
@@ -65,9 +66,12 @@ BOOL CTomographyControlApp::InitInstance()
 	// Change the registry key under which our settings are stored
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
-	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+	SetRegistryKey(_T("University of Edinburgh"));
 
 	CTomographyControlDlg controlDialogue;
+
+	controlDialogue.tableAndCameraControl = new CTableAndCameraControl();
+
 	m_pMainWnd = &controlDialogue;
 	INT_PTR nResponse = controlDialogue.DoModal();
 	if (nResponse == IDOK)

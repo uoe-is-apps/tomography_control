@@ -1,15 +1,13 @@
 #include "stdafx.h"
+#include "Table And Camera Control.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 
 
-class CTableAndCameraControl
+CTableAndCameraControl::CTableAndCameraControl() 
 {
-public:
-	void SendTableCommand(char* command);
-};
+}
 
 void CTableAndCameraControl::SendTableCommand(char* command)
 {
-
 }
