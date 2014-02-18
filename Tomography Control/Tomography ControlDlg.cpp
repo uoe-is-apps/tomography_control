@@ -59,6 +59,8 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_StopsPerRotation(0)
 	, m_NumberOfTurns(0)
 	, m_DelayBetweenTurnsSeconds(0)
+	, m_TableInitialisationFile(_T(""))
+	, m_ManualCameraControl(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -77,6 +79,8 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_DelayBetweenTurnsSeconds);
 	DDX_Control(pDX, IDC_BUTTON_STOP_RUN_LOOP, m_StopRunLoopButton);
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_RunLoopButton);
+	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_TableInitialisationFile);
+	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_ManualCameraControl);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -90,6 +94,10 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_RESET_TABLE, &CTomographyControlDlg::OnBnClickedButtonResetTable)
 	ON_BN_CLICKED(IDC_BUTTON_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonRunLoop)
 	ON_BN_CLICKED(IDC_BUTTON_STOP_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonStopRunLoop)
+	ON_BN_CLICKED(IDC_BUTTON_CAMERA_WRITE_INITIAL, &CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial)
+	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
+	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
+	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
 END_MESSAGE_MAP()
 
 
@@ -258,4 +266,28 @@ void CTomographyControlDlg::OnBnClickedButtonStopRunLoop()
 	// TODO: Add your control notification handler code here
 	m_RunLoopButton.EnableWindow(TRUE);
 	m_StopRunLoopButton.EnableWindow(FALSE);
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
+{
+	// TODO: Add your control notification handler code here
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
+{
+	// TODO: Add your control notification handler code here
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
+{
+	// TODO: Add your control notification handler code here
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
+{
+	// TODO: Add your control notification handler code here
 }

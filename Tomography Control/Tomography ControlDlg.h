@@ -46,19 +46,30 @@ public:
 	afx_msg void OnBnClickedButtonTableNreset();
 	afx_msg void OnBnClickedButtonTableNcal();
 	afx_msg void OnBnClickedButtonClearTableDisplay();
+	afx_msg void OnBnClickedButtonResetTable();
+	afx_msg void OnBnClickedButtonRunLoop();
+	afx_msg void OnBnClickedButtonStopRunLoop();
+	afx_msg void OnBnClickedButtonCameraWriteInitial();
+	afx_msg void OnBnClickedButtonCameraTakeSingle();
+	afx_msg void OnBnClickedButtonCameraTakeDark();
+	afx_msg void OnBnClickedButtonCameraTakeFlat();
 	
+	// Table controls
 	CString m_TableCommand;
 	CString m_TableCommandOutput;
 	CEdit m_TableCommandControl;
+	CString m_TableInitialisationFile;
+
+	// Run controls
+	CButton m_StopRunLoopButton;
+	CButton m_RunLoopButton;
+
+	// Camera controls
 	CString m_MainImageName;
-	afx_msg void OnBnClickedButtonResetTable();
 	int m_ExposureTime;
 	int m_FramesPerStop;
 	int m_StopsPerRotation;
 	int m_NumberOfTurns;
 	int m_DelayBetweenTurnsSeconds;
-	CButton m_StopRunLoopButton;
-	CButton m_RunLoopButton;
-	afx_msg void OnBnClickedButtonRunLoop();
-	afx_msg void OnBnClickedButtonStopRunLoop();
+	CString m_ManualCameraControl;
 };
