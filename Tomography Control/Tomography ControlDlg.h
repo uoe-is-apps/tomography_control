@@ -50,4 +50,6 @@ public:
 	CString m_TableCommand;
 	CString m_TableCommandOutput;
 	CEdit m_TableCommandControl;
+	CString m_MainImageName;
+	afx_msg void OnBnClickedButtonResetTable();
 };

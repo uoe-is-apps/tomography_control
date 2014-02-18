@@ -53,6 +53,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_TableCommandOutput(_T(""))
 	, m_TableCommand(_T(""))
+	, m_MainImageName(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -63,6 +64,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_TableCommandOutput);
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommandControl);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommand);
+	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_MainImageName);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -73,6 +75,7 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NRESET, &CTomographyControlDlg::OnBnClickedButtonTableNreset)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
+	ON_BN_CLICKED(IDC_BUTTON_RESET_TABLE, &CTomographyControlDlg::OnBnClickedButtonResetTable)
 END_MESSAGE_MAP()
 
 
@@ -168,6 +171,8 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
         pMsg->wParam == VK_RETURN/*  &&
         GetFocus() == this -> m_TableCommandControl */)
     {
+		this -> UpdateData(TRUE);
+
 		// Take a copy of the command, then wipe the field
 		char *command = (char*)alloca(sizeof(char) * (this -> m_TableCommand.GetLength() + 1));
 		strcpy(command, (LPCTSTR)m_TableCommand);
@@ -183,6 +188,7 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 
 void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 {
+	this -> UpdateData(TRUE);
 	// TODO: Add your control notification handler code here
 	// Get filename from browser
 	// Load file from disk
@@ -190,20 +196,33 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 }
 
 
+void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
+{
+	this -> UpdateData(TRUE);
+	this -> m_TableCommandOutput.Empty();
+	this -> UpdateData(FALSE);
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonResetTable()
+{
+	this -> UpdateData(TRUE);
+
+	// TODO: Add your control notification handler code here
+	this -> m_TableCommandOutput.Empty();
+	this -> UpdateData(FALSE);
+}
+
+
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
+	this -> UpdateData(TRUE);
 	this -> tableAndCameraControl -> SendTableCommand(this, "nreset");
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
+	this -> UpdateData(TRUE);
 	this -> tableAndCameraControl -> SendTableCommand(this, "ncal");
-}
-
-
-void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
-{
-	this -> m_TableCommandOutput.Empty();
-	this -> UpdateData(FALSE);
 }
