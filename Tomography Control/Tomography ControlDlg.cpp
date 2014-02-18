@@ -278,30 +278,91 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
+	CameraTask* task = new CameraTask(CameraTask::SINGLE);
 	CTakingPhotosDlg takingPhotosDlg;
+	
+	task -> m_dialog = &takingPhotosDlg;
 
-	takingPhotosDlg.m_taskType = CTakingPhotosDlg::SINGLE;
+	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	workerThread -> m_bAutoDelete = FALSE;
+	workerThread -> ResumeThread();
 
 	takingPhotosDlg.DoModal();
+
+	task -> m_running = false;
+	// Give the thread 5 seconds to exit
+	::WaitForSingleObject(workerThread -> m_hThread, 5000);
+	delete workerThread;
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
+	CameraTask* task = new CameraTask(CameraTask::DARK);
 	CTakingPhotosDlg takingPhotosDlg;
+	
+	task -> m_dialog = &takingPhotosDlg;
 
-	takingPhotosDlg.m_taskType = CTakingPhotosDlg::DARK;
+	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	workerThread -> m_bAutoDelete = FALSE;
+	workerThread -> ResumeThread();
 
 	takingPhotosDlg.DoModal();
+
+	task -> m_running = false;
+	// Give the thread 5 seconds to exit
+	::WaitForSingleObject(workerThread -> m_hThread, 5000);
+	delete workerThread;
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
+	CameraTask* task = new CameraTask(CameraTask::FLAT_FIELD);
 	CTakingPhotosDlg takingPhotosDlg;
 
-	takingPhotosDlg.m_taskType = CTakingPhotosDlg::FLAT_FIELD;
+	task -> m_dialog = &takingPhotosDlg;
+
+	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	workerThread -> m_bAutoDelete = FALSE;
+	workerThread -> ResumeThread();
 
 	takingPhotosDlg.DoModal();
+
+	task -> m_running = false;
+	// Give the thread 5 seconds to exit
+	::WaitForSingleObject(workerThread -> m_hThread, 5000);
+	delete workerThread;
 }
 
+
+// Worker functions
+UINT TakeImages( LPVOID pParam )
+{
+	CameraTask* task = (CameraTask*)pParam;
+	
+	for (short i = 0; i < task -> m_totalImages; i++) 
+	{
+		Sleep(1000);
+		if(!(task -> m_running))
+		{
+			break;
+		}
+
+		if (task -> m_dialog -> m_IsInit)
+		{
+			task -> m_dialog -> m_progress.SetRange(0, task -> m_totalImages - 1);
+			task -> m_dialog -> m_progress.SetPos(i + 1);
+		}
+	}
+
+	if (task -> m_running)
+	{
+		task -> m_dialog -> PostMessage(WM_CLOSE);
+	}
+
+	return 0;   // thread completed successfully
+}

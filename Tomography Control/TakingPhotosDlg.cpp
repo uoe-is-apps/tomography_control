@@ -7,14 +7,16 @@
 #include "afxdialogex.h"
 
 
-// CTakingPhotosDlg dialog
+// CTakingPhotosDlg dialog - this is the modal dialog shown while a set
+// of photos is being taken. This dialog doesn't do anything itself, but
+// instead acts as a display while a separate thread feeds in progress
 
 IMPLEMENT_DYNAMIC(CTakingPhotosDlg, CDialogEx)
 
 	CTakingPhotosDlg::CTakingPhotosDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTakingPhotosDlg::IDD, pParent)
 {
-
+	this -> m_IsInit = FALSE;
 }
 
 CTakingPhotosDlg::~CTakingPhotosDlg()
@@ -30,41 +32,9 @@ void CTakingPhotosDlg::DoDataExchange(CDataExchange* pDX)
 BOOL CTakingPhotosDlg::OnInitDialog()
 {
 	BOOL retVal = CDialogEx::OnInitDialog();
-
-	this -> m_running = TRUE;
-
-	switch (this -> m_taskType)
-	{
-	case SINGLE:
-		this -> m_totalImages = 1;
-		break;
-	default:
-		this -> m_totalImages = 10;
-		break;
-	}
-
-	this -> m_progress.SetRange(0, m_totalImages - 1);
-	this -> m_workerThread = AfxBeginThread(TakeImages, this, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	this -> m_workerThread -> m_bAutoDelete = FALSE;
-
-	this -> m_workerThread -> ResumeThread();
+	this -> m_IsInit = TRUE;
 
 	return retVal;
-}
-
-/* void CTakingPhotosDlg::OnCancel( )
-{
-	this -> m_running = false;
-	// TODO: The thread shouldn't be keeping its run/not running
-	// state in this class, as it's lost when the dialog closes.
-} */
-
-void CTakingPhotosDlg::OnClose( )
-{
-	// Give the thread 5 seconds to exit
-	// ::WaitForSingleObject(this -> m_workerThread -> m_hThread, 5000);
-	delete this -> m_workerThread;
 }
 
 BEGIN_MESSAGE_MAP(CTakingPhotosDlg, CDialogEx)
@@ -73,31 +43,19 @@ END_MESSAGE_MAP()
 
 // CTakingPhotosDlg message handlers
 
-// Worker functions
-UINT TakeImages( LPVOID pParam )
+// Helper class for tracking details of the task
+
+CameraTask::CameraTask(TaskType taskType)
 {
-	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)pParam;
+	this -> m_taskType = taskType;
 
-	if (dialog == NULL ||
-		!dialog->IsKindOf(RUNTIME_CLASS(CTakingPhotosDlg)))
+	switch (taskType)
 	{
-		return 1;
+	case SINGLE:
+		this -> m_totalImages = 1;
+		break;
+	default:
+		this -> m_totalImages = 10;
+		break;
 	}
-
-	for (short i = 0; i < dialog -> m_totalImages; i++) 
-	{
-		Sleep(1000);
-		if(!(dialog -> m_running))
-		{
-			break;
-		}
-		dialog->m_progress.SetPos(i + 1);
-	}
-
-	if(dialog -> m_running)
-	{
-		dialog -> PostMessage(WM_CLOSE);
-	}
-
-	return 0;   // thread completed successfully
 }

@@ -14,24 +14,32 @@ public:
 	CTakingPhotosDlg(CWnd* pParent = NULL);   // standard constructor
 	virtual ~CTakingPhotosDlg();
 	virtual BOOL OnInitDialog();
-	// virtual void OnCancel( );
-	virtual void OnClose( );
+	BOOL m_IsInit;
 
 // Dialog Data
 	enum { IDD = IDD_TAKING_PHOTOS_DIALOG };
 
-	enum TaskType { SINGLE, DARK, FLAT_FIELD };
-
-	TaskType m_taskType;
 	CProgressCtrl m_progress;
-	short m_currentImages;
-	short m_totalImages;
-	BOOL m_running;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
-	CWinThread *m_workerThread;
+	// CWinThread *m_workerThread;
 
 	DECLARE_MESSAGE_MAP()
+};
+
+/* Tracks details of a request sent to the camera */
+class CameraTask
+{
+public:
+	enum TaskType { SINGLE, DARK, FLAT_FIELD };
+
+	CameraTask(TaskType taskType);
+
+	TaskType m_taskType;
+	CTakingPhotosDlg* m_dialog;
+	short m_currentImages;
+	short m_totalImages;
+	BOOL m_running;
 };
