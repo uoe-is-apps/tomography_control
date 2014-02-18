@@ -11,7 +11,7 @@
 
 IMPLEMENT_DYNAMIC(CTakingPhotosDlg, CDialogEx)
 
-CTakingPhotosDlg::CTakingPhotosDlg(CWnd* pParent /*=NULL*/)
+	CTakingPhotosDlg::CTakingPhotosDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTakingPhotosDlg::IDD, pParent)
 {
 
@@ -35,18 +35,36 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 
 	switch (this -> m_taskType)
 	{
-	case DARK:
-	case FLAT_FIELD:
-		this -> m_progress.SetRange(0, 9);
-		AfxBeginThread(TakeMultipleImages, this);
-		break;
 	case SINGLE:
-		this -> m_progress.SetRange(0, 1);
-		AfxBeginThread(TakeSingleImage, this);
+		this -> m_totalImages = 1;
+		break;
+	default:
+		this -> m_totalImages = 10;
 		break;
 	}
 
+	this -> m_progress.SetRange(0, m_totalImages - 1);
+	this -> m_workerThread = AfxBeginThread(TakeImages, this, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	this -> m_workerThread -> m_bAutoDelete = FALSE;
+
+	this -> m_workerThread -> ResumeThread();
+
 	return retVal;
+}
+
+/* void CTakingPhotosDlg::OnCancel( )
+{
+	this -> m_running = false;
+	// TODO: The thread shouldn't be keeping its run/not running
+	// state in this class, as it's lost when the dialog closes.
+} */
+
+void CTakingPhotosDlg::OnClose( )
+{
+	// Give the thread 5 seconds to exit
+	// ::WaitForSingleObject(this -> m_workerThread -> m_hThread, 5000);
+	delete this -> m_workerThread;
 }
 
 BEGIN_MESSAGE_MAP(CTakingPhotosDlg, CDialogEx)
@@ -56,15 +74,17 @@ END_MESSAGE_MAP()
 // CTakingPhotosDlg message handlers
 
 // Worker functions
-UINT TakeMultipleImages( LPVOID pParam )
+UINT TakeImages( LPVOID pParam )
 {
-    CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)pParam;
+	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)pParam;
 
-    if (dialog == NULL ||
-        !dialog->IsKindOf(RUNTIME_CLASS(CTakingPhotosDlg)))
-    return 1;   // if dialog is not valid
+	if (dialog == NULL ||
+		!dialog->IsKindOf(RUNTIME_CLASS(CTakingPhotosDlg)))
+	{
+		return 1;
+	}
 
-	for (short i = 0; i < 10; i++) 
+	for (short i = 0; i < dialog -> m_totalImages; i++) 
 	{
 		Sleep(1000);
 		if(!(dialog -> m_running))
@@ -74,28 +94,10 @@ UINT TakeMultipleImages( LPVOID pParam )
 		dialog->m_progress.SetPos(i + 1);
 	}
 
-	dialog -> PostMessage(WM_CLOSE);
-
-    return 0;   // thread completed successfully
-}
-
-UINT TakeSingleImage( LPVOID pParam )
-{
-    CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)pParam;
-
-    if (dialog == NULL ||
-        !dialog->IsKindOf(RUNTIME_CLASS(CTakingPhotosDlg)))
-    return 1;   // if dialog is not valid
-
-	for (short i = 0; i < 1; i++) 
+	if(dialog -> m_running)
 	{
-		Sleep(1000);
-		if(!(dialog -> m_running))
-		{
-			break;
-		}
-		dialog->m_progress.SetPos(i + 1);
+		dialog -> PostMessage(WM_CLOSE);
 	}
 
-    return 0;   // thread completed successfully
+	return 0;   // thread completed successfully
 }
