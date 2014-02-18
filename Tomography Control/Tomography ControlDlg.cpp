@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "Tomography Control.h"
+#include "TakingPhotosDlg.h"
 #include "Tomography ControlDlg.h"
 #include "Table And Camera Control.h"
 #include "afxdialogex.h"
@@ -278,6 +279,9 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
 	// TODO: Add your control notification handler code here
+	CTakingPhotosDlg takingPhotosDlg;
+
+	takingPhotosDlg.DoModal();
 }
 
 
