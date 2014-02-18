@@ -52,4 +52,13 @@ public:
 	CEdit m_TableCommandControl;
 	CString m_MainImageName;
 	afx_msg void OnBnClickedButtonResetTable();
+	int m_ExposureTime;
+	int m_FramesPerStop;
+	int m_StopsPerRotation;
+	int m_NumberOfTurns;
+	int m_DelayBetweenTurnsSeconds;
+	CButton m_StopRunLoopButton;
+	CButton m_RunLoopButton;
+	afx_msg void OnBnClickedButtonRunLoop();
+	afx_msg void OnBnClickedButtonStopRunLoop();
 };

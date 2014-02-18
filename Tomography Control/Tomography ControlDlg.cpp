@@ -54,6 +54,11 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_TableCommandOutput(_T(""))
 	, m_TableCommand(_T(""))
 	, m_MainImageName(_T(""))
+	, m_ExposureTime(0)
+	, m_FramesPerStop(0)
+	, m_StopsPerRotation(0)
+	, m_NumberOfTurns(0)
+	, m_DelayBetweenTurnsSeconds(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -65,6 +70,13 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommandControl);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommand);
 	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_MainImageName);
+	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_ExposureTime);
+	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_FramesPerStop);
+	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_StopsPerRotation);
+	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_NumberOfTurns);
+	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_DelayBetweenTurnsSeconds);
+	DDX_Control(pDX, IDC_BUTTON_STOP_RUN_LOOP, m_StopRunLoopButton);
+	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_RunLoopButton);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -76,6 +88,8 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
 	ON_BN_CLICKED(IDC_BUTTON_RESET_TABLE, &CTomographyControlDlg::OnBnClickedButtonResetTable)
+	ON_BN_CLICKED(IDC_BUTTON_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonRunLoop)
+	ON_BN_CLICKED(IDC_BUTTON_STOP_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonStopRunLoop)
 END_MESSAGE_MAP()
 
 
@@ -111,6 +125,7 @@ BOOL CTomographyControlDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
+	m_StopRunLoopButton.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -208,6 +223,8 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 {
 	this -> UpdateData(TRUE);
 
+	printf("%d\r\n", this -> m_ExposureTime);
+
 	// TODO: Add your control notification handler code here
 	this -> m_TableCommandOutput.Empty();
 	this -> UpdateData(FALSE);
@@ -225,4 +242,20 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
 	this -> UpdateData(TRUE);
 	this -> tableAndCameraControl -> SendTableCommand(this, "ncal");
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonRunLoop()
+{
+	// TODO: Add your control notification handler code here
+	m_RunLoopButton.EnableWindow(FALSE);
+	m_StopRunLoopButton.EnableWindow(TRUE);
+}
+
+
+void CTomographyControlDlg::OnBnClickedButtonStopRunLoop()
+{
+	// TODO: Add your control notification handler code here
+	m_RunLoopButton.EnableWindow(TRUE);
+	m_StopRunLoopButton.EnableWindow(FALSE);
 }
