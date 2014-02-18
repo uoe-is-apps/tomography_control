@@ -74,6 +74,8 @@ UINT TakeMultipleImages( LPVOID pParam )
 		dialog->m_progress.SetPos(i + 1);
 	}
 
+	dialog -> PostMessage(WM_CLOSE);
+
     return 0;   // thread completed successfully
 }
 
