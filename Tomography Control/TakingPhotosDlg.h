@@ -1,5 +1,10 @@
 #pragma once
+#include "afxcmn.h"
 
+// Function for the worker thread
+UINT TakeMultipleImages( LPVOID pParam );
+// Function for the worker thread
+UINT TakeSingleImage( LPVOID pParam );
 
 // CTakingPhotosDlg dialog
 
@@ -18,6 +23,8 @@ public:
 	enum TaskType { SINGLE, DARK, FLAT_FIELD };
 
 	TaskType m_taskType;
+	CProgressCtrl m_progress;
+	BOOL m_running;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support

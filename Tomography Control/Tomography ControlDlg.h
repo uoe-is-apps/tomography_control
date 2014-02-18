@@ -73,3 +73,4 @@ public:
 	int m_DelayBetweenTurnsSeconds;
 	CString m_ManualCameraControl;
 };
+

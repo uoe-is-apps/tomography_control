@@ -304,3 +304,4 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 
 	takingPhotosDlg.DoModal();
 }
+
