@@ -278,8 +278,9 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
-	// TODO: Add your control notification handler code here
 	CTakingPhotosDlg takingPhotosDlg;
+
+	takingPhotosDlg.m_taskType = CTakingPhotosDlg::SINGLE;
 
 	takingPhotosDlg.DoModal();
 }
@@ -287,11 +288,19 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
-	// TODO: Add your control notification handler code here
+	CTakingPhotosDlg takingPhotosDlg;
+
+	takingPhotosDlg.m_taskType = CTakingPhotosDlg::DARK;
+
+	takingPhotosDlg.DoModal();
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
-	// TODO: Add your control notification handler code here
+	CTakingPhotosDlg takingPhotosDlg;
+
+	takingPhotosDlg.m_taskType = CTakingPhotosDlg::FLAT_FIELD;
+
+	takingPhotosDlg.DoModal();
 }

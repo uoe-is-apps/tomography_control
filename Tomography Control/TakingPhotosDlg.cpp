@@ -26,6 +26,10 @@ void CTakingPhotosDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 }
 
+BOOL CTakingPhotosDlg::OnInitDialog()
+{
+	return CDialogEx::OnInitDialog();
+}
 
 BEGIN_MESSAGE_MAP(CTakingPhotosDlg, CDialogEx)
 END_MESSAGE_MAP()
