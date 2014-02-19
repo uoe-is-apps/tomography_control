@@ -53,14 +53,14 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
-	, m_MainImageName(_T(""))
-	, m_ExposureTime(0)
-	, m_FramesPerStop(0)
-	, m_StopsPerRotation(0)
-	, m_NumberOfTurns(0)
-	, m_DelayBetweenTurnsSeconds(0)
-	, m_TableInitialisationFile(_T(""))
-	, m_ManualCameraControl(_T(""))
+	, m_mainImageName(_T(""))
+	, m_exposureTime(0)
+	, m_framesPerStop(0)
+	, m_stopsPerRotation(0)
+	, m_numberOfTurns(0)
+	, m_delayBetweenTurnsSeconds(0)
+	, m_tableInitialisationFile(_T(""))
+	, m_manualCameraControl(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -71,16 +71,16 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableCommandOutput);
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommandControl);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommand);
-	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_MainImageName);
-	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_ExposureTime);
-	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_FramesPerStop);
-	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_StopsPerRotation);
-	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_NumberOfTurns);
-	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_DelayBetweenTurnsSeconds);
-	DDX_Control(pDX, IDC_BUTTON_STOP_RUN_LOOP, m_StopRunLoopButton);
-	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_RunLoopButton);
-	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_TableInitialisationFile);
-	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_ManualCameraControl);
+	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_mainImageName);
+	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_exposureTime);
+	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_framesPerStop);
+	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
+	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_numberOfTurns);
+	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
+	DDX_Control(pDX, IDC_BUTTON_STOP_RUN_LOOP, m_stopRunLoopButton);
+	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
+	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
+	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -133,7 +133,7 @@ BOOL CTomographyControlDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-	m_StopRunLoopButton.EnableWindow(FALSE);
+	m_stopRunLoopButton.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -231,7 +231,7 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 {
 	this -> UpdateData(TRUE);
 
-	printf("%d\r\n", this -> m_ExposureTime);
+	printf("%d\r\n", this -> m_exposureTime);
 
 	// TODO: Add your control notification handler code here
 	this -> m_tableCommandOutput.Empty();
@@ -256,16 +256,16 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	// TODO: Add your control notification handler code here
-	m_RunLoopButton.EnableWindow(FALSE);
-	m_StopRunLoopButton.EnableWindow(TRUE);
+	m_runLoopButton.EnableWindow(FALSE);
+	m_stopRunLoopButton.EnableWindow(TRUE);
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonStopRunLoop()
 {
 	// TODO: Add your control notification handler code here
-	m_RunLoopButton.EnableWindow(TRUE);
-	m_StopRunLoopButton.EnableWindow(FALSE);
+	m_runLoopButton.EnableWindow(TRUE);
+	m_stopRunLoopButton.EnableWindow(FALSE);
 }
 
 

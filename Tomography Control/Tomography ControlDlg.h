@@ -55,23 +55,23 @@ public:
 	afx_msg void OnBnClickedButtonCameraTakeFlat();
 	
 	// Table controls
-	CString m_TableCommand;
-	CString m_TableCommandOutput;
-	CEdit m_TableCommandControl;
-	CString m_TableInitialisationFile;
+	CString m_tableCommand;
+	CString m_tableCommandOutput;
+	CEdit m_tableCommandControl;
+	CString m_tableInitialisationFile;
 
 	// Run controls
-	CButton m_StopRunLoopButton;
-	CButton m_RunLoopButton;
+	CButton m_stopRunLoopButton;
+	CButton m_runLoopButton;
 
 	// Camera controls
-	CString m_MainImageName;
-	int m_ExposureTime;
-	int m_FramesPerStop;
-	int m_StopsPerRotation;
-	int m_NumberOfTurns;
-	int m_DelayBetweenTurnsSeconds;
-	CString m_ManualCameraControl;
+	CString m_mainImageName;
+	int m_exposureTime;
+	int m_framesPerStop;
+	int m_stopsPerRotation;
+	int m_numberOfTurns;
+	int m_delayBetweenTurnsSeconds;
+	CString m_manualCameraControl;
 };
 
 // CTakingPhotosDlg dialog

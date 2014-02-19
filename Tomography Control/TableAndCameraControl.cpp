@@ -10,12 +10,12 @@ CTableAndCameraControl::CTableAndCameraControl()
 
 void CTableAndCameraControl::SendTableCommand(CDialogEx* dialog, char* command)
 {
-	CString currentCommand = ((CTomographyControlDlg*)dialog) -> m_TableCommandOutput;
+	CString currentCommand = ((CTomographyControlDlg*)dialog) -> m_tableCommandOutput;
 
 	currentCommand += command;
 	currentCommand += "\r\n";
 
-	((CTomographyControlDlg*)dialog) -> m_TableCommandOutput = currentCommand;
+	((CTomographyControlDlg*)dialog) -> m_tableCommandOutput = currentCommand;
 
 	dialog -> UpdateData(FALSE);
 }
