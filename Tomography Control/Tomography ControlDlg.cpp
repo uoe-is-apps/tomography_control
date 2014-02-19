@@ -54,13 +54,19 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
 	, m_mainImageName(_T(""))
-	, m_exposureTime(0)
-	, m_framesPerStop(0)
-	, m_stopsPerRotation(0)
-	, m_numberOfTurns(0)
-	, m_delayBetweenTurnsSeconds(0)
+	, m_exposureTime(3)
+	, m_framesPerStop(10)
+	, m_stopsPerRotation(100)
+	, m_numberOfTurns(1)
+	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
 	, m_manualCameraControl(_T(""))
+	, m_stopsMadeDisplay(0)
+	, m_calculatedAngle(0)
+	, m_turnsMadeDisplay(0)
+	, m_estimatedRunTimeDisplay(_T(""))
+	, m_startTimeDisplay(_T(""))
+	, m_estimatedEndTimeDisplay(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -81,6 +87,12 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
+	DDX_Text(pDX, IDC_DISPLAY_STOPS_MADE, m_stopsMadeDisplay);
+	DDX_Text(pDX, IDC_DISPLAY_CALC_ANGLE, m_calculatedAngle);
+	DDX_Text(pDX, IDC_DISPLAY_TURNS_MADE, m_turnsMadeDisplay);
+	DDX_Text(pDX, IDC_DISPLAY_EST_RUN_TIME, m_estimatedRunTimeDisplay);
+	DDX_Text(pDX, IDC_DISPLAY_START_TIME, m_startTimeDisplay);
+	DDX_Text(pDX, IDC_DISPLAY_EST_END_TIME, m_estimatedEndTimeDisplay);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -255,9 +267,12 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
-	// TODO: Add your control notification handler code here
+	// TODO: Validate inputs
+
 	m_runLoopButton.EnableWindow(FALSE);
 	m_stopRunLoopButton.EnableWindow(TRUE);
+
+	AfxBeginThread(takeRunImages, this, THREAD_PRIORITY_NORMAL);
 }
 
 
@@ -274,7 +289,9 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
 	// TODO: Add your control notification handler code here
 }
 
-
+/* The following methods deal with manually taking images from the camera, on
+ * request.
+ */
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
 	CameraTask* task = new CameraTask(CameraTask::SINGLE);
@@ -282,14 +299,12 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 	delete task;
 }
 
-
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
 	CameraTask* task = new CameraTask(CameraTask::DARK);
 	this -> RunManualImageTask(task);
 	delete task;
 }
-
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
@@ -315,6 +330,43 @@ void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
 	// Give the thread 5 seconds to exit
 	::WaitForSingleObject(workerThread -> m_hThread, 5000);
 	delete workerThread;
+}
+
+// Worker functions
+UINT takeRunImages( LPVOID pParam )
+{
+	// TODO: Disable table & camera manual buttons
+
+	CTomographyControlDlg* dialog = (CTomographyControlDlg*)pParam;
+
+	// Display start time
+	CString startTime = CTime::GetCurrentTime().Format("%H:%M");
+	dialog -> m_startTimeDisplay.Append(startTime);
+
+	float degreesPerStop = 360.0f / dialog -> m_stopsPerRotation;
+	
+	
+	for (dialog -> m_turnsMadeDisplay = 0; dialog -> m_turnsMadeDisplay < dialog -> m_numberOfTurns; dialog -> m_turnsMadeDisplay++)
+	{
+		for (dialog -> m_stopsMadeDisplay = 0; dialog -> m_stopsMadeDisplay < dialog -> m_stopsPerRotation; dialog -> m_stopsMadeDisplay++)
+		{
+			// float m_calculatedAngle;
+			// CString m_estimatedRunTimeDisplay;
+			// CString m_estimatedEndTimeDisplay;
+			dialog -> UpdateData(FALSE);
+
+			for (int frameCount = 0; frameCount < dialog -> m_framesPerStop; frameCount++)
+			{
+				Sleep(10);
+			}
+		}
+	}
+	
+	Sleep(5000);
+
+	// delete startTime;
+
+	return 0;   // thread completed successfully
 }
 
 // Worker functions

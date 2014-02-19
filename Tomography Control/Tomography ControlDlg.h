@@ -105,7 +105,7 @@ public:
 	CButton m_stopRunLoopButton;
 	CButton m_runLoopButton;
 
-	// Camera controls
+	// Run controls
 	CString m_mainImageName;
 	int m_exposureTime;
 	int m_framesPerStop;
@@ -113,8 +113,19 @@ public:
 	int m_numberOfTurns;
 	int m_delayBetweenTurnsSeconds;
 	CString m_manualCameraControl;
+
+	// Run displays
+	int m_stopsMadeDisplay;
+	float m_calculatedAngle;
+	int m_turnsMadeDisplay;
+	CString m_estimatedRunTimeDisplay;
+	CString m_startTimeDisplay;
+	CString m_estimatedEndTimeDisplay;
 };
 
 
 // Function for the manual camera worker thread
 UINT takeManualImages( LPVOID pParam );
+
+// Function for the manual camera worker thread
+UINT takeRunImages( LPVOID pParam );
