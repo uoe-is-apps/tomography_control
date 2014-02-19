@@ -97,7 +97,6 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
-	ON_MESSAGE(WM_USER_DATA_CHANGED, &CTomographyControlDlg::OnDataChangedMessage)
 END_MESSAGE_MAP()
 
 
@@ -253,12 +252,33 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	// TODO: Validate inputs
-	
-	/* RunTask task;
-	this -> RunManualImageTask(task);
-	delete task; */
 
-	AfxBeginThread(takeRunImages, this, THREAD_PRIORITY_NORMAL);
+	// TODO: Calculate end time
+
+	this -> UpdateData();
+
+	RunTask task;
+	CRunProgressDlg runProgressDlg;
+
+	task.m_dialog = &runProgressDlg;
+	task.m_baseFilename = this -> m_mainImageName;
+	task.m_turnsTotal = this -> m_numberOfTurns;
+	int m_stopsPerTurn = this -> m_stopsPerRotation;
+	int m_framesPerStop = this -> m_framesPerStop;
+	int m_exposureTimeSeconds = this -> m_exposureTime;
+	task.m_running = TRUE;
+
+	CWinThread* workerThread = AfxBeginThread(takeRunImages, &task, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	workerThread -> m_bAutoDelete = FALSE;
+	workerThread -> ResumeThread();
+
+	runProgressDlg.DoModal();
+
+	task.m_running = false;
+	// Give the thread 5 seconds to exit
+	::WaitForSingleObject(workerThread -> m_hThread, 5000);
+	delete workerThread;
 }
 
 
@@ -289,13 +309,6 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 	CameraTask* task = new CameraTask(CameraTask::FLAT_FIELD);
 	this -> RunManualImageTask(task);
 	delete task;
-}
-
-afx_msg LRESULT CTomographyControlDlg::OnDataChangedMessage(WPARAM wParam, LPARAM lParam)
-{
-	this -> UpdateData(FALSE);
-
-	return TRUE;
 }
 
 void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
