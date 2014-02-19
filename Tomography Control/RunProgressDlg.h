@@ -23,7 +23,7 @@ public:
 	int m_currentPosition;
 	CString m_imageFilename;
 	int m_stopsMade;
-	int m_stopsTotal;
+	int m_stopsPerRotation;
 	int m_turnsMade;
 	int m_turnsTotal;
 	CString m_calculatedAngle;
@@ -31,8 +31,11 @@ public:
 	CString m_estEndTime;
 	CString m_estRunTime;
 
-	// Called when the worker thread completes a rotation of the table
+	// Called when the worker thread completes image captures within a rotation of the table
 	afx_msg LRESULT OnTurnCompleted(WPARAM wParam, LPARAM lParam);
+
+	// Called when the worker thread completes rotating the table to a new position
+	afx_msg LRESULT CRunProgressDlg::OnTableAngleChanged(WPARAM wParam, LPARAM lParam);
 
 	// Called when the worker thread completes a set of image captures
 	afx_msg LRESULT OnStopCompleted(WPARAM wParam, LPARAM lParam);

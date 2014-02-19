@@ -225,10 +225,6 @@ void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 
 void CTomographyControlDlg::OnBnClickedButtonResetTable()
 {
-	this -> UpdateData(TRUE);
-
-	printf("%d\r\n", this -> m_exposureTime);
-
 	// TODO: Add your control notification handler code here
 	this -> m_tableCommandOutput.Empty();
 	this -> UpdateData(FALSE);
@@ -263,10 +259,13 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	task.m_dialog = &runProgressDlg;
 	task.m_baseFilename = this -> m_mainImageName;
 	task.m_turnsTotal = this -> m_numberOfTurns;
-	int m_stopsPerTurn = this -> m_stopsPerRotation;
-	int m_framesPerStop = this -> m_framesPerStop;
-	int m_exposureTimeSeconds = this -> m_exposureTime;
+	task.m_stopsPerTurn = this -> m_stopsPerRotation;
+	task.m_framesPerStop = this -> m_framesPerStop;
+	task.m_exposureTimeSeconds = this -> m_exposureTime;
 	task.m_running = TRUE;
+
+	runProgressDlg.m_turnsTotal = this -> m_numberOfTurns;
+	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 
 	CWinThread* workerThread = AfxBeginThread(takeRunImages, &task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
@@ -275,9 +274,11 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 
 	runProgressDlg.DoModal();
 
-	task.m_running = false;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(workerThread -> m_hThread, 5000);
+	// TODO: The dialog itself should set this, so the dialog is still
+	// valid at every point where this value is true
+	task.m_running = FALSE;
+	// Give the thread 60 seconds to exit
+	::WaitForSingleObject(workerThread -> m_hThread, 60000);
 	delete workerThread;
 }
 
