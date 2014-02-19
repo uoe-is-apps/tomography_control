@@ -115,4 +115,4 @@ public:
 };
 
 // Function for the manual camera worker thread
-UINT TakeImages( LPVOID pParam );
+UINT takeManualImages( LPVOID pParam );

@@ -282,7 +282,7 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 	
 	task -> m_dialog = &takingPhotosDlg;
 
-	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	workerThread -> m_bAutoDelete = FALSE;
 	workerThread -> ResumeThread();
@@ -303,7 +303,7 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 	
 	task -> m_dialog = &takingPhotosDlg;
 
-	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	workerThread -> m_bAutoDelete = FALSE;
 	workerThread -> ResumeThread();
@@ -324,7 +324,7 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 
 	task -> m_dialog = &takingPhotosDlg;
 
-	CWinThread* workerThread = AfxBeginThread(TakeImages, task, THREAD_PRIORITY_NORMAL, 
+	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	workerThread -> m_bAutoDelete = FALSE;
 	workerThread -> ResumeThread();
@@ -339,7 +339,7 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 
 
 // Worker functions
-UINT TakeImages( LPVOID pParam )
+UINT takeManualImages( LPVOID pParam )
 {
 	CameraTask* task = (CameraTask*)pParam;
 	
