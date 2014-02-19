@@ -20,8 +20,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	int m_currentPosition;
 	CString m_imageFilename;
+	int m_currentPosition;
 	int m_stopsMade;
 	int m_stopsPerRotation;
 	int m_turnsMade;
@@ -44,7 +44,9 @@ public:
 	afx_msg LRESULT OnImageCaptured(WPARAM wParam, LPARAM lParam);
 };
 
-// Tracks details of a data collection run task.
+// Tracks details of a data collection run task. This also captures current
+// state, so that it's guaranteed to exist beyong the lifecycle of the
+// thread
 struct RunTask
 {
 	CWnd* m_dialog;
@@ -53,6 +55,11 @@ struct RunTask
 	int m_stopsPerTurn;
 	int m_framesPerStop;
 	int m_exposureTimeSeconds;
+
+	int m_turnCount;
+	int m_stopCount;
+	int m_frameCount;
+	int m_currentPosition;
 	BOOL m_running;
 };
 

@@ -82,7 +82,7 @@ afx_msg LRESULT CRunProgressDlg::OnTableAngleChanged(WPARAM wParam, LPARAM lPara
 {
 	float* angle = (float*)lParam;
 
-	this -> m_calculatedAngle.Format("%.2f", angle);
+	this -> m_calculatedAngle.Format("%.2f", *angle);
 	this -> UpdateData(FALSE);
 
 	return TRUE;
@@ -100,6 +100,11 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 
 afx_msg LRESULT CRunProgressDlg::OnImageCaptured(WPARAM wParam, LPARAM lParam)
 {
+	int* currentPosition = (int*)lParam;
+
+	this -> m_currentPosition = *currentPosition;
+	this -> UpdateData(FALSE);
+
 	return TRUE;
 }
 
@@ -111,13 +116,15 @@ UINT takeRunImages( LPVOID pParam )
 	CWnd* dialog = (CRunProgressDlg*)task -> m_dialog;
 
 	const float tableResolution = 0.0005f; // Degrees
-	int stepsPerStop = (360.0f / task -> m_stopsPerTurn) / tableResolution;
+	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
+
+	task -> m_currentPosition = 0;
 	
-	for (int turnCount = 0; turnCount < task -> m_turnsTotal; turnCount++)
+	for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal; task -> m_turnCount++)
 	{
-		for (int stopCount = 0; stopCount < task -> m_stopsPerTurn; stopCount++)
+		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn; task -> m_stopCount++)
 		{
-			float calculatedAngle = stopCount * stepsPerStop * tableResolution;
+			float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
 
 			// TODO: Turn table here
 			if (::IsWindow(dialog -> m_hWnd))
@@ -125,8 +132,9 @@ UINT takeRunImages( LPVOID pParam )
 				dialog -> PostMessage(WM_USER_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 			}
 
-			for (int frameCount = 0; frameCount < task -> m_framesPerStop; frameCount++)
+			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop; task -> m_frameCount++)
 			{
+				task -> m_currentPosition++;
 				Sleep(100); // task -> m_exposureTimeSeconds * 1000);
 
 				if (task -> m_running)
@@ -134,7 +142,7 @@ UINT takeRunImages( LPVOID pParam )
 					if (::IsWindow(dialog -> m_hWnd))
 					{
 						// Should input filename here, too
-						dialog -> PostMessage(WM_USER_IMAGE_CAPTURED, 0, (LPARAM)&frameCount);
+						dialog -> PostMessage(WM_USER_IMAGE_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
 					}
 				}
 				else
@@ -147,7 +155,7 @@ UINT takeRunImages( LPVOID pParam )
 			{
 				if (::IsWindow(dialog -> m_hWnd))
 				{
-					dialog -> PostMessage(WM_USER_STOP_COMPLETED, 0, (LPARAM)&stopCount);
+					dialog -> PostMessage(WM_USER_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 				}
 			}
 			else
@@ -161,7 +169,7 @@ UINT takeRunImages( LPVOID pParam )
 		{
 			if (::IsWindow(dialog -> m_hWnd))
 			{
-				dialog -> PostMessage(WM_USER_TURN_COMPLETED, 0, (LPARAM)&turnCount);
+				dialog -> PostMessage(WM_USER_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
 			}
 		}
 		else
