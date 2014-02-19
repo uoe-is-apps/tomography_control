@@ -278,48 +278,28 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
 	CameraTask* task = new CameraTask(CameraTask::SINGLE);
-	CTakingPhotosDlg takingPhotosDlg;
-	
-	task -> m_dialog = &takingPhotosDlg;
-
-	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	workerThread -> m_bAutoDelete = FALSE;
-	workerThread -> ResumeThread();
-
-	takingPhotosDlg.DoModal();
-
-	task -> m_running = false;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(workerThread -> m_hThread, 5000);
-	delete workerThread;
+	this -> RunManualImageTask(task);
+	delete task;
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
 	CameraTask* task = new CameraTask(CameraTask::DARK);
-	CTakingPhotosDlg takingPhotosDlg;
-	
-	task -> m_dialog = &takingPhotosDlg;
-
-	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	workerThread -> m_bAutoDelete = FALSE;
-	workerThread -> ResumeThread();
-
-	takingPhotosDlg.DoModal();
-
-	task -> m_running = false;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(workerThread -> m_hThread, 5000);
-	delete workerThread;
+	this -> RunManualImageTask(task);
+	delete task;
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
 	CameraTask* task = new CameraTask(CameraTask::FLAT_FIELD);
+	this -> RunManualImageTask(task);
+	delete task;
+}
+
+void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
+{
 	CTakingPhotosDlg takingPhotosDlg;
 
 	task -> m_dialog = &takingPhotosDlg;
@@ -336,7 +316,6 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 	::WaitForSingleObject(workerThread -> m_hThread, 5000);
 	delete workerThread;
 }
-
 
 // Worker functions
 UINT takeManualImages( LPVOID pParam )
