@@ -1,0 +1,45 @@
+0 1 nmode
+1 nclear
+-1 1 snv 1 gne 1 gne 1 gne
+1 1 setaxis
+1 0 1 setsw
+1 1 1 setsw
+360.000000000 1 setpitch
+180.000000 1 snv
+500.000000 1 sna
+1 1 setnaccelfunc
+40 1 1 setncalvel
+1 2 1 setncalvel
+40 1 1 setnrmvel
+1 2 1 setnrmvel
+2000.000000 1 setncalaccel
+0.0000 1 setncalswdist
+0 1 setnpowerup
+:version =2.37
+:serialno =6914130
+1 1 setcloop
+0.0400000000000000 1 setclperiod
+0.001000 0 1 0 1 setclwindow
+0.0012 1 setclwintime
+100.000000 700.000000 0.500000 12.000000 3.000000 12.000000 10.000000 0.000000 0.000000 0.000000 10 1 setclpara
+1 1 setselpos
+2 1 1 setnrefvel
+0.01 2 1 setnrefvel
+0 1 setref
+520 1 setalpha
+3900 1 setumotmin
+50 1 setumotgrad
+2 1 setphases
+7 1 setpolepairs
+0 1 setmotiondir
+80000 3 1 setmotorpara
+50.000000 1 setnjoyspeed
+5.000000 1 setnjoybspeed
+2 1 setnjoytype
+2000.000000 1 setnmanaccel
+0.000000 1 setwheelratio
+1 1 setwheelres
+1 nreset
+1 ncal
+2 0 1 setsw
+2 1 1 setsw
