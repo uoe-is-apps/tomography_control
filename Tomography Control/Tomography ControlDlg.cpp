@@ -4,7 +4,6 @@
 
 #include "stdafx.h"
 #include "Tomography Control.h"
-#include "TakingPhotosDlg.h"
 #include "Tomography ControlDlg.h"
 #include "Table And Camera Control.h"
 #include "afxdialogex.h"
@@ -52,8 +51,8 @@ END_MESSAGE_MAP()
 
 CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
-	, m_TableCommandOutput(_T(""))
-	, m_TableCommand(_T(""))
+	, m_tableCommandOutput(_T(""))
+	, m_tableCommand(_T(""))
 	, m_MainImageName(_T(""))
 	, m_ExposureTime(0)
 	, m_FramesPerStop(0)
@@ -69,9 +68,9 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_TableCommandOutput);
-	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommandControl);
-	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_TableCommand);
+	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableCommandOutput);
+	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommandControl);
+	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommand);
 	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_MainImageName);
 	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_ExposureTime);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_FramesPerStop);
@@ -193,17 +192,17 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 {
     if (pMsg->message == WM_KEYDOWN &&
         pMsg->wParam == VK_RETURN/*  &&
-        GetFocus() == this -> m_TableCommandControl */)
+        GetFocus() == this -> m_tableCommandControl */)
     {
 		this -> UpdateData(TRUE);
 
 		// Take a copy of the command, then wipe the field
-		char *command = (char*)alloca(sizeof(char) * (this -> m_TableCommand.GetLength() + 1));
-		strcpy(command, (LPCTSTR)m_TableCommand);
-		this -> m_TableCommand.Empty();
+		char *command = (char*)alloca(sizeof(char) * (this -> m_tableCommand.GetLength() + 1));
+		strcpy(command, (LPCTSTR)m_tableCommand);
+		this -> m_tableCommand.Empty();
 
 		this -> tableAndCameraControl -> SendTableCommand(this, command);
-		this -> m_TableCommand.Empty();
+		this -> m_tableCommand.Empty();
         return TRUE; // this doesn't need processing anymore
     }
     return FALSE; // all other cases still need default processing
@@ -223,7 +222,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 {
 	this -> UpdateData(TRUE);
-	this -> m_TableCommandOutput.Empty();
+	this -> m_tableCommandOutput.Empty();
 	this -> UpdateData(FALSE);
 }
 
@@ -235,7 +234,7 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 	printf("%d\r\n", this -> m_ExposureTime);
 
 	// TODO: Add your control notification handler code here
-	this -> m_TableCommandOutput.Empty();
+	this -> m_tableCommandOutput.Empty();
 	this -> UpdateData(FALSE);
 }
 

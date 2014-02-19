@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "Tomography Control.h"
-#include "TakingPhotosDlg.h"
+#include "Tomography ControlDlg.h"
 #include "afxdialogex.h"
 
 
