@@ -5,6 +5,9 @@
 #pragma once
 #include "afxwin.h"
 
+// Message for the worker threads to notify of a data change
+#define WM_USER_DATA_CHANGED (WM_USER + 1) 
+#define WM_USER_RUN_FINISHED (WM_USER_DATA_CHANGED + 1) 
 
 // CTakingPhotosDlg dialog
 
@@ -94,6 +97,9 @@ public:
 	afx_msg void OnBnClickedButtonCameraTakeSingle();
 	afx_msg void OnBnClickedButtonCameraTakeDark();
 	afx_msg void OnBnClickedButtonCameraTakeFlat();
+
+	// Called when a worker thread changes data
+	afx_msg LRESULT OnDataChangedMessage(WPARAM wParam, LPARAM lParam);
 	
 	// Table controls
 	CString m_tableCommand;
@@ -104,8 +110,9 @@ public:
 	// Run controls
 	CButton m_stopRunLoopButton;
 	CButton m_runLoopButton;
+	BOOL m_running; // Not set from the UI, just used by the background thread
 
-	// Run controls
+	// Run inputs
 	CString m_mainImageName;
 	int m_exposureTime;
 	int m_framesPerStop;

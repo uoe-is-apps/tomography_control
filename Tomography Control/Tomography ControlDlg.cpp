@@ -110,6 +110,7 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
+	ON_MESSAGE(WM_USER_DATA_CHANGED, &CTomographyControlDlg::OnDataChangedMessage)
 END_MESSAGE_MAP()
 
 
@@ -269,6 +270,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	// TODO: Validate inputs
 
+	m_running = TRUE;
 	m_runLoopButton.EnableWindow(FALSE);
 	m_stopRunLoopButton.EnableWindow(TRUE);
 
@@ -279,8 +281,9 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 void CTomographyControlDlg::OnBnClickedButtonStopRunLoop()
 {
 	// TODO: Add your control notification handler code here
-	m_runLoopButton.EnableWindow(TRUE);
-	m_stopRunLoopButton.EnableWindow(FALSE);
+	m_running = FALSE;
+	// m_runLoopButton.EnableWindow(TRUE);
+	// m_stopRunLoopButton.EnableWindow(FALSE);
 }
 
 
@@ -313,6 +316,13 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 	delete task;
 }
 
+afx_msg LRESULT CTomographyControlDlg::OnDataChangedMessage(WPARAM wParam, LPARAM lParam)
+{
+	this -> UpdateData(FALSE);
+
+	return TRUE;
+}
+
 void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
 {
 	CTakingPhotosDlg takingPhotosDlg;
@@ -340,7 +350,7 @@ UINT takeRunImages( LPVOID pParam )
 	CTomographyControlDlg* dialog = (CTomographyControlDlg*)pParam;
 
 	// Display start time
-	CString startTime = CTime::GetCurrentTime().Format("%H:%M");
+	CString startTime = CTime::GetCurrentTime().Format("%H:%M:%S");
 	dialog -> m_startTimeDisplay.Append(startTime);
 
 	float degreesPerStop = 360.0f / dialog -> m_stopsPerRotation;
@@ -353,12 +363,27 @@ UINT takeRunImages( LPVOID pParam )
 			// float m_calculatedAngle;
 			// CString m_estimatedRunTimeDisplay;
 			// CString m_estimatedEndTimeDisplay;
-			dialog -> UpdateData(FALSE);
 
 			for (int frameCount = 0; frameCount < dialog -> m_framesPerStop; frameCount++)
 			{
+				dialog -> PostMessage(WM_USER_DATA_CHANGED, 0, NULL);
 				Sleep(10);
+
+				if (!dialog -> m_running)
+				{
+					break;
+				}
 			}
+
+			if (!dialog -> m_running)
+			{
+				break;
+			}
+		}
+
+		if (!dialog -> m_running)
+		{
+			break;
 		}
 	}
 	
