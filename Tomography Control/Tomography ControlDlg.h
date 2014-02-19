@@ -92,7 +92,6 @@ public:
 	afx_msg void OnBnClickedButtonClearTableDisplay();
 	afx_msg void OnBnClickedButtonResetTable();
 	afx_msg void OnBnClickedButtonRunLoop();
-	afx_msg void OnBnClickedButtonStopRunLoop();
 	afx_msg void OnBnClickedButtonCameraWriteInitial();
 	afx_msg void OnBnClickedButtonCameraTakeSingle();
 	afx_msg void OnBnClickedButtonCameraTakeDark();
@@ -100,6 +99,9 @@ public:
 
 	// Called when a worker thread changes data
 	afx_msg LRESULT OnDataChangedMessage(WPARAM wParam, LPARAM lParam);
+
+	// Camera controls
+	CString m_manualCameraControl;
 	
 	// Table controls
 	CString m_tableCommand;
@@ -108,7 +110,6 @@ public:
 	CString m_tableInitialisationFile;
 
 	// Run controls
-	CButton m_stopRunLoopButton;
 	CButton m_runLoopButton;
 	BOOL m_running; // Not set from the UI, just used by the background thread
 
@@ -119,20 +120,8 @@ public:
 	int m_stopsPerRotation;
 	int m_numberOfTurns;
 	int m_delayBetweenTurnsSeconds;
-	CString m_manualCameraControl;
-
-	// Run displays
-	int m_stopsMadeDisplay;
-	float m_calculatedAngle;
-	int m_turnsMadeDisplay;
-	CString m_estimatedRunTimeDisplay;
-	CString m_startTimeDisplay;
-	CString m_estimatedEndTimeDisplay;
 };
 
 
 // Function for the manual camera worker thread
 UINT takeManualImages( LPVOID pParam );
-
-// Function for the manual camera worker thread
-UINT takeRunImages( LPVOID pParam );

@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "RunProgressDlg.h"
 #include "Table And Camera Control.h"
 #include "afxdialogex.h"
 
@@ -61,12 +62,6 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
 	, m_manualCameraControl(_T(""))
-	, m_stopsMadeDisplay(0)
-	, m_calculatedAngle(0)
-	, m_turnsMadeDisplay(0)
-	, m_estimatedRunTimeDisplay(_T(""))
-	, m_startTimeDisplay(_T(""))
-	, m_estimatedEndTimeDisplay(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -83,16 +78,9 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_numberOfTurns);
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
-	DDX_Control(pDX, IDC_BUTTON_STOP_RUN_LOOP, m_stopRunLoopButton);
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
-	DDX_Text(pDX, IDC_DISPLAY_STOPS_MADE, m_stopsMadeDisplay);
-	DDX_Text(pDX, IDC_DISPLAY_CALC_ANGLE, m_calculatedAngle);
-	DDX_Text(pDX, IDC_DISPLAY_TURNS_MADE, m_turnsMadeDisplay);
-	DDX_Text(pDX, IDC_DISPLAY_EST_RUN_TIME, m_estimatedRunTimeDisplay);
-	DDX_Text(pDX, IDC_DISPLAY_START_TIME, m_startTimeDisplay);
-	DDX_Text(pDX, IDC_DISPLAY_EST_END_TIME, m_estimatedEndTimeDisplay);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -105,7 +93,6 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
 	ON_BN_CLICKED(IDC_BUTTON_RESET_TABLE, &CTomographyControlDlg::OnBnClickedButtonResetTable)
 	ON_BN_CLICKED(IDC_BUTTON_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonRunLoop)
-	ON_BN_CLICKED(IDC_BUTTON_STOP_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonStopRunLoop)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_WRITE_INITIAL, &CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
@@ -144,9 +131,6 @@ BOOL CTomographyControlDlg::OnInitDialog()
 	//  when the application's main window is not a dialog
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
-
-	// TODO: Add extra initialization here
-	m_stopRunLoopButton.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -269,21 +253,12 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	// TODO: Validate inputs
-
-	m_running = TRUE;
-	m_runLoopButton.EnableWindow(FALSE);
-	m_stopRunLoopButton.EnableWindow(TRUE);
+	
+	/* RunTask task;
+	this -> RunManualImageTask(task);
+	delete task; */
 
 	AfxBeginThread(takeRunImages, this, THREAD_PRIORITY_NORMAL);
-}
-
-
-void CTomographyControlDlg::OnBnClickedButtonStopRunLoop()
-{
-	// TODO: Add your control notification handler code here
-	m_running = FALSE;
-	// m_runLoopButton.EnableWindow(TRUE);
-	// m_stopRunLoopButton.EnableWindow(FALSE);
 }
 
 
@@ -340,58 +315,6 @@ void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
 	// Give the thread 5 seconds to exit
 	::WaitForSingleObject(workerThread -> m_hThread, 5000);
 	delete workerThread;
-}
-
-// Worker functions
-UINT takeRunImages( LPVOID pParam )
-{
-	// TODO: Disable table & camera manual buttons
-
-	CTomographyControlDlg* dialog = (CTomographyControlDlg*)pParam;
-
-	// Display start time
-	CString startTime = CTime::GetCurrentTime().Format("%H:%M:%S");
-	dialog -> m_startTimeDisplay.Append(startTime);
-
-	float degreesPerStop = 360.0f / dialog -> m_stopsPerRotation;
-	
-	
-	for (dialog -> m_turnsMadeDisplay = 0; dialog -> m_turnsMadeDisplay < dialog -> m_numberOfTurns; dialog -> m_turnsMadeDisplay++)
-	{
-		for (dialog -> m_stopsMadeDisplay = 0; dialog -> m_stopsMadeDisplay < dialog -> m_stopsPerRotation; dialog -> m_stopsMadeDisplay++)
-		{
-			// float m_calculatedAngle;
-			// CString m_estimatedRunTimeDisplay;
-			// CString m_estimatedEndTimeDisplay;
-
-			for (int frameCount = 0; frameCount < dialog -> m_framesPerStop; frameCount++)
-			{
-				dialog -> PostMessage(WM_USER_DATA_CHANGED, 0, NULL);
-				Sleep(10);
-
-				if (!dialog -> m_running)
-				{
-					break;
-				}
-			}
-
-			if (!dialog -> m_running)
-			{
-				break;
-			}
-		}
-
-		if (!dialog -> m_running)
-		{
-			break;
-		}
-	}
-	
-	Sleep(5000);
-
-	// delete startTime;
-
-	return 0;   // thread completed successfully
 }
 
 // Worker functions
