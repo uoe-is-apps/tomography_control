@@ -2,6 +2,7 @@
 
 
 #include "ICamera.h"
+#include "afxcmn.h"
 
 // CRunProgressDlg dialog
 
@@ -44,6 +45,7 @@ public:
 
 	// Called when the worker thread captures a single image
 	afx_msg LRESULT OnImageCaptured(WPARAM wParam, LPARAM lParam);
+	CProgressCtrl m_progressCtl;
 };
 
 // Tracks details of a data collection run task. This also captures current

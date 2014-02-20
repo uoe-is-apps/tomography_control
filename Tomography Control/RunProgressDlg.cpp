@@ -6,6 +6,8 @@
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
+#define MAX_PROGRESS 1000
+
 
 // CRunProgressDlg dialog
 
@@ -44,6 +46,7 @@ void CRunProgressDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_DISPLAY_START_TIME, m_startTime);
 	DDX_Text(pDX, IDC_DISPLAY_EST_END_TIME, m_estEndTime);
 	DDX_Text(pDX, IDC_DISPLAY_EST_RUN_TIME, m_estRunTime);
+	DDX_Control(pDX, IDC_PROGRESS1, m_progressCtl);
 }
 
 BOOL CRunProgressDlg::OnInitDialog()
@@ -52,6 +55,8 @@ BOOL CRunProgressDlg::OnInitDialog()
 	
 	CString startTime = CTime::GetCurrentTime().Format("%H:%M:%S");
 	this -> m_startTime.Append(startTime);
+
+	this -> m_progressCtl.SetRange(0, (short)MAX_PROGRESS);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -95,6 +100,11 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 	this -> m_stopsMade = *stopCount;
 	this -> UpdateData(FALSE);
 
+	int totalStops = m_turnsTotal * m_stopsPerRotation;
+	short progress = MAX_PROGRESS * (*stopCount) / totalStops;
+
+	this -> m_progressCtl.SetPos(progress);
+
 	return TRUE;
 }
 
@@ -113,7 +123,7 @@ afx_msg LRESULT CRunProgressDlg::OnImageCaptured(WPARAM wParam, LPARAM lParam)
 UINT takeRunImages( LPVOID pParam )
 {
 	RunTask* task = (RunTask*)pParam;
-	CWnd* dialog = (CRunProgressDlg*)task -> m_dialog;
+	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
 
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
