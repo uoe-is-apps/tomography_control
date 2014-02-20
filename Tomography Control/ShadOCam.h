@@ -4,7 +4,7 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
-class ShadOCam : ICamera
+class ShadOCam : public ICamera
 {
 public:
 	ShadOCam(char* camFile);

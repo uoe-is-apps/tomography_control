@@ -1,7 +1,7 @@
 
 #include "ICamera.h"
 
-class DummyCamera : ICamera
+class DummyCamera : public ICamera
 {
 public:
 	DummyCamera();

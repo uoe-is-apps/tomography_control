@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include "ICamera.h"
+
 // CRunProgressDlg dialog
 
 class CRunProgressDlg : public CDialogEx
@@ -50,6 +52,7 @@ public:
 struct RunTask
 {
 	CWnd* m_dialog;
+	ICamera* m_camera;
 	CString m_baseFilename;
 	int m_turnsTotal;
 	int m_stopsPerTurn;

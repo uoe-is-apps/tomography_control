@@ -3,8 +3,15 @@
 //
 
 #include "stdafx.h"
+
+#include <windows.h>
+#include <string.h>
+
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "DummyCamera.h"
+#include "ShadOCam.h"
+#include "Tomography Control.h"
 #include "RunProgressDlg.h"
 #include "Table And Camera Control.h"
 #include "afxdialogex.h"
@@ -254,10 +261,32 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 
 	// TODO: Calculate end time
 
-	this -> UpdateData();
+	this -> UpdateData(TRUE);
 
 	RunTask task;
 	CRunProgressDlg runProgressDlg;
+	
+	try {
+		if (strcmp(this -> m_cameraName, "Dummy") == 0)
+		{
+			task.m_camera = new DummyCamera(); // new ShadOCam("C:\\ShadoCam\\IniFile.txt");
+		}
+		else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
+		{
+			task.m_camera = new ShadOCam("C:\\ShadoCam\\IniFile.txt");
+		}
+		else
+		{
+			throw "Unrecognised camera type.";
+		}
+	}
+	catch(char* message)
+	{
+		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		return;
+	}
+
+	task.m_camera -> SetupCamera(this -> m_exposureTimeSeconds);
 
 	task.m_dialog = &runProgressDlg;
 	task.m_baseFilename = this -> m_mainImageName;
@@ -280,6 +309,9 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	// TODO: The dialog itself should set this, so the dialog is still
 	// valid at every point where this value is true
 	task.m_running = FALSE;
+
+	delete task.m_camera;
+
 	// Give the thread 60 seconds to exit
 	::WaitForSingleObject(workerThread -> m_hThread, 60000);
 	delete workerThread;

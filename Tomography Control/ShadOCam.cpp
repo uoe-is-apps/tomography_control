@@ -108,6 +108,7 @@ void ShadOCam::TakeImage(char* output_file)
 	}
       
     //save file
+	// TODO: Don't use strcat!
 	strcat(output_file, ".crude");
 	this -> m_framelib.WriteBin(this -> m_currentFrame, output_file, 1);
 }
