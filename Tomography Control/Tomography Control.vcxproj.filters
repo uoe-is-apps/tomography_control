@@ -45,6 +45,9 @@
     <ClInclude Include="ShadOCam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ICamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tomography Control.cpp">
