@@ -55,13 +55,14 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
 	, m_mainImageName(_T(""))
-	, m_exposureTime(3)
+	, m_exposureTimeSeconds(0.5f)
 	, m_framesPerStop(10)
 	, m_stopsPerRotation(100)
 	, m_numberOfTurns(1)
 	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
 	, m_manualCameraControl(_T(""))
+	, m_cameraName(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -73,7 +74,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommandControl);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommand);
 	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_mainImageName);
-	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_exposureTime);
+	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_exposureTimeSeconds);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_framesPerStop);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_numberOfTurns);
@@ -81,6 +82,8 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
+	DDX_CBString(pDX, IDC_COMBO_CAMERA, m_cameraName);
+	DDX_Control(pDX, IDC_COMBO_CAMERA, m_cameraComboBox);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -261,7 +264,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	task.m_turnsTotal = this -> m_numberOfTurns;
 	task.m_stopsPerTurn = this -> m_stopsPerRotation;
 	task.m_framesPerStop = this -> m_framesPerStop;
-	task.m_exposureTimeSeconds = this -> m_exposureTime;
+	task.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	task.m_running = TRUE;
 
 	runProgressDlg.m_turnsTotal = this -> m_numberOfTurns;
