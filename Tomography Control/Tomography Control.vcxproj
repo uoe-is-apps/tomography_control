@@ -102,6 +102,7 @@
     <None Include="res\TomographyControl.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DummyCamera.h" />
     <ClInclude Include="ICamera.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RunProgressDlg.h" />
@@ -112,6 +113,7 @@
     <ClInclude Include="Tomography ControlDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DummyCamera.cpp" />
     <ClCompile Include="RunProgressDlg.cpp" />
     <ClCompile Include="ShadOCam.cpp" />
     <ClCompile Include="stdafx.cpp">
