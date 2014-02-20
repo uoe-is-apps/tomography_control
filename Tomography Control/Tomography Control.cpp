@@ -3,6 +3,8 @@
 //
 
 #include "stdafx.h"
+
+#include "ShadOCam.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "Table And Camera Control.h"
@@ -67,22 +69,27 @@ BOOL CTomographyControlApp::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("University of Edinburgh"));
-
+	
+	ShadOCam* shadOCam = NULL;
 	CTomographyControlDlg controlDialogue;
 
 	controlDialogue.tableAndCameraControl = new CTableAndCameraControl();
 
+	try {
+		shadOCam = new ShadOCam("C:\\ShadoCam\\IniFile.txt");
+	}
+	catch(char* message)
+	{
+		MessageBox(NULL, message, "Tomography Control", MB_ICONERROR);
+		// TODO: Fail
+	}
+
 	m_pMainWnd = &controlDialogue;
 	INT_PTR nResponse = controlDialogue.DoModal();
-	if (nResponse == IDOK)
+
+	if (NULL != shadOCam)
 	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with OK
-	}
-	else if (nResponse == IDCANCEL)
-	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with Cancel
+		delete shadOCam;
 	}
 
 	// Delete the shell manager created above.
@@ -95,4 +102,3 @@ BOOL CTomographyControlApp::InitInstance()
 	//  application, rather than start the application's message pump.
 	return FALSE;
 }
-
