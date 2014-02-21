@@ -4,6 +4,7 @@
 
 #pragma once
 #include "afxwin.h"
+#include "ICamera.h"
 #include "Table.h"
 
 // CTakingPhotosDlg dialog
@@ -40,6 +41,7 @@ public:
 	CameraTask(TaskType taskType);
 
 	TaskType m_taskType;
+	ICamera* m_camera;
 	CTakingPhotosDlg* m_dialog;
 	short m_currentImages;
 	short m_totalImages;
@@ -64,17 +66,6 @@ public:
 
 
 // Implementation
-protected:
-	HICON m_hIcon;
-
-	// Generated message map functions
-	virtual BOOL OnInitDialog();
-	virtual BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg);
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
-	void RunManualImageTask(CameraTask* task);
-	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButtonInitialiseTable();
 	afx_msg void OnBnClickedButtonTableNreset();
@@ -109,6 +100,18 @@ public:
 	int m_delayBetweenTurnsSeconds;
 	CString m_cameraName;
 	CComboBox m_cameraComboBox;
+protected:
+	HICON m_hIcon;
+
+	// Generated message map functions
+	virtual BOOL OnInitDialog();
+	virtual BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
+	afx_msg void OnPaint();
+	afx_msg HCURSOR OnQueryDragIcon();
+	void RunManualImageTask(CameraTask* task);
+	ICamera* BuildSelectedCamera();
+	DECLARE_MESSAGE_MAP()
 };
 
 

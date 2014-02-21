@@ -9,4 +9,7 @@ public:
 
 	virtual void SetupCamera(float exposureTime);
 	virtual void TakeImage(char* filename);
+
+protected:
+	float m_exposureTimeSeconds;
 };

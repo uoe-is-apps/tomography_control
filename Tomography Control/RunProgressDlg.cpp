@@ -145,7 +145,6 @@ UINT takeRunImages( LPVOID pParam )
 			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop; task -> m_frameCount++)
 			{
 				task -> m_currentPosition++;
-				Sleep(100); // task -> m_exposureTimeSeconds * 1000);
 
 				if (task -> m_running)
 				{

@@ -253,6 +253,29 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 	this -> table -> SendTableCommand("ncal\r\n");
 }
 
+/* Get a camera object, depending on the currently selected
+ * type.
+ * Throws a string with an error message in case of a problem.
+ */
+ICamera* CTomographyControlDlg::BuildSelectedCamera()
+{
+	ICamera *camera;
+
+	if (strcmp(this -> m_cameraName, "Dummy") == 0)
+	{
+		camera = new DummyCamera();
+	}
+	else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
+	{
+		camera = new ShadOCam("C:\\ShadoCam\\IniFile.txt");
+	}
+	else
+	{
+		throw "Unrecognised camera type.";
+	}
+
+	camera -> SetupCamera(this -> m_exposureTimeSeconds);
+}
 
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
@@ -266,26 +289,13 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	CRunProgressDlg runProgressDlg;
 	
 	try {
-		if (strcmp(this -> m_cameraName, "Dummy") == 0)
-		{
-			task.m_camera = new DummyCamera(); // new ShadOCam("C:\\ShadoCam\\IniFile.txt");
-		}
-		else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
-		{
-			task.m_camera = new ShadOCam("C:\\ShadoCam\\IniFile.txt");
-		}
-		else
-		{
-			throw "Unrecognised camera type.";
-		}
+		task.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
 		MessageBox(message, "Tomography Control", MB_ICONERROR);
 		return;
 	}
-
-	task.m_camera -> SetupCamera(this -> m_exposureTimeSeconds);
 
 	task.m_dialog = &runProgressDlg;
 	task.m_baseFilename = this -> m_mainImageName;
@@ -327,22 +337,59 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
  */
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
+	this -> UpdateData(TRUE);
+
 	CameraTask* task = new CameraTask(CameraTask::SINGLE);
+
+	try {
+		task -> m_camera = BuildSelectedCamera();
+	}
+	catch(char* message)
+	{
+		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		return;
+	}
+
 	this -> RunManualImageTask(task);
+	delete task -> m_camera;
 	delete task;
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
+	this -> UpdateData(TRUE);
+
 	CameraTask* task = new CameraTask(CameraTask::DARK);
+
+	try {
+		task -> m_camera = BuildSelectedCamera();
+	}
+	catch(char* message)
+	{
+		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		return;
+	}
 	this -> RunManualImageTask(task);
+	delete task -> m_camera;
 	delete task;
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
+	this -> UpdateData(TRUE);
+
 	CameraTask* task = new CameraTask(CameraTask::FLAT_FIELD);
+
+	try {
+		task -> m_camera = BuildSelectedCamera();
+	}
+	catch(char* message)
+	{
+		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		return;
+	}
 	this -> RunManualImageTask(task);
+	delete task -> m_camera;
 	delete task;
 }
 
@@ -372,7 +419,8 @@ UINT takeManualImages( LPVOID pParam )
 	
 	for (short i = 0; i < task -> m_totalImages; i++) 
 	{
-		Sleep(1000);
+		// TODO: Provide filename
+		task -> m_camera -> TakeImage("");
 		if(!(task -> m_running))
 		{
 			break;
