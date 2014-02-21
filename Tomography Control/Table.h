@@ -10,6 +10,7 @@ public:
 	~Table();
 	void DoIO();
 	void SendTableCommand(char* command);
+	void SetMessageReceiver(CWnd* wnd);
 	void Start();
 	void Stop();
 
@@ -17,11 +18,14 @@ public:
 	BOOL m_running;
 
 protected:
+	void PulseMessageReceived();
+
 	CCriticalSection m_bufferLock;
 	char* m_inputBuffer; // Communication waiting to be sent to the table
 	char* m_outputBuffer; // Communication back from the table
 	HANDLE m_hComm;
 	CWinThread* m_thread;
+	CWnd* m_messageReceiver;
 };
 
 class DummyTable : public ITable
@@ -31,6 +35,7 @@ public:
 	~DummyTable();
 	void DoIO();
 	void SendTableCommand(char* command);
+	void SetMessageReceiver(CWnd* wnd);
 	void Start();
 	void Stop();
 
@@ -38,10 +43,13 @@ public:
 	BOOL m_running;
 
 protected:
+	void PulseMessageReceived();
+
 	CCriticalSection m_bufferLock;
 	char* m_inputBuffer; // Communication waiting to be sent to the table
 	char* m_outputBuffer; // Communication back from the table
 	CWinThread* m_thread;
+	CWnd* m_messageReceiver;
 };
 
 // Function for the table communication thread

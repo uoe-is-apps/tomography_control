@@ -61,10 +61,19 @@ void DummyTable::DoIO()
 	
 		strcat_s(this -> m_outputBuffer, outputBufferSize, tempBuffer);
 
-		// TODO: Send message to notify dialog that the output buffer has changed
+		this -> PulseMessageReceived();
 	}
 
 	this -> m_bufferLock.Unlock();
+}
+
+void DummyTable::PulseMessageReceived()
+{
+	if (NULL != this -> m_messageReceiver
+		&& ::IsWindow(this -> m_messageReceiver -> m_hWnd))
+	{
+		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_MESSAGE_RECEIVED, 0, (LPARAM)this);
+	}
 }
 
 void DummyTable::SendTableCommand(char* command)
@@ -76,6 +85,11 @@ void DummyTable::SendTableCommand(char* command)
 	TODO: strcat_s(m_inputBuffer, sizeof(char) * BUFFER_SIZE, command);
 	this -> m_bufferLock.Unlock();
 	this -> m_inputEvent.PulseEvent();
+}
+
+void DummyTable::SetMessageReceiver(CWnd* wnd)
+{
+	this -> m_messageReceiver = wnd;
 }
 
 void DummyTable::Start()

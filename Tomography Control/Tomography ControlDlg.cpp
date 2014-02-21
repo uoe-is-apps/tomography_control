@@ -106,6 +106,7 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
+	ON_MESSAGE(WM_USER_TABLE_MESSAGE_RECEIVED, &CTomographyControlDlg::OnTableMessageReceived)
 END_MESSAGE_MAP()
 
 
@@ -251,6 +252,17 @@ void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
 	this -> table -> SendTableCommand("ncal\r\n");
+}
+
+LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr)
+{
+	ITable* table = (ITable*)tablePtr;
+
+	UpdateData(TRUE);
+	this -> m_tableCommandOutput = "test"; // TODO: Take from the actual table
+	UpdateData(FALSE);
+
+	return TRUE;
 }
 
 /* Get a camera object, depending on the currently selected

@@ -78,6 +78,9 @@ public:
 	afx_msg void OnBnClickedButtonCameraTakeDark();
 	afx_msg void OnBnClickedButtonCameraTakeFlat();
 
+	// Called when the worker thread completes image captures within a rotation of the table
+	afx_msg LRESULT OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr);
+
 	// Camera controls
 	CString m_manualCameraControl;
 	

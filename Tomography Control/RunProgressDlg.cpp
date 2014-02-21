@@ -63,10 +63,10 @@ BOOL CRunProgressDlg::OnInitDialog()
 
 
 BEGIN_MESSAGE_MAP(CRunProgressDlg, CDialogEx)
-	ON_MESSAGE(WM_USER_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
-	ON_MESSAGE(WM_USER_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
-	ON_MESSAGE(WM_USER_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
-	ON_MESSAGE(WM_USER_IMAGE_CAPTURED, &CRunProgressDlg::OnImageCaptured)
+	ON_MESSAGE(WM_USER_RUN_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
+	ON_MESSAGE(WM_USER_RUN_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
+	ON_MESSAGE(WM_USER_RUN_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
+	ON_MESSAGE(WM_USER_RUN_IMAGE_CAPTURED, &CRunProgressDlg::OnImageCaptured)
 END_MESSAGE_MAP()
 
 
@@ -139,7 +139,7 @@ UINT takeRunImages( LPVOID pParam )
 			// TODO: Turn table here
 			if (::IsWindow(dialog -> m_hWnd))
 			{
-				dialog -> PostMessage(WM_USER_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
+				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 			}
 
 			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop; task -> m_frameCount++)
@@ -152,7 +152,7 @@ UINT takeRunImages( LPVOID pParam )
 					task -> m_camera -> TakeImage("");
 					if (::IsWindow(dialog -> m_hWnd))
 					{
-						dialog -> PostMessage(WM_USER_IMAGE_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
+						dialog -> PostMessage(WM_USER_RUN_IMAGE_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
 					}
 				}
 				else
@@ -165,7 +165,7 @@ UINT takeRunImages( LPVOID pParam )
 			{
 				if (::IsWindow(dialog -> m_hWnd))
 				{
-					dialog -> PostMessage(WM_USER_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
+					dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 				}
 			}
 			else
@@ -179,7 +179,7 @@ UINT takeRunImages( LPVOID pParam )
 		{
 			if (::IsWindow(dialog -> m_hWnd))
 			{
-				dialog -> PostMessage(WM_USER_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
+				dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
 			}
 		}
 		else

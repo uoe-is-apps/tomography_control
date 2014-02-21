@@ -59,6 +59,7 @@ void Table::DoIO()
 		if (ReadFile(this -> m_hComm, tempBuffer, sizeof(tempBuffer) - bytesRead - 1, &bytesRead, NULL) == 0)
 		{
 			// TODO: Indicate failure somehow
+			return;
 		}
 
 		bytesRead += bufferFilled;
@@ -68,24 +69,29 @@ void Table::DoIO()
 	// Lock the IO buffers while we exchange data with them
 	this -> m_bufferLock.Lock();
 	
-	// Calculate the overflow on the output buffer
-	DWORD spare = outputBufferSize - strlen(this -> m_outputBuffer);
-
-	// If the buffer overflows, drop everything past the overflow point, and
-	// move the rest to the top of the buffer.
-	if (strlen(tempBuffer) > spare)
+	if (bytesRead > 0)
 	{
-		DWORD overflow = 0 - (spare - strlen(tempBuffer));
-		DWORD keep = outputBufferSize - overflow; // Number of characters to keep
-		// Copy that many characters from the mid to the start
-		for (DWORD charIdx = 0; charIdx < keep; charIdx++)
+		// Calculate the overflow on the output buffer
+		DWORD spare = outputBufferSize - strlen(this -> m_outputBuffer);
+
+		// If the buffer overflows, drop everything past the overflow point, and
+		// move the rest to the top of the buffer.
+		if (strlen(tempBuffer) > spare)
 		{
-			*(this -> m_outputBuffer + charIdx) = *(this -> m_outputBuffer + charIdx + keep);
+			DWORD overflow = 0 - (spare - strlen(tempBuffer));
+			DWORD keep = outputBufferSize - overflow; // Number of characters to keep
+			// Copy that many characters from the mid to the start
+			for (DWORD charIdx = 0; charIdx < keep; charIdx++)
+			{
+				*(this -> m_outputBuffer + charIdx) = *(this -> m_outputBuffer + charIdx + keep);
+			}
+			*(this -> m_outputBuffer + keep) = 0;
 		}
-		*(this -> m_outputBuffer + keep) = 0;
-	}
 	
-	strcat_s(this -> m_outputBuffer, outputBufferSize, tempBuffer);
+		strcat_s(this -> m_outputBuffer, outputBufferSize, tempBuffer);
+		
+		this -> PulseMessageReceived();
+	}
 
 	// If we have input to be sent, take a copy then release the locks on the buffers
 	if (strlen(this -> m_inputBuffer) > 0)
@@ -109,12 +115,26 @@ void Table::DoIO()
 	// TODO: Report error if not all bytes have been written
 }
 
+void Table::PulseMessageReceived()
+{
+	if (NULL != this -> m_messageReceiver
+		&& ::IsWindow(this -> m_messageReceiver -> m_hWnd))
+	{
+		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_MESSAGE_RECEIVED, 0, (LPARAM)this);
+	}
+}
+
 void Table::SendTableCommand(char* command)
 {
 	this -> m_bufferLock.Lock();
 	strcat_s(m_inputBuffer, BUFFER_SIZE, command);
 	this -> m_bufferLock.Unlock();
 	this -> m_inputEvent.PulseEvent();
+}
+
+void Table::SetMessageReceiver(CWnd* wnd)
+{
+	this -> m_messageReceiver = wnd;
 }
 
 void Table::Start()

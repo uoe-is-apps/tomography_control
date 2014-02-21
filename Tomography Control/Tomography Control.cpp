@@ -73,7 +73,7 @@ BOOL CTomographyControlApp::InitInstance()
 	CTomographyControlDlg controlDialogue;
 
 	controlDialogue.table = new DummyTable();
-	// TODO: Tell the table to pump messages into the dialog
+	controlDialogue.table -> SetMessageReceiver(&controlDialogue);
 	controlDialogue.table -> Start();
 
 	m_pMainWnd = &controlDialogue;
