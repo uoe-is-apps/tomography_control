@@ -7,11 +7,18 @@ class Table
 public:
 	Table(char* gszPort);
 	~Table();
+	void DoIO();
 	void SendTableCommand(char* command);
 
-protected:
+	BOOL m_running;
 	CEvent m_inputEvent;
-	CString* m_inputBuffer; // Communication waiting to be sent to the table
-	CString* m_outputBuffer; // Communication back from the table
+
+protected:
+	CCriticalSection m_bufferLock;
+	char* m_inputBuffer; // Communication waiting to be sent to the table
+	char* m_outputBuffer; // Communication back from the table
 	HANDLE m_hComm;
 };
+
+// Function for the table communication thread
+UINT communicateWithTable( LPVOID pParam );
