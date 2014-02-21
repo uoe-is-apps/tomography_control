@@ -104,7 +104,6 @@
   <ItemGroup>
     <ClInclude Include="DummyCamera.h" />
     <ClInclude Include="ICamera.h" />
-    <ClInclude Include="ITable.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RunProgressDlg.h" />
     <ClInclude Include="ShadOCam.h" />

@@ -59,7 +59,7 @@ public:
 	enum { IDD = IDD_TOMOGRAPHYCONTROL_DIALOG };
 
 // Table controller
-	ITable* table;
+	Table* table;
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support

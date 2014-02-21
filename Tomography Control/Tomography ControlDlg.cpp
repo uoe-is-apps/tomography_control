@@ -256,7 +256,7 @@ void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 
 LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr)
 {
-	ITable* table = (ITable*)tablePtr;
+	Table* table = (Table*)tablePtr;
 
 	UpdateData(TRUE);
 	this -> m_tableCommandOutput = "test"; // TODO: Take from the actual table

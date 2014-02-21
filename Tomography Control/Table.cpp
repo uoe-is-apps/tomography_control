@@ -4,7 +4,7 @@
 
 #define BUFFER_SIZE 2000
 
-Table::Table(char* gszPort) 
+SerialTable::SerialTable(char* gszPort) 
 {
 	this -> m_inputEvent.ResetEvent();
 	this -> m_inputBuffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
@@ -37,7 +37,7 @@ Table::Table(char* gszPort)
 	}
 }
 
-Table::~Table() 
+SerialTable::~SerialTable() 
 {
     CloseHandle(this -> m_hComm);
 
@@ -46,7 +46,7 @@ Table::~Table()
 }
 
 /* Get pending input from the table, and write new input out to it. */
-void Table::DoIO()
+void SerialTable::DoIO()
 {
 	DWORD inputBufferSize = sizeof(char) * BUFFER_SIZE;
 	DWORD outputBufferSize = sizeof(char) * BUFFER_SIZE;

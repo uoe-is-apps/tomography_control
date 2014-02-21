@@ -1,55 +1,48 @@
 
 #pragma once
 #include "afxwin.h"
-#include "ITable.h"
 
-class Table : public ITable
+class Table
 {
 public:
-	Table(char* gszPort);
-	~Table();
-	void DoIO();
-	void SendTableCommand(char* command);
-	void SetMessageReceiver(CWnd* wnd);
-	void Start();
-	void Stop();
+	virtual void DoIO() = 0;
+	virtual void PulseMessageReceived();
+	virtual void SendTableCommand(char* command);
+	virtual void SetMessageReceiver(CWnd* wnd);
+	virtual void Start();
+	virtual void Stop();
 
 	CEvent m_inputEvent;
 	BOOL m_running;
-
-protected:
-	void PulseMessageReceived();
-
 	CCriticalSection m_bufferLock;
 	char* m_inputBuffer; // Communication waiting to be sent to the table
 	char* m_outputBuffer; // Communication back from the table
-	HANDLE m_hComm;
+
+protected:
+
 	CWinThread* m_thread;
 	CWnd* m_messageReceiver;
 };
 
-class DummyTable : public ITable
+class SerialTable : public Table
+{
+public:
+	SerialTable(char* gszPort);
+	~SerialTable();
+	void DoIO();
+
+protected:
+	HANDLE m_hComm;
+};
+
+class DummyTable : public Table
 {
 public:
 	DummyTable();
 	~DummyTable();
 	void DoIO();
-	void SendTableCommand(char* command);
-	void SetMessageReceiver(CWnd* wnd);
-	void Start();
-	void Stop();
-
-	CEvent m_inputEvent;
-	BOOL m_running;
 
 protected:
-	void PulseMessageReceived();
-
-	CCriticalSection m_bufferLock;
-	char* m_inputBuffer; // Communication waiting to be sent to the table
-	char* m_outputBuffer; // Communication back from the table
-	CWinThread* m_thread;
-	CWnd* m_messageReceiver;
 };
 
 // Function for the table communication thread
