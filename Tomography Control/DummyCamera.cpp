@@ -15,6 +15,7 @@ DummyCamera::~DummyCamera()
 
 void DummyCamera::SetupCamera(float exposureTimeSeconds)
 {
+	assert (exposureTimeSeconds > 0.001);
 	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 

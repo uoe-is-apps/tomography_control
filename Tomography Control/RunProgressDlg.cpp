@@ -148,10 +148,10 @@ UINT takeRunImages( LPVOID pParam )
 
 				if (task -> m_running)
 				{
+					// Should input filename here, too
+					task -> m_camera -> TakeImage("");
 					if (::IsWindow(dialog -> m_hWnd))
 					{
-						// Should input filename here, too
-						task -> m_camera -> TakeImage("");
 						dialog -> PostMessage(WM_USER_IMAGE_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
 					}
 				}

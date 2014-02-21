@@ -339,10 +339,10 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
 	this -> UpdateData(TRUE);
 
-	CameraTask* task = new CameraTask(CameraTask::SINGLE);
+	CameraTask task(CameraTask::SINGLE);
 
 	try {
-		task -> m_camera = BuildSelectedCamera();
+		task.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
@@ -350,47 +350,44 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 		return;
 	}
 
-	this -> RunManualImageTask(task);
-	delete task -> m_camera;
-	delete task;
+	this -> RunManualImageTask(&task);
+	delete task.m_camera;
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
 	this -> UpdateData(TRUE);
 
-	CameraTask* task = new CameraTask(CameraTask::DARK);
+	CameraTask task(CameraTask::DARK);
 
 	try {
-		task -> m_camera = BuildSelectedCamera();
+		task.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
 		MessageBox(message, "Tomography Control", MB_ICONERROR);
 		return;
 	}
-	this -> RunManualImageTask(task);
-	delete task -> m_camera;
-	delete task;
+	this -> RunManualImageTask(&task);
+	delete task.m_camera;
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
 	this -> UpdateData(TRUE);
 
-	CameraTask* task = new CameraTask(CameraTask::FLAT_FIELD);
+	CameraTask task(CameraTask::FLAT_FIELD);
 
 	try {
-		task -> m_camera = BuildSelectedCamera();
+		task.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
 		MessageBox(message, "Tomography Control", MB_ICONERROR);
 		return;
 	}
-	this -> RunManualImageTask(task);
-	delete task -> m_camera;
-	delete task;
+	this -> RunManualImageTask(&task);
+	delete task.m_camera;
 }
 
 void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
