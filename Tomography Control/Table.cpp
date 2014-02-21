@@ -5,6 +5,10 @@
 
 Table::Table(char* gszPort) 
 {
+	this -> m_inputEvent.ResetEvent();
+	this -> m_inputBuffer = new CString("", 1000);
+	this -> m_outputBuffer = new CString("", 5000);
+
     DCB dcb;
     this -> m_hComm = CreateFile( gszPort,  
                     GENERIC_READ | GENERIC_WRITE, 
@@ -35,6 +39,9 @@ Table::Table(char* gszPort)
 Table::~Table() 
 {
     CloseHandle(this -> m_hComm);
+
+	delete this -> m_inputBuffer;
+	delete this -> m_outputBuffer;
 }
 
 void Table::SendTableCommand(char* command)
