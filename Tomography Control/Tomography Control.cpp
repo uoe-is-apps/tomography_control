@@ -7,7 +7,7 @@
 #include "ShadOCam.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
-#include "Table And Camera Control.h"
+#include "Table.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -72,7 +72,7 @@ BOOL CTomographyControlApp::InitInstance()
 	
 	CTomographyControlDlg controlDialogue;
 
-	controlDialogue.tableAndCameraControl = new CTableAndCameraControl();
+	controlDialogue.table = new Table("COM1");
 	
 
 	m_pMainWnd = &controlDialogue;

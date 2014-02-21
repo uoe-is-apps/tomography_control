@@ -13,7 +13,6 @@
 #include "ShadOCam.h"
 #include "Tomography Control.h"
 #include "RunProgressDlg.h"
-#include "Table And Camera Control.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -207,8 +206,18 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 		strcpy(command, (LPCTSTR)m_tableCommand);
 		this -> m_tableCommand.Empty();
 
-		this -> tableAndCameraControl -> SendTableCommand(this, command);
+		this -> table -> SendTableCommand(command);
+		
+		CString currentCommand = this -> m_tableCommandOutput;
+
+		currentCommand += command;
+		currentCommand += "\r\n";
+
+		this -> m_tableCommandOutput = currentCommand;
 		this -> m_tableCommand.Empty();
+
+		this -> UpdateData(FALSE);
+
         return TRUE; // this doesn't need processing anymore
     }
     return FALSE; // all other cases still need default processing
@@ -243,15 +252,39 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
+	char* command = "nreset";
+
 	this -> UpdateData(TRUE);
-	this -> tableAndCameraControl -> SendTableCommand(this, "nreset");
+	this -> table -> SendTableCommand(command);
+		
+	CString currentCommand = this -> m_tableCommandOutput;
+
+	currentCommand += command;
+	currentCommand += "\r\n";
+
+	this -> m_tableCommandOutput = currentCommand;
+	this -> m_tableCommand.Empty();
+
+	this -> UpdateData(FALSE);
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
+	char* command = "ncal";
+
 	this -> UpdateData(TRUE);
-	this -> tableAndCameraControl -> SendTableCommand(this, "ncal");
+	this -> table -> SendTableCommand(command);
+		
+	CString currentCommand = this -> m_tableCommandOutput;
+
+	currentCommand += command;
+	currentCommand += "\r\n";
+
+	this -> m_tableCommandOutput = currentCommand;
+	this -> m_tableCommand.Empty();
+
+	this -> UpdateData(FALSE);
 }
 
 

@@ -4,6 +4,7 @@
 
 #pragma once
 #include "afxwin.h"
+#include "Table.h"
 
 // CTakingPhotosDlg dialog
 
@@ -45,13 +46,6 @@ public:
 	BOOL m_running;
 };
 
-class CTableAndCameraControl
-{
-public:
-	CTableAndCameraControl();
-	void SendTableCommand(CDialogEx* dialog, char* command);
-};
-
 // CTomographyControlDlg dialog
 class CTomographyControlDlg : public CDialogEx
 {
@@ -62,8 +56,8 @@ public:
 // Dialog Data
 	enum { IDD = IDD_TOMOGRAPHYCONTROL_DIALOG };
 
-// Table and camera controller
-	CTableAndCameraControl* tableAndCameraControl;
+// Table controller
+	Table* table;
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
