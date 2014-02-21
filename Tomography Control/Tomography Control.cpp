@@ -72,14 +72,14 @@ BOOL CTomographyControlApp::InitInstance()
 	
 	CTomographyControlDlg controlDialogue;
 
-	controlDialogue.table = new DummyTable();
-	controlDialogue.table -> SetMessageReceiver(&controlDialogue);
-	controlDialogue.table -> Start();
+	controlDialogue.m_table = new DummyTable();
+	controlDialogue.m_table -> SetMessageReceiver(&controlDialogue);
+	controlDialogue.m_table -> Start();
 
 	m_pMainWnd = &controlDialogue;
 	INT_PTR nResponse = controlDialogue.DoModal();
 
-	controlDialogue.table -> Stop();
+	controlDialogue.m_table -> Stop();
 
 	// Delete the shell manager created above.
 	if (pShellManager != NULL)

@@ -209,7 +209,7 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 		strcat_s(command, commandLen, "\r\n");
 		this -> m_tableCommand.Empty();
 
-		this -> table -> SendTableCommand(command);
+		this -> m_table -> SendTableCommand(command);
 
         return TRUE; // this doesn't need processing anymore
     }
@@ -229,9 +229,13 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 
 void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 {
-	this -> UpdateData(TRUE);
+	this -> m_table -> m_bufferLock.Lock();
+	this -> m_table -> m_outputBuffer[0] = NULL;
+	this -> m_table -> m_bufferLock.Unlock();
+	
+	UpdateData(TRUE);
 	this -> m_tableCommandOutput.Empty();
-	this -> UpdateData(FALSE);
+	UpdateData(FALSE);
 }
 
 
@@ -245,13 +249,13 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
-	this -> table -> SendTableCommand("nreset\r\n");
+	this -> m_table -> SendTableCommand("nreset\r\n");
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
-	this -> table -> SendTableCommand("ncal\r\n");
+	this -> m_table -> SendTableCommand("ncal\r\n");
 }
 
 LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr)
@@ -259,8 +263,10 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 	Table* table = (Table*)tablePtr;
 
 	UpdateData(TRUE);
-	this -> m_tableCommandOutput = "test"; // TODO: Take from the actual table
+	table -> m_bufferLock.Lock();
+	this -> m_tableCommandOutput = table -> m_outputBuffer;
 	UpdateData(FALSE);
+	table -> m_bufferLock.Unlock();
 
 	return TRUE;
 }
