@@ -48,6 +48,8 @@ Table::~Table()
 /* Get pending input from the table, and write new input out to it. */
 void Table::DoIO()
 {
+	DWORD inputBufferSize = sizeof(char) * BUFFER_SIZE;
+	DWORD outputBufferSize = sizeof(char) * BUFFER_SIZE;
 	DWORD bufferFilled = 0;
 	DWORD bytesRead;
 	char tempBuffer[BUFFER_SIZE];
@@ -67,28 +69,31 @@ void Table::DoIO()
 	this -> m_bufferLock.Lock();
 	
 	// Calculate the overflow on the output buffer
-	DWORD spare = sizeof(this -> m_outputBuffer) - strlen(this -> m_outputBuffer);
-	DWORD overflow = 0 - (spare - strlen(tempBuffer));
+	DWORD spare = outputBufferSize - strlen(this -> m_outputBuffer);
 
 	// If the buffer overflows, drop everything past the overflow point, and
 	// move the rest to the top of the buffer.
-	if (overflow > 0)
+	if (strlen(tempBuffer) > spare)
 	{
-		DWORD keep = sizeof(this -> m_outputBuffer) - overflow; // Number of characters to keep
+		DWORD overflow = 0 - (spare - strlen(tempBuffer));
+		DWORD keep = outputBufferSize - overflow; // Number of characters to keep
 		// Copy that many characters from the mid to the start
-		for (int charIdx = 0; charIdx < keep; charIdx++)
+		for (DWORD charIdx = 0; charIdx < keep; charIdx++)
 		{
 			*(this -> m_outputBuffer + charIdx) = *(this -> m_outputBuffer + charIdx + keep);
 		}
 		*(this -> m_outputBuffer + keep) = 0;
 	}
 	
-	strcat_s(this -> m_outputBuffer, sizeof(this -> m_outputBuffer), tempBuffer);
+	strcat_s(this -> m_outputBuffer, outputBufferSize, tempBuffer);
 
 	// If we have input to be sent, take a copy then release the locks on the buffers
 	if (strlen(this -> m_inputBuffer) > 0)
 	{
-		memcpy(tempBuffer, this -> m_inputBuffer, sizeof(this -> m_inputBuffer));
+		memcpy(tempBuffer, this -> m_inputBuffer, inputBufferSize);
+
+		// Clear the input buffer
+		m_inputBuffer[0] = NULL;
 	}
 	else
 	{
@@ -137,7 +142,7 @@ UINT communicateWithTable( LPVOID pParam )
 	{
 		table -> DoIO();
 
-		::WaitForSingleObject(table -> m_inputEvent.m_hObject, 500);
+		::WaitForSingleObject(table -> m_inputEvent.m_hObject, 5000);
 	}
 
 	return 0;

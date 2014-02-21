@@ -196,27 +196,19 @@ HCURSOR CTomographyControlDlg::OnQueryDragIcon()
 BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 {
     if (pMsg->message == WM_KEYDOWN &&
-        pMsg->wParam == VK_RETURN/*  &&
-        GetFocus() == this -> m_tableCommandControl */)
+        pMsg->wParam == VK_RETURN) /* &&
+        this -> GetFocus() == &this -> m_tableCommandControl) */
     {
 		this -> UpdateData(TRUE);
 
 		// Take a copy of the command, then wipe the field
-		char *command = (char*)alloca(sizeof(char) * (this -> m_tableCommand.GetLength() + 1));
-		strcpy(command, (LPCTSTR)m_tableCommand);
+		DWORD commandLen = sizeof(char) * (this -> m_tableCommand.GetLength() + 3);
+		char *command = (char*)alloca(commandLen);
+		strcpy_s(command, commandLen, (LPCTSTR)m_tableCommand);
+		strcat_s(command, commandLen, "\r\n");
 		this -> m_tableCommand.Empty();
 
 		this -> table -> SendTableCommand(command);
-		
-		CString currentCommand = this -> m_tableCommandOutput;
-
-		currentCommand += command;
-		currentCommand += "\r\n";
-
-		this -> m_tableCommandOutput = currentCommand;
-		this -> m_tableCommand.Empty();
-
-		this -> UpdateData(FALSE);
 
         return TRUE; // this doesn't need processing anymore
     }
@@ -252,39 +244,13 @@ void CTomographyControlDlg::OnBnClickedButtonResetTable()
 
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
-	char* command = "nreset";
-
-	this -> UpdateData(TRUE);
-	this -> table -> SendTableCommand(command);
-		
-	CString currentCommand = this -> m_tableCommandOutput;
-
-	currentCommand += command;
-	currentCommand += "\r\n";
-
-	this -> m_tableCommandOutput = currentCommand;
-	this -> m_tableCommand.Empty();
-
-	this -> UpdateData(FALSE);
+	this -> table -> SendTableCommand("nreset\r\n");
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
-	char* command = "ncal";
-
-	this -> UpdateData(TRUE);
-	this -> table -> SendTableCommand(command);
-		
-	CString currentCommand = this -> m_tableCommandOutput;
-
-	currentCommand += command;
-	currentCommand += "\r\n";
-
-	this -> m_tableCommandOutput = currentCommand;
-	this -> m_tableCommand.Empty();
-
-	this -> UpdateData(FALSE);
+	this -> table -> SendTableCommand("ncal\r\n");
 }
 
 

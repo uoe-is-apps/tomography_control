@@ -116,6 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DummyCamera.cpp" />
+    <ClCompile Include="DummyTable.cpp" />
     <ClCompile Include="RunProgressDlg.cpp" />
     <ClCompile Include="ShadOCam.cpp" />
     <ClCompile Include="stdafx.cpp">
