@@ -6,6 +6,7 @@
 
 Table::Table(char* gszPort) 
 {
+	this -> m_running = TRUE;
 	this -> m_inputEvent.ResetEvent();
 	this -> m_inputBuffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
 	this -> m_outputBuffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
@@ -45,7 +46,7 @@ Table::~Table()
 	free(this -> m_outputBuffer);
 }
 
-/* Get pending input from the table, and write new input out to it. */
+
 void Table::DoIO()
 {
 	DWORD bufferFilled = 0;
@@ -110,23 +111,6 @@ void Table::SendTableCommand(char* command)
 	strcat_s(m_inputBuffer, BUFFER_SIZE, command);
 	this -> m_bufferLock.Unlock();
 	this -> m_inputEvent.PulseEvent();
-}
-
-void Table::Start()
-{
-	this -> m_running = TRUE;
-	this -> m_thread = AfxBeginThread(communicateWithTable, this, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	this -> m_thread -> m_bAutoDelete = FALSE;
-	this -> m_thread -> ResumeThread();
-}
-
-void Table::Stop()
-{
-	this -> m_running = FALSE;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(this -> m_thread -> m_hThread, 5000);
-	delete this -> m_thread;
 }
 
 UINT communicateWithTable( LPVOID pParam )
