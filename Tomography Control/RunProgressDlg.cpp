@@ -7,7 +7,7 @@
 #include "afxdialogex.h"
 
 #define MAX_PROGRESS 1000
-
+#define TABLE_COMMAND_BUFFER_SIZE 128
 
 // CRunProgressDlg dialog
 
@@ -53,9 +53,20 @@ BOOL CRunProgressDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	
-	CString startTime = CTime::GetCurrentTime().Format("%H:%M:%S");
-	this -> m_startTime.Append(startTime);
+	CTime startTime = CTime::GetCurrentTime();
+	
+	__time64_t exposureTimePerTurn = this -> m_exposureTimeSeconds * this -> m_stopsPerRotation * this -> m_framesPerStop;
+	// TODO: Calculate realistic time for turning the table
+	__time64_t rotationTimePerTurn = this -> m_stopsPerRotation;
+	__time64_t timePerTurn = exposureTimePerTurn + rotationTimePerTurn;
 
+	
+	CTimeSpan estRunTime(timePerTurn * this -> m_turnsTotal);
+	CTime estEndTime = startTime + estRunTime;
+	
+	this -> m_startTime.Append(startTime.Format("%H:%M:%S"));
+	this -> m_estEndTime.Append(estEndTime.Format("%H:%M:%S"));
+	this -> m_estRunTime.Append(estRunTime.Format("%H:%M:%S"));
 	this -> m_progressCtl.SetRange(0, (short)MAX_PROGRESS);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -125,6 +136,7 @@ UINT takeRunImages( LPVOID pParam )
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
 
+	char tableCommandBuffer[TABLE_COMMAND_BUFFER_SIZE];
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
@@ -135,8 +147,12 @@ UINT takeRunImages( LPVOID pParam )
 		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn; task -> m_stopCount++)
 		{
 			float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
+			sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "deg %.2f nm\r\n", calculatedAngle);
 
-			// TODO: Turn table here
+			task -> m_table -> SendTableCommand(tableCommandBuffer);
+			// TODO: See if we can get a verification of state from the table instead of just waiting blindly
+			Sleep(1000);
+
 			if (::IsWindow(dialog -> m_hWnd))
 			{
 				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);

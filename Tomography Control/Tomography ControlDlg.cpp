@@ -259,12 +259,22 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 	
 	// Load file from disk, line by line
 	char buffer[FILE_BUFFER_SIZE];
-	char* line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
+	// Leave two free characters, one for injecting a '\r' if needed, one for the NULL terminator
+	char* line = fgets(buffer, FILE_BUFFER_SIZE - 2, initialisationFileHandle);
 
 	while (NULL != line
 		&& !feof(initialisationFileHandle))
 	{
-		// Should verify line endings are sane
+		// If the line ends with just "\n", change it to "\r\n"
+		char *lastChar = line + strlen(line) - 1;
+
+		if (*(lastChar - 1) != '\r')
+		{
+			*lastChar = '\r';
+			*(lastChar + 1) = '\n';
+			*(lastChar + 2) = NULL;
+		}
+
 		this -> m_table -> SendTableCommand(line);
 		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
 	}
@@ -363,13 +373,16 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	}
 
 	task.m_dialog = &runProgressDlg;
+	task.m_table = this -> m_table;
 	task.m_baseFilename = this -> m_mainImageName;
 	task.m_turnsTotal = this -> m_numberOfTurns;
 	task.m_stopsPerTurn = this -> m_stopsPerRotation;
 	task.m_framesPerStop = this -> m_framesPerStop;
 	task.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	task.m_running = TRUE;
-
+	
+	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
+	runProgressDlg.m_framesPerStop = this -> m_framesPerStop;
 	runProgressDlg.m_turnsTotal = this -> m_numberOfTurns;
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 

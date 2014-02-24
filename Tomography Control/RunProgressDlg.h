@@ -1,7 +1,7 @@
 #pragma once
 
-
 #include "ICamera.h"
+#include "Table.h"
 #include "afxcmn.h"
 
 // CRunProgressDlg dialog
@@ -25,6 +25,8 @@ protected:
 public:
 	CString m_imageFilename;
 	int m_currentPosition;
+	float m_exposureTimeSeconds;
+	int m_framesPerStop;
 	int m_stopsMade;
 	int m_stopsPerRotation;
 	int m_turnsMade;
@@ -55,6 +57,7 @@ struct RunTask
 {
 	CWnd* m_dialog;
 	ICamera* m_camera;
+	Table* m_table;
 	CString m_baseFilename;
 	int m_turnsTotal;
 	int m_stopsPerTurn;
