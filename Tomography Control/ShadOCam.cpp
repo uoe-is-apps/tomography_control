@@ -96,7 +96,7 @@ void ShadOCam::SetupCamera(float exposureTime)
 	this -> m_pxd.SetInputLUT(this -> m_hFrameGrabber, 16, 0, 0, len, nLUT);
 }
 
-void ShadOCam::TakeImage(char* output_file)
+void ShadOCam::TakeFrame(char* output_file)
 {
 	long qh;				// handle for grab
 

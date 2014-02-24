@@ -65,7 +65,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
-	, m_mainImageName(_T(""))
+	, m_directoryPath(_T(""))
 	, m_exposureTimeSeconds(0.5f)
 	, m_framesPerStop(10)
 	, m_stopsPerRotation(100)
@@ -84,7 +84,6 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableCommandOutput);
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommandControl);
 	DDX_Text(pDX, IDC_EDIT_TABLE_COMMAND, m_tableCommand);
-	DDX_Text(pDX, IDC_EDIT_MAIN_NAME_IMAGE, m_mainImageName);
 	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_exposureTimeSeconds);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_framesPerStop);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
@@ -95,6 +94,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_CBString(pDX, IDC_COMBO_CAMERA, m_cameraName);
 	DDX_Control(pDX, IDC_COMBO_CAMERA, m_cameraComboBox);
+	DDX_Text(pDX, IDC_MFCEDITBROWSE1, m_directoryPath);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -374,7 +374,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 
 	task.m_dialog = &runProgressDlg;
 	task.m_table = this -> m_table;
-	task.m_baseFilename = this -> m_mainImageName;
+	task.m_directoryPath = this -> m_directoryPath;
 	task.m_turnsTotal = this -> m_numberOfTurns;
 	task.m_stopsPerTurn = this -> m_stopsPerRotation;
 	task.m_framesPerStop = this -> m_framesPerStop;
@@ -386,7 +386,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	runProgressDlg.m_turnsTotal = this -> m_numberOfTurns;
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 
-	CWinThread* workerThread = AfxBeginThread(takeRunImages, &task, THREAD_PRIORITY_NORMAL, 
+	CWinThread* workerThread = AfxBeginThread(captureRunFrames, &task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	workerThread -> m_bAutoDelete = FALSE;
 	workerThread -> ResumeThread();
@@ -495,7 +495,7 @@ UINT takeManualImages( LPVOID pParam )
 	for (short i = 0; i < task -> m_totalImages; i++) 
 	{
 		// TODO: Provide filename
-		task -> m_camera -> TakeImage("");
+		task -> m_camera -> TakeFrame("");
 		if(!(task -> m_running))
 		{
 			break;

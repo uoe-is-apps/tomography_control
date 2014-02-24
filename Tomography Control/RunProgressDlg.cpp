@@ -7,6 +7,7 @@
 #include "afxdialogex.h"
 
 #define MAX_PROGRESS 1000
+#define FILENAME_BUFFER_SIZE 256
 #define TABLE_COMMAND_BUFFER_SIZE 128
 
 // CRunProgressDlg dialog
@@ -17,9 +18,11 @@ CRunProgressDlg::CRunProgressDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CRunProgressDlg::IDD, pParent)
 	, m_currentPosition(0)
 	, m_imageFilename(_T(""))
-	, m_stopsMade(_T(0))
+	, m_framesPerStop(0)
+	, m_framesCaptured(0)
+	, m_stopsCompleted(_T(0))
 	, m_stopsPerRotation(0)
-	, m_turnsMade(0)
+	, m_turnsCompleted(0)
 	, m_turnsTotal(0)
 	, m_calculatedAngle(_T(""))
 	, m_startTime(_T(""))
@@ -37,10 +40,10 @@ void CRunProgressDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_DISPLAY_CURRENT_POSITION, m_currentPosition);
-	DDX_Text(pDX, IDC_DISPLAY_PROCEEDED_IMAGE, m_imageFilename);
-	DDX_Text(pDX, IDC_DISPLAY_STOPS_MADE, m_stopsMade);
+	DDX_Text(pDX, IDC_DISPLAY_PROCEEDED_FRAME, m_imageFilename);
+	DDX_Text(pDX, IDC_DISPLAY_STOPS_MADE, m_stopsCompleted);
 	DDX_Text(pDX, IDC_DISPLAY_STOPS_TOTAL, m_stopsPerRotation);
-	DDX_Text(pDX, IDC_DISPLAY_TURNS_MADE, m_turnsMade);
+	DDX_Text(pDX, IDC_DISPLAY_TURNS_MADE, m_turnsCompleted);
 	DDX_Text(pDX, IDC_DISPLAY_TURNS_TOTAL, m_turnsTotal);
 	DDX_Text(pDX, IDC_DISPLAY_CALC_ANGLE, m_calculatedAngle);
 	DDX_Text(pDX, IDC_DISPLAY_START_TIME, m_startTime);
@@ -54,14 +57,10 @@ BOOL CRunProgressDlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 	
 	CTime startTime = CTime::GetCurrentTime();
-	
-	__time64_t exposureTimePerTurn = this -> m_exposureTimeSeconds * this -> m_stopsPerRotation * this -> m_framesPerStop;
-	// TODO: Calculate realistic time for turning the table
-	__time64_t rotationTimePerTurn = this -> m_stopsPerRotation;
-	__time64_t timePerTurn = exposureTimePerTurn + rotationTimePerTurn;
+	CTimeSpan estRunTime;
 
-	
-	CTimeSpan estRunTime(timePerTurn * this -> m_turnsTotal);
+	this -> CalculateTimeRemaining(&estRunTime);
+
 	CTime estEndTime = startTime + estRunTime;
 	
 	this -> m_startTime.Append(startTime.Format("%H:%M:%S"));
@@ -72,23 +71,56 @@ BOOL CRunProgressDlg::OnInitDialog()
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
+void CRunProgressDlg::CalculateTimeRemaining(CTimeSpan* dest) {
+	// TODO: Check this maths
+	__time64_t exposureTimePerStop = (int)(this -> m_exposureTimeSeconds * this -> m_framesPerStop);
+	__time64_t timePerStop = exposureTimePerStop + 1; // Add in rotation time
+	unsigned int totalStops = this -> m_stopsPerRotation * this -> m_turnsTotal;
+	unsigned int stopsCompletedTotal = (this -> m_stopsPerRotation * this -> m_turnsCompleted) + this -> m_stopsCompleted;
+
+	*dest = exposureTimePerStop * (totalStops - stopsCompletedTotal);
+}
+
 
 BEGIN_MESSAGE_MAP(CRunProgressDlg, CDialogEx)
 	ON_MESSAGE(WM_USER_RUN_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
 	ON_MESSAGE(WM_USER_RUN_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
 	ON_MESSAGE(WM_USER_RUN_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
-	ON_MESSAGE(WM_USER_RUN_IMAGE_CAPTURED, &CRunProgressDlg::OnImageCaptured)
+	ON_MESSAGE(WM_USER_RUN_CAPTURING_FRAME, &CRunProgressDlg::OnFrameCaptureStarted)
+	ON_MESSAGE(WM_USER_RUN_FRAME_CAPTURED, &CRunProgressDlg::OnFrameCaptured)
 END_MESSAGE_MAP()
 
 
 // CRunProgressDlg message handlers
 
 
+afx_msg LRESULT CRunProgressDlg::OnFrameCaptured(WPARAM wParam, LPARAM lParam)
+{
+	int* currentPosition = (int*)lParam;
+
+	this -> m_currentPosition = *currentPosition;
+	this -> m_framesCaptured++;
+	this -> UpdateData(FALSE);
+
+	return TRUE;
+}
+
+afx_msg LRESULT CRunProgressDlg::OnFrameCaptureStarted(WPARAM wParam, LPARAM lParam)
+{
+	char* filename = (char*)lParam;
+
+	this -> m_imageFilename.Empty();
+	this -> m_imageFilename.Append(filename);
+	this -> UpdateData(FALSE);
+
+	return TRUE;
+}
+
 afx_msg LRESULT CRunProgressDlg::OnTurnCompleted(WPARAM wParam, LPARAM lParam)
 {
 	int* turnCount = (int*)lParam;
 
-	this -> m_turnsMade = *turnCount;
+	this -> m_turnsCompleted = *turnCount;
 	this -> UpdateData(FALSE);
 
 	return TRUE;
@@ -108,7 +140,7 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 {
 	int* stopCount = (int*)lParam;
 
-	this -> m_stopsMade = *stopCount;
+	this -> m_stopsCompleted = *stopCount;
 	this -> UpdateData(FALSE);
 
 	int totalStops = m_turnsTotal * m_stopsPerRotation;
@@ -119,23 +151,14 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
-afx_msg LRESULT CRunProgressDlg::OnImageCaptured(WPARAM wParam, LPARAM lParam)
-{
-	int* currentPosition = (int*)lParam;
-
-	this -> m_currentPosition = *currentPosition;
-	this -> UpdateData(FALSE);
-
-	return TRUE;
-}
-
 
 // Worker functions
-UINT takeRunImages( LPVOID pParam )
+UINT captureRunFrames( LPVOID pParam )
 {
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
-
+	
+	char filenameBuffer[FILENAME_BUFFER_SIZE];
 	char tableCommandBuffer[TABLE_COMMAND_BUFFER_SIZE];
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
@@ -164,11 +187,17 @@ UINT takeRunImages( LPVOID pParam )
 
 				if (task -> m_running)
 				{
-					// Should input filename here, too
-					task -> m_camera -> TakeImage("");
+					sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, task -> m_currentPosition);
 					if (::IsWindow(dialog -> m_hWnd))
 					{
-						dialog -> PostMessage(WM_USER_RUN_IMAGE_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
+						dialog -> PostMessage(WM_USER_RUN_CAPTURING_FRAME, 0, (LPARAM)(filenameBuffer + strlen(task -> m_directoryPath) + 1));
+					}
+
+					// TODO: Check return status
+					task -> m_camera -> TakeFrame(filenameBuffer);
+					if (::IsWindow(dialog -> m_hWnd))
+					{
+						dialog -> PostMessage(WM_USER_RUN_FRAME_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
 					}
 				}
 				else

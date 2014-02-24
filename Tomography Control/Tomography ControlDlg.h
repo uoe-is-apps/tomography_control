@@ -95,7 +95,7 @@ public:
 	BOOL m_running; // Not set from the UI, just used by the background thread
 
 	// Run inputs
-	CString m_mainImageName;
+	CString m_directoryPath;
 	float m_exposureTimeSeconds;
 	int m_framesPerStop;
 	int m_stopsPerRotation;
