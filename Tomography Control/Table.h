@@ -1,5 +1,6 @@
 
 #pragma once
+#include <string>
 #include "afxwin.h"
 
 class Table
@@ -15,8 +16,8 @@ public:
 	CEvent m_inputEvent;
 	BOOL m_running;
 	CCriticalSection m_bufferLock;
-	char* m_inputBuffer; // Communication waiting to be sent to the table
-	char* m_outputBuffer; // Communication back from the table
+	std::string m_inputBuffer; // Communication waiting to be sent to the table
+	std::string m_outputBuffer; // Communication back from the table
 
 protected:
 

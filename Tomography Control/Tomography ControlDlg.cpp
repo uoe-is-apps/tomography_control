@@ -4,6 +4,8 @@
 
 #include "stdafx.h"
 
+#include <errno.h>
+#include <io.h>
 #include <windows.h>
 #include <string.h>
 
@@ -19,6 +21,9 @@
 #define new DEBUG_NEW
 #endif
 
+#define ACCESS_MODE_READ_ONLY	4
+
+#define FILE_BUFFER_SIZE		2048
 
 // CAboutDlg dialog used for App About
 
@@ -216,14 +221,55 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
     return FALSE; // all other cases still need default processing
 }
 
-
+/**
+ * Send the contents of the table initialisation file to the table.
+ */
 void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 {
 	this -> UpdateData(TRUE);
-	// TODO: Add your control notification handler code here
-	// Get filename from browser
-	// Load file from disk
-	// Foreach line, send to table
+
+	if (this -> m_tableInitialisationFile.GetLength() == 0)
+	{
+		MessageBox("You must specify a table initialisation file.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+
+	switch (_access(m_tableInitialisationFile, ACCESS_MODE_READ_ONLY))
+	{
+	case 0:
+		// File exists and we can read it
+		break;
+	case EACCES:
+		MessageBox("You do not have permission to read the table initialisation file.", "Tomography Control", MB_ICONERROR);
+		return;
+	case ENOENT:
+		MessageBox("Table initialisation file does not exist.", "Tomography Control", MB_ICONERROR);
+		return;
+	default:
+		// Leave further diagnosis to opening the file
+		break;
+	}
+
+	FILE* initialisationFileHandle = fopen(m_tableInitialisationFile, "r");
+	if (NULL == initialisationFileHandle)
+	{
+		MessageBox(strerror(errno), "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	
+	// Load file from disk, line by line
+	char buffer[FILE_BUFFER_SIZE];
+	char* line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
+
+	while (NULL != line
+		&& !feof(initialisationFileHandle))
+	{
+		// Should verify line endings are sane
+		this -> m_table -> SendTableCommand(line);
+		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
+	}
+
+	fclose(initialisationFileHandle);
 }
 
 
@@ -264,9 +310,10 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 
 	UpdateData(TRUE);
 	table -> m_bufferLock.Lock();
-	this -> m_tableCommandOutput = table -> m_outputBuffer;
-	UpdateData(FALSE);
+	this -> m_tableCommandOutput += table -> m_outputBuffer.data();
+	table -> m_outputBuffer.clear();
 	table -> m_bufferLock.Unlock();
+	UpdateData(FALSE);
 
 	return TRUE;
 }
