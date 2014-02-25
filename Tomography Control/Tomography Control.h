@@ -21,6 +21,7 @@
 #define WM_USER_RUN_FINISHED (WM_USER_RUN_FRAME_CAPTURED + 1) 
 // #define WM_USER_MANUAL_FRAME_CAPTURED (WM_USER_RUN_FINISHED + 1) 
 
+#define FILENAME_BUFFER_SIZE 256
 
 // CTomographyControlApp:
 // See Tomography Control.cpp for the implementation of this class

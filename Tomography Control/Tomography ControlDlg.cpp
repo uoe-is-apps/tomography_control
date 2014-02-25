@@ -487,15 +487,30 @@ void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
 	delete workerThread;
 }
 
-// Worker functions
+// Worker function for taking a set of manual images from an X-ray camera
 UINT takeManualImages( LPVOID pParam )
 {
+	char filenameBuffer[FILENAME_BUFFER_SIZE];
 	CameraTask* task = (CameraTask*)pParam;
 	
 	for (short i = 0; i < task -> m_totalImages; i++) 
 	{
-		// TODO: Provide filename
-		task -> m_camera -> TakeFrame("");
+		// TODO Handle dark images
+		switch (task -> m_taskType)
+		{
+		case CameraTask::TaskType::DARK:
+			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\DC%04d.raw", task -> m_directoryPath, (i + 1));
+			task -> m_camera -> CaptureDarkImage(filenameBuffer);
+			break;
+		case CameraTask::TaskType::FLAT_FIELD:
+			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\FF%04d.raw", task -> m_directoryPath, (i + 1));
+			task -> m_camera -> CaptureFlatField(filenameBuffer);
+			break;
+		default:
+			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, (i + 1));
+			task -> m_camera -> CaptureFrame(filenameBuffer);
+			break;
+		}
 		if(!(task -> m_running))
 		{
 			break;

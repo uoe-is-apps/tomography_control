@@ -96,19 +96,28 @@ void ShadOCam::SetupCamera(float exposureTime)
 	this -> m_pxd.SetInputLUT(this -> m_hFrameGrabber, 16, 0, 0, len, nLUT);
 }
 
-void ShadOCam::TakeFrame(char* output_file)
+void ShadOCam::CaptureFrame(char* output_file)
 {
-	long qh;				// handle for grab
+	long qh; // handle for grab; only needed to confirm image was taken
+			 // successfully, does not reserve memory for the grab.
 
 	// grab
-    qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0);
+    qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
     if (!qh)
     {
       	throw "Unable to acquire image.";
 	}
       
     //save file
-	// TODO: Don't use strcat!
-	strcat(output_file, ".crude");
 	this -> m_framelib.WriteBin(this -> m_currentFrame, output_file, 1);
+}
+
+void ShadOCam::CaptureDarkImage(char* output_file)
+{
+	ShadOCam::CaptureFrame(output_file);
+}
+
+void ShadOCam::CaptureFlatField(char* output_file)
+{
+	ShadOCam::CaptureFrame(output_file); 
 }

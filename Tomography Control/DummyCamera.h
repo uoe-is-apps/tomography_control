@@ -8,7 +8,9 @@ public:
 	~DummyCamera();
 
 	virtual void SetupCamera(float exposureTime);
-	virtual void TakeFrame(char* filename);
+	virtual void CaptureFrame(char* filename);
+	virtual void CaptureDarkImage(char* filename);
+	virtual void CaptureFlatField(char* filename);
 
 protected:
 	float m_exposureTimeSeconds;

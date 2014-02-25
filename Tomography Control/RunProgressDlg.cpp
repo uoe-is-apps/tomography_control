@@ -7,7 +7,6 @@
 #include "afxdialogex.h"
 
 #define MAX_PROGRESS 1000
-#define FILENAME_BUFFER_SIZE 256
 #define TABLE_COMMAND_BUFFER_SIZE 128
 
 // CRunProgressDlg dialog
@@ -194,7 +193,7 @@ UINT captureRunFrames( LPVOID pParam )
 					}
 
 					// TODO: Check return status
-					task -> m_camera -> TakeFrame(filenameBuffer);
+					task -> m_camera -> CaptureFrame(filenameBuffer);
 					if (::IsWindow(dialog -> m_hWnd))
 					{
 						dialog -> PostMessage(WM_USER_RUN_FRAME_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);

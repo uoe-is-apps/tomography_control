@@ -42,6 +42,7 @@ public:
 
 	TaskType m_taskType;
 	ICamera* m_camera;
+	char *m_directoryPath;
 	CTakingPhotosDlg* m_dialog;
 	short m_currentImages;
 	short m_totalImages;

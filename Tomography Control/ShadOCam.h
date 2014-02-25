@@ -14,7 +14,9 @@ public:
 	int m_nHeight;			// height of image
 
 	virtual void SetupCamera(float exposureTime);
-	virtual void TakeFrame(char* filename);
+	virtual void CaptureFrame(char* filename);
+	virtual void CaptureDarkImage(char* filename);
+	virtual void CaptureFlatField(char* filename);
 
 protected:
 	PXD m_pxd;				// pxd library structure

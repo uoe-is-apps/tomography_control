@@ -19,7 +19,7 @@ void DummyCamera::SetupCamera(float exposureTimeSeconds)
 	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 
-void DummyCamera::TakeFrame(char* output_file)
+void DummyCamera::CaptureFrame(char* output_file)
 {
 	// TODO: Write something to disk
 	Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
