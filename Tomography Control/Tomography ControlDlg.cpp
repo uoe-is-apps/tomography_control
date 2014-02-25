@@ -95,7 +95,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_CBString(pDX, IDC_COMBO_CAMERA, m_cameraName);
 	DDX_Control(pDX, IDC_COMBO_CAMERA, m_cameraComboBox);
-	DDX_Text(pDX, IDC_MFCEDITBROWSE1, m_directoryPath);
+	DDX_Text(pDX, IDC_BROWSE_DIRECTORY_PATH, m_directoryPath);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
