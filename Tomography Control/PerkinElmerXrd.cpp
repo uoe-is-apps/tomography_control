@@ -5,6 +5,9 @@
 
 	PerkinElmerXrd::PerkinElmerXrd(char* camFile)
 {
+	this -> m_acquisitionBuffer = NULL;
+	this -> m_offsetBuffer = NULL;
+
 	this -> m_endAcquisitionEvent.ResetEvent();
 	this -> m_endFrameEvent.ResetEvent();
 
@@ -21,6 +24,8 @@
 		// TODO: Check detector initialised successfully 
 	}
 
+	// Do we need to call Acquisition_Init as well?
+
 	this -> m_detectorInitialised = TRUE;
 
 	if (!Acquisition_GetHwHeaderInfo(&this -> m_hAcqDesc, &headInfo))
@@ -31,11 +36,35 @@
 	this -> m_nHeight = headInfo.dwNrRows;
 	this -> m_nWidth = headInfo.dwNrColumns;
 
+	Acquisition_SetCallbacksAndMessages(&this -> m_hAcqDesc,
+		hWnd?,
+		"Error during image acquisition",
+		"Losing frames",
+		endFrameCallback,
+		endAcquisitionCallback);
+		
+	this -> m_acquisitionBuffer = malloc(sizeof(unsigned short) * this -> m_nWidth * this -> m_nHeight);
+
+	Acquisition_DefineDestBuffers();
 	*/
+
 }
 
 PerkinElmerXrd::~PerkinElmerXrd()
 {
+	if (NULL != this -> m_offsetBuffer)
+	{
+		free(this -> m_offsetBuffer);
+	}
+	if (NULL != this -> m_acquisitionBuffer)
+	{
+		free(this -> m_acquisitionBuffer);
+	}
+
+	if (this -> m_detectorInitialised)
+	{
+		// Acquisition_Close(&this -> m_hAcqDesc);
+	}
 }
 
 
@@ -57,6 +86,8 @@ void PerkinElmerXrd::CaptureFrame(char* output_file)
 	// TODO: Wait for acquisition completed event to fire
 
 	// TODO: Write image to disk
+
+	Acquisition_SetReady(&this -> m_hAcqDesc, 1);
 
 	*/
 
@@ -99,3 +130,15 @@ void PerkinElmerXrd::CaptureFlatField(char* output_file)
 
 	free(offsetData); */
 }
+
+/* 
+CALLBACK PerkinElmerXrd::endAcquisitionCallback(HACQDESC hAcqDesc)
+{
+	this -> m_endAcquisitionEvent.PulseEvent();
+}
+
+CALLBACK PerkinElmerXrd::endFrameCallback(HACQDESC hAcqDesc)
+{
+	this -> m_endFrameEvent.PulseEvent();
+}
+*/

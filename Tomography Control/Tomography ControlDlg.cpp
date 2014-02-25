@@ -498,11 +498,11 @@ UINT takeManualImages( LPVOID pParam )
 		// TODO Handle dark images
 		switch (task -> m_taskType)
 		{
-		case CameraTask::TaskType::DARK:
+		case CameraTask::DARK:
 			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\DC%04d.raw", task -> m_directoryPath, (i + 1));
 			task -> m_camera -> CaptureDarkImage(filenameBuffer);
 			break;
-		case CameraTask::TaskType::FLAT_FIELD:
+		case CameraTask::FLAT_FIELD:
 			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\FF%04d.raw", task -> m_directoryPath, (i + 1));
 			task -> m_camera -> CaptureFlatField(filenameBuffer);
 			break;

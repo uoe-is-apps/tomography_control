@@ -20,5 +20,7 @@ protected:
 	CEvent		m_endFrameEvent;
 	// HACQDESC	m_hAcqDesc;
 	int			m_nChannelNr;
+	unsigned short *m_acquisitionBuffer;
+	DWORD		*m_offsetBuffer;
 	BOOL		m_detectorInitialised;
 };
