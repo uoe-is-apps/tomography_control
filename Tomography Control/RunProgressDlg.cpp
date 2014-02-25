@@ -39,7 +39,7 @@ void CRunProgressDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_DISPLAY_CURRENT_POSITION, m_currentPosition);
-	DDX_Text(pDX, IDC_DISPLAY_PROCEEDED_FRAME, m_imageFilename);
+	DDX_Text(pDX, IDC_DISPLAY_PROCEEDED_IMAGE, m_imageFilename);
 	DDX_Text(pDX, IDC_DISPLAY_STOPS_MADE, m_stopsCompleted);
 	DDX_Text(pDX, IDC_DISPLAY_STOPS_TOTAL, m_stopsPerRotation);
 	DDX_Text(pDX, IDC_DISPLAY_TURNS_MADE, m_turnsCompleted);

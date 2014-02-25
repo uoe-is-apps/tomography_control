@@ -2,8 +2,10 @@
 
 // #include <acq.h>
 #include "PerkinElmerXrd.h"
+#include "tiffio.h"
+#include "tiff.h"
 
-	PerkinElmerXrd::PerkinElmerXrd(char* camFile)
+	PerkinElmerXrd::PerkinElmerXrd()
 {
 	this -> m_acquisitionBuffer = NULL;
 	this -> m_offsetBuffer = NULL;
@@ -42,10 +44,18 @@
 		"Losing frames",
 		endFrameCallback,
 		endAcquisitionCallback);
-		
-	this -> m_acquisitionBuffer = malloc(sizeof(unsigned short) * this -> m_nWidth * this -> m_nHeight);
+	*/
+	
+	// Note that the buffer requires twice the width * height; this is following the
+	// documentation
+	this -> m_acquisitionBuffer = (unsigned short*)malloc(this -> m_nWidth * this -> m_nHeight * 2);
 
-	Acquisition_DefineDestBuffers();
+	/*
+	
+	Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
+		this -> m_acquisitionBuffer,
+		1, // Frames,
+		this -> m_nHeight, this -> m_nWidth);
 	*/
 
 }
@@ -75,7 +85,6 @@ void PerkinElmerXrd::SetupCamera(float exposureTime)
 void PerkinElmerXrd::CaptureFrame(char* output_file)
 {
 	/*
-	// TODO: Set acquisition buffer here
 
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
 		1, 0, // Frames, skip frames
@@ -83,52 +92,85 @@ void PerkinElmerXrd::CaptureFrame(char* output_file)
 		NULL, NULL, NULL // Offset, gain, pixel correction
 	);
 
-	// TODO: Wait for acquisition completed event to fire
+	*/
+	// TODO: Handle timeout
+	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
+	WriteTiff(output_file, this -> m_acquisitionBuffer);
 
-	// TODO: Write image to disk
-
+	/* 
 	Acquisition_SetReady(&this -> m_hAcqDesc, 1);
 
 	*/
-
 }
 
 void PerkinElmerXrd::CaptureDarkImage(char* output_file)
 {
-	/* unsigned short *offsetData;
+	unsigned short *offsetData;
 
-	offsetData = (unsigned short *)malloc(sizeof(unsigned short) * this -> m_nHeight * this -> m_nWidth);
+	offsetData = (unsigned short *)malloc(sizeof(unsigned short) * this -> m_nHeight * this -> m_nWidth * 2);
 	if (NULL == offsetData)
 	{
 		// TODO: Handle problems allocating buffer
 	}
 
+	/*
 	Acquisition_Acquire_OffsetImage(this -> m_hAcqDesc,
 		offsetData,
 		this -> m_nHeight, this -> m_nWidth,
 		1 // Frames
 	);
+	*/
+	
+	WriteTiff(output_file, offsetData);
 
-	free(offsetData); */
+	free(offsetData);
 }
 
 void PerkinElmerXrd::CaptureFlatField(char* output_file)
 {
-	/* DWORD *offsetData;
+	unsigned short *offsetData;
 
-	offsetData = (DWORD *)malloc(sizeof(DWORD) * this -> m_nHeight * this -> m_nWidth);
-	if (null == offsetData)
+	offsetData = (unsigned short *)malloc(sizeof(unsigned short) * this -> m_nHeight * this -> m_nWidth * 2);
+	if (NULL == offsetData)
 	{
 		// TODO: Handle problems allocating buffer
 	}
 
+	/*
 	Acquisition_Acquire_GainImage(this -> m_hAcqDesc,
 		offsetData,
 		this -> m_nHeight, this -> m_nWidth,
 		1 // Frames
 	);
+	*/
+	
+	WriteTiff(output_file, offsetData);
 
-	free(offsetData); */
+	free(offsetData);
+}
+
+void PerkinElmerXrd::WriteTiff(char* output_file, unsigned short *buffer)
+{
+	TIFF* tif = TIFFOpen(output_file, "w");
+	TIFFSetField (tif, TIFFTAG_IMAGEWIDTH, this -> m_nWidth);
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> m_nHeight);
+	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8); // Check this - I'm inferring from the buffer size and data type
+	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+	tdata_t rowData = _TIFFmalloc(this -> m_nWidth * 2);
+	for (int row = 0; row < this -> m_nHeight; row++)
+	{
+		unsigned short *sourceRowStart = buffer + (row * this -> m_nWidth * 2);
+		memcpy(rowData, sourceRowStart, sizeof(rowData));
+
+		TIFFWriteScanline(tif, rowData, row);
+	}
+    TIFFClose(tif);
+	_TIFFfree(rowData);
 }
 
 /* 

@@ -12,6 +12,7 @@
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "DummyCamera.h"
+#include "PerkinElmerXrd.h"
 #include "ShadOCam.h"
 #include "Tomography Control.h"
 #include "RunProgressDlg.h"
@@ -343,6 +344,10 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 	else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
 	{
 		camera = new ShadOCam("C:\\ShadoCam\\IniFile.txt");
+	}
+	else if (strcmp(this -> m_cameraName, "Perkin-Elmer XRD") == 0)
+	{
+		camera = new PerkinElmerXrd();
 	}
 	else
 	{

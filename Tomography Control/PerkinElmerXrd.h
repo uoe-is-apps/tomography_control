@@ -4,7 +4,7 @@
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd(char* camFile);
+	PerkinElmerXrd();
 	~PerkinElmerXrd();
 
 	int m_nWidth;			// width of image
@@ -16,6 +16,8 @@ public:
 	virtual void CaptureFlatField(char* filename);
 
 protected:
+	void WriteTiff(char* filename, unsigned short *buffer);
+
 	CEvent		m_endAcquisitionEvent;
 	CEvent		m_endFrameEvent;
 	// HACQDESC	m_hAcqDesc;
