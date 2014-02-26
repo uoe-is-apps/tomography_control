@@ -67,6 +67,23 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_estRunTime.Append(estRunTime.Format("%H:%M:%S"));
 	this -> m_progressCtl.SetRange(0, (short)MAX_PROGRESS);
 
+	this -> m_task = new RunTask();
+
+	this -> m_task -> m_dialog = this;
+	this -> m_task -> m_camera = this -> m_camera;
+	this -> m_task -> m_table = this -> m_table;
+	this -> m_task -> m_directoryPath = this -> m_directoryPath;
+	this -> m_task -> m_turnsTotal = this -> m_turnsTotal;
+	this -> m_task -> m_stopsPerTurn = this -> m_stopsPerRotation;
+	this -> m_task -> m_framesPerStop = this -> m_framesPerStop;
+	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
+	this -> m_task -> m_running = TRUE;
+
+	this -> m_workerThread = AfxBeginThread(captureRunFrames, this -> m_task, THREAD_PRIORITY_NORMAL, 
+		0, CREATE_SUSPENDED);
+	this -> m_workerThread -> m_bAutoDelete = FALSE;
+	this -> m_workerThread -> ResumeThread();
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -82,16 +99,34 @@ void CRunProgressDlg::CalculateTimeRemaining(CTimeSpan* dest) {
 
 
 BEGIN_MESSAGE_MAP(CRunProgressDlg, CDialogEx)
+	ON_MESSAGE(WM_USER_THREAD_FINISHED, &CRunProgressDlg::OnThreadFinished)
 	ON_MESSAGE(WM_USER_RUN_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
 	ON_MESSAGE(WM_USER_RUN_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
 	ON_MESSAGE(WM_USER_RUN_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
 	ON_MESSAGE(WM_USER_RUN_CAPTURING_FRAME, &CRunProgressDlg::OnFrameCaptureStarted)
 	ON_MESSAGE(WM_USER_RUN_FRAME_CAPTURED, &CRunProgressDlg::OnFrameCaptured)
+	ON_WM_CLOSE()
+	ON_BN_CLICKED(IDCANCEL, &CRunProgressDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
 
 // CRunProgressDlg message handlers
 
+afx_msg void CRunProgressDlg::OnClose()
+{
+	// Tell the background worker we're finished running, but wait for it to exit
+	// before closing the window
+	this -> m_task -> m_running = FALSE;
+	return;
+}
+
+void CRunProgressDlg::OnBnClickedCancel()
+{
+	// Tell the background worker we're finished running, but wait for it to exit
+	// before closing the window
+	this -> m_task -> m_running = FALSE;
+	return;
+}
 
 afx_msg LRESULT CRunProgressDlg::OnFrameCaptured(WPARAM wParam, LPARAM lParam)
 {
@@ -111,6 +146,18 @@ afx_msg LRESULT CRunProgressDlg::OnFrameCaptureStarted(WPARAM wParam, LPARAM lPa
 	this -> m_imageFilename.Empty();
 	this -> m_imageFilename.Append(filename);
 	this -> UpdateData(FALSE);
+
+	return TRUE;
+}
+
+afx_msg LRESULT CRunProgressDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
+{
+	// Give the thread 10 seconds to exit
+	::WaitForSingleObject(this -> m_workerThread -> m_hThread, 10000);
+
+	delete this -> m_workerThread;
+
+	EndDialog(IDOK);
 
 	return TRUE;
 }
@@ -150,12 +197,17 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
-
 // Worker functions
 UINT captureRunFrames( LPVOID pParam )
 {
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
+
+	// Wait for the dialog to open before we proceed
+	while (!::IsWindow(dialog -> m_hWnd))
+	{
+		Sleep(200);
+	}
 	
 	char filenameBuffer[FILENAME_BUFFER_SIZE];
 	char tableCommandBuffer[TABLE_COMMAND_BUFFER_SIZE];
@@ -164,9 +216,9 @@ UINT captureRunFrames( LPVOID pParam )
 
 	task -> m_currentPosition = 0;
 	
-	for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal; task -> m_turnCount++)
+	for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
 	{
-		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn; task -> m_stopCount++)
+		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
 		{
 			float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
 			sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "deg %.2f nm\r\n", calculatedAngle);
@@ -175,68 +227,27 @@ UINT captureRunFrames( LPVOID pParam )
 			// TODO: See if we can get a verification of state from the table instead of just waiting blindly
 			Sleep(1000);
 
-			if (::IsWindow(dialog -> m_hWnd))
-			{
-				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
-			}
+			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop; task -> m_frameCount++)
+			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop && task -> m_running; task -> m_frameCount++)
 			{
 				task -> m_currentPosition++;
 
-				if (task -> m_running)
-				{
-					sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, task -> m_currentPosition);
-					if (::IsWindow(dialog -> m_hWnd))
-					{
-						dialog -> PostMessage(WM_USER_RUN_CAPTURING_FRAME, 0, (LPARAM)(filenameBuffer + strlen(task -> m_directoryPath) + 1));
-					}
+				sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, task -> m_currentPosition);
+				dialog -> PostMessage(WM_USER_RUN_CAPTURING_FRAME, 0, (LPARAM)(filenameBuffer + strlen(task -> m_directoryPath) + 1));
 
-					// TODO: Check return status
-					task -> m_camera -> CaptureFrame(filenameBuffer);
-					if (::IsWindow(dialog -> m_hWnd))
-					{
-						dialog -> PostMessage(WM_USER_RUN_FRAME_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
-					}
-				}
-				else
-				{
-					break;
-				}
+				// TODO: Check return status from the camera
+				task -> m_camera -> CaptureFrame(filenameBuffer);
+				dialog -> PostMessage(WM_USER_RUN_FRAME_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
 			}
-
-			if (task -> m_running)
-			{
-				if (::IsWindow(dialog -> m_hWnd))
-				{
-					dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
-				}
-			}
-			else
-			{
-				break;
-			}
-
+			
+			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 		}
-
-		if (task -> m_running)
-		{
-			if (::IsWindow(dialog -> m_hWnd))
-			{
-				dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
-			}
-		}
-		else
-		{
-			break;
-		}
+		
+		dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
 	}
 
-	if (task -> m_running == TRUE
-		&& ::IsWindow(dialog -> m_hWnd))
-	{
-		dialog -> PostMessage(WM_CLOSE);
-	}
+	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 
 	return 0;   // thread completed successfully
 }

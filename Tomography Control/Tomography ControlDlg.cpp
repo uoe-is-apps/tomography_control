@@ -70,7 +70,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_exposureTimeSeconds(0.5f)
 	, m_framesPerStop(10)
 	, m_stopsPerRotation(100)
-	, m_numberOfTurns(1)
+	, m_turnsTotal(1)
 	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
 	, m_manualCameraControl(_T(""))
@@ -88,7 +88,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_EXPOSURE_TIME, m_exposureTimeSeconds);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES_STOP, m_framesPerStop);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
-	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_numberOfTurns);
+	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_turnsTotal);
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
@@ -361,52 +361,31 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	// TODO: Validate inputs
 
-	// TODO: Calculate end time
-
 	this -> UpdateData(TRUE);
 
-	RunTask task;
 	CRunProgressDlg runProgressDlg;
 	
+	runProgressDlg.m_table = this -> m_table;
+	
 	try {
-		task.m_camera = BuildSelectedCamera();
+		runProgressDlg.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
 		MessageBox(message, "Tomography Control", MB_ICONERROR);
 		return;
 	}
-
-	task.m_dialog = &runProgressDlg;
-	task.m_table = this -> m_table;
-	task.m_directoryPath = this -> m_directoryPath;
-	task.m_turnsTotal = this -> m_numberOfTurns;
-	task.m_stopsPerTurn = this -> m_stopsPerRotation;
-	task.m_framesPerStop = this -> m_framesPerStop;
-	task.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
-	task.m_running = TRUE;
 	
+	runProgressDlg.m_directoryPath = this -> m_directoryPath;
 	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	runProgressDlg.m_framesPerStop = this -> m_framesPerStop;
-	runProgressDlg.m_turnsTotal = this -> m_numberOfTurns;
+	runProgressDlg.m_turnsTotal = this -> m_turnsTotal;
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 
-	CWinThread* workerThread = AfxBeginThread(captureRunFrames, &task, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	workerThread -> m_bAutoDelete = FALSE;
-	workerThread -> ResumeThread();
-
+	// The dialog handles waiting for the thread to exit
 	runProgressDlg.DoModal();
 
-	// TODO: The dialog itself should set this, so the dialog is still
-	// valid at every point where this value is true
-	task.m_running = FALSE;
-
-	delete task.m_camera;
-
-	// Give the thread 60 seconds to exit
-	::WaitForSingleObject(workerThread -> m_hThread, 60000);
-	delete workerThread;
+	delete runProgressDlg.m_camera;
 }
 
 

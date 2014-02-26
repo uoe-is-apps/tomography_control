@@ -100,7 +100,7 @@ public:
 	float m_exposureTimeSeconds;
 	int m_framesPerStop;
 	int m_stopsPerRotation;
-	int m_numberOfTurns;
+	int m_turnsTotal;
 	int m_delayBetweenTurnsSeconds;
 	CString m_cameraName;
 	CComboBox m_cameraComboBox;
