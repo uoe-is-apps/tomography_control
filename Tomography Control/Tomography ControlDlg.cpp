@@ -399,118 +399,38 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
  */
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
-	this -> UpdateData(TRUE);
-
-	CameraTask task(CameraTask::SINGLE);
-
-	try {
-		task.m_camera = BuildSelectedCamera();
-	}
-	catch(char* message)
-	{
-		MessageBox(message, "Tomography Control", MB_ICONERROR);
-		return;
-	}
-
-	this -> RunManualImageTask(&task);
-	delete task.m_camera;
+	this -> RunManualImageTask(SINGLE);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
-	this -> UpdateData(TRUE);
-
-	CameraTask task(CameraTask::DARK);
-
-	try {
-		task.m_camera = BuildSelectedCamera();
-	}
-	catch(char* message)
-	{
-		MessageBox(message, "Tomography Control", MB_ICONERROR);
-		return;
-	}
-	this -> RunManualImageTask(&task);
-	delete task.m_camera;
+	this -> RunManualImageTask(DARK);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
+	this -> RunManualImageTask(FLAT_FIELD);
+}
+
+void CTomographyControlDlg::RunManualImageTask(TaskType taskType)
+{
 	this -> UpdateData(TRUE);
 
-	CameraTask task(CameraTask::FLAT_FIELD);
-
+	CTakingPhotosDlg takingPhotosDlg;
+	
+	
 	try {
-		task.m_camera = BuildSelectedCamera();
+		takingPhotosDlg.m_camera = BuildSelectedCamera();
 	}
 	catch(char* message)
 	{
 		MessageBox(message, "Tomography Control", MB_ICONERROR);
 		return;
 	}
-	this -> RunManualImageTask(&task);
-	delete task.m_camera;
-}
-
-void CTomographyControlDlg::RunManualImageTask(CameraTask* task)
-{
-	CTakingPhotosDlg takingPhotosDlg;
-
-	task -> m_dialog = &takingPhotosDlg;
-
-	CWinThread* workerThread = AfxBeginThread(takeManualImages, task, THREAD_PRIORITY_NORMAL, 
-		0, CREATE_SUSPENDED);
-	workerThread -> m_bAutoDelete = FALSE;
-	workerThread -> ResumeThread();
-
+	
+	takingPhotosDlg.m_taskType = taskType;
+	takingPhotosDlg.m_directoryPath = this -> m_directoryPath;
 	takingPhotosDlg.DoModal();
 
-	task -> m_running = false;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(workerThread -> m_hThread, 5000);
-	delete workerThread;
-}
-
-// Worker function for taking a set of manual images from an X-ray camera
-UINT takeManualImages( LPVOID pParam )
-{
-	char filenameBuffer[FILENAME_BUFFER_SIZE];
-	CameraTask* task = (CameraTask*)pParam;
-	
-	for (short i = 0; i < task -> m_totalImages; i++) 
-	{
-		// TODO Handle dark images
-		switch (task -> m_taskType)
-		{
-		case CameraTask::DARK:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\DC%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureDarkImage(filenameBuffer);
-			break;
-		case CameraTask::FLAT_FIELD:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\FF%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureFlatField(filenameBuffer);
-			break;
-		default:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureFrame(filenameBuffer);
-			break;
-		}
-		if(!(task -> m_running))
-		{
-			break;
-		}
-
-		if (task -> m_dialog -> m_IsInit)
-		{
-			task -> m_dialog -> m_progress.SetRange(0, task -> m_totalImages - 1);
-			task -> m_dialog -> m_progress.SetPos(i + 1);
-		}
-	}
-
-	if (task -> m_running)
-	{
-		task -> m_dialog -> PostMessage(WM_CLOSE);
-	}
-
-	return 0;   // thread completed successfully
+	delete takingPhotosDlg.m_camera;
 }

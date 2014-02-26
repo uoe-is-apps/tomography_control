@@ -7,6 +7,24 @@
 #include "ICamera.h"
 #include "Table.h"
 
+enum TaskType { SINGLE, DARK, FLAT_FIELD };
+
+/* Tracks details of a request sent to the camera */
+class CameraTask
+{
+public:
+
+	CameraTask(TaskType taskType);
+
+	TaskType m_taskType;
+	ICamera* m_camera;
+	CString m_directoryPath;
+	CWnd* m_dialog;
+	short m_currentImages;
+	short m_totalImages;
+	BOOL m_running;
+};
+
 // CTakingPhotosDlg dialog
 
 class CTakingPhotosDlg : public CDialogEx
@@ -17,36 +35,30 @@ public:
 	CTakingPhotosDlg(CWnd* pParent = NULL);   // standard constructor
 	virtual ~CTakingPhotosDlg();
 	virtual BOOL OnInitDialog();
-	BOOL m_IsInit;
+	
+	TaskType m_taskType;
+	CString m_directoryPath;
+
+	CameraTask *m_task;
+	CWinThread* m_workerThread;
+	ICamera* m_camera;
 
 // Dialog Data
 	enum { IDD = IDD_TAKING_PHOTOS_DIALOG };
 
-	CProgressCtrl m_progress;
+	afx_msg void OnClose();
+	void OnBnClickedCancel();
+	afx_msg LRESULT OnFrameCaptured(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnThreadFinished(WPARAM wParam, LPARAM lParam);
 
 protected:
+	CProgressCtrl m_progress;
+
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	// CWinThread *m_workerThread;
 
 	DECLARE_MESSAGE_MAP()
-};
-
-/* Tracks details of a request sent to the camera */
-class CameraTask
-{
-public:
-	enum TaskType { SINGLE, DARK, FLAT_FIELD };
-
-	CameraTask(TaskType taskType);
-
-	TaskType m_taskType;
-	ICamera* m_camera;
-	char *m_directoryPath;
-	CTakingPhotosDlg* m_dialog;
-	short m_currentImages;
-	short m_totalImages;
-	BOOL m_running;
 };
 
 // CTomographyControlDlg dialog
@@ -109,11 +121,11 @@ protected:
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
-	virtual BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg);
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	void RunManualImageTask(CameraTask* task);
+	void RunManualImageTask(TaskType taskType);
 	ICamera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
 };

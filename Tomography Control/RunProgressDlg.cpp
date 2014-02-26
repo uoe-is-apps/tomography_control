@@ -99,12 +99,12 @@ void CRunProgressDlg::CalculateTimeRemaining(CTimeSpan* dest) {
 
 
 BEGIN_MESSAGE_MAP(CRunProgressDlg, CDialogEx)
-	ON_MESSAGE(WM_USER_THREAD_FINISHED, &CRunProgressDlg::OnThreadFinished)
 	ON_MESSAGE(WM_USER_RUN_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
 	ON_MESSAGE(WM_USER_RUN_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
 	ON_MESSAGE(WM_USER_RUN_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
 	ON_MESSAGE(WM_USER_RUN_CAPTURING_FRAME, &CRunProgressDlg::OnFrameCaptureStarted)
 	ON_MESSAGE(WM_USER_RUN_FRAME_CAPTURED, &CRunProgressDlg::OnFrameCaptured)
+	ON_MESSAGE(WM_USER_THREAD_FINISHED, &CRunProgressDlg::OnThreadFinished)
 	ON_WM_CLOSE()
 	ON_BN_CLICKED(IDCANCEL, &CRunProgressDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
