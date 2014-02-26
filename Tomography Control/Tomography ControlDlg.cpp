@@ -357,7 +357,31 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
-	// TODO: Validate inputs
+	if (this -> m_directoryPath.IsEmpty())
+	{
+		MessageBox("Please specify a directory path to save the captured images to.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	if (this -> m_exposureTimeSeconds < 0.000)
+	{
+		MessageBox("Exposure time must be a positive number of seconds.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	if (this -> m_framesPerStop < 1)
+	{
+		MessageBox("Frames per stop must be at least 1.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	if (this -> m_stopsPerRotation < 1)
+	{
+		MessageBox("Stops per rotation must be at least 1.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	if (this -> m_turnsTotal < 1)
+	{
+		MessageBox("Rotations to be performed must be at least 1.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
 
 	this -> UpdateData(TRUE);
 
@@ -377,8 +401,8 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	runProgressDlg.m_directoryPath = this -> m_directoryPath;
 	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	runProgressDlg.m_framesPerStop = this -> m_framesPerStop;
-	runProgressDlg.m_turnsTotal = this -> m_turnsTotal;
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
+	runProgressDlg.m_turnsTotal = this -> m_turnsTotal;
 
 	// The dialog handles waiting for the thread to exit
 	runProgressDlg.DoModal();
