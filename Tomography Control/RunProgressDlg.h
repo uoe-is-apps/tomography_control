@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ICamera.h"
+#include "Camera.h"
 #include "Table.h"
 #include "afxcmn.h"
 

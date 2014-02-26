@@ -4,7 +4,7 @@
 
 #pragma once
 #include "afxwin.h"
-#include "ICamera.h"
+#include "Camera.h"
 #include "Table.h"
 
 enum TaskType { SINGLE, DARK, FLAT_FIELD };

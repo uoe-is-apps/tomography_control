@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 
-#include "ShadOCam.h"
+#include "Camera.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "Table.h"

@@ -11,9 +11,7 @@
 
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
-#include "DummyCamera.h"
-#include "PerkinElmerXrd.h"
-#include "ShadOCam.h"
+#include "Camera.h"
 #include "Tomography Control.h"
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"

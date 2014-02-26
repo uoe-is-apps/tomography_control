@@ -1,7 +1,5 @@
 #include "stdafx.h"
-
-#include "stdafx.h"
-#include "DummyCamera.h"
+#include "Camera.h"
 
 	DummyCamera::DummyCamera()
 {

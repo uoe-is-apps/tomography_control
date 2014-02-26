@@ -42,19 +42,10 @@
     <ClInclude Include="RunProgressDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ShadOCam.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ICamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DummyCamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PerkinElmerXrd.h">
+    <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,7 @@
 #include "stdafx.h"
+#include "Camera.h"
 
 // #include <acq.h>
-#include "PerkinElmerXrd.h"
 #include "tiffio.h"
 #include "tiff.h"
 

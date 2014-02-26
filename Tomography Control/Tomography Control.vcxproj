@@ -105,12 +105,9 @@
     <None Include="res\TomographyControl.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DummyCamera.h" />
-    <ClInclude Include="ICamera.h" />
-    <ClInclude Include="PerkinElmerXrd.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RunProgressDlg.h" />
-    <ClInclude Include="ShadOCam.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Table.h" />
     <ClInclude Include="targetver.h" />

@@ -1,6 +1,5 @@
 #include "stdafx.h"
-
-#include "ShadOCam.h"
+#include "Camera.h"
 
 	ShadOCam::ShadOCam(char* camFile)
 {
