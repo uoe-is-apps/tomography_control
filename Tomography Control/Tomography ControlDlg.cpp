@@ -89,11 +89,11 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_turnsTotal);
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
+	DDX_Text(pDX, IDC_BROWSE_DIRECTORY_PATH, m_directoryPath);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_CBString(pDX, IDC_COMBO_CAMERA, m_cameraName);
 	DDX_Control(pDX, IDC_COMBO_CAMERA, m_cameraComboBox);
-	DDX_Text(pDX, IDC_BROWSE_DIRECTORY_PATH, m_directoryPath);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -355,6 +355,8 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
+	UpdateData(TRUE);
+
 	if (this -> m_directoryPath.IsEmpty())
 	{
 		MessageBox("Please specify a directory path to save the captured images to.", "Tomography Control", MB_ICONERROR);
@@ -380,8 +382,6 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 		MessageBox("Rotations to be performed must be at least 1.", "Tomography Control", MB_ICONERROR);
 		return;
 	}
-
-	this -> UpdateData(TRUE);
 
 	CRunProgressDlg runProgressDlg;
 	
