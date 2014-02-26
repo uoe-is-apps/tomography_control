@@ -79,6 +79,10 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
+	char settingsFilename[FILENAME_BUFFER_SIZE];
+	sprintf_s(settingsFilename, FILENAME_BUFFER_SIZE - 1, "%s\\settings.txt", this -> m_directoryPath);
+	WriteSettings(settingsFilename);
+
 	this -> m_workerThread = AfxBeginThread(captureRunFrames, this -> m_task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	this -> m_workerThread -> m_bAutoDelete = FALSE;
@@ -195,6 +199,19 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 	this -> m_progressCtl.SetPos(progress);
 
 	return TRUE;
+}
+
+void CRunProgressDlg::WriteSettings(char* dest)
+{
+	FILE* file = fopen(dest, "w");
+
+	if (NULL == file)
+	{
+		//TODO: Handle problems opening the file
+		return;
+	}
+
+	fclose(file);
 }
 
 // Worker functions

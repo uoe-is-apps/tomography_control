@@ -93,6 +93,8 @@ public:
 	// Overriden to stop close messages getting through
 	afx_msg void OnClose();
 	afx_msg void OnBnClickedCancel();
+
+	void WriteSettings(char* dest);
 };
 
 // Function for the manual camera worker thread

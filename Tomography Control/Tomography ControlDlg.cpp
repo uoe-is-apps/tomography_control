@@ -213,6 +213,24 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 		strcat_s(command, commandLen, "\r\n");
 		this -> m_tableCommand.Empty();
 
+		this -> UpdateData(FALSE);
+
+		// Check if the command starts "deg"
+		if (strstr(command, "deg") == command)
+		{
+			float angle;
+
+			if (sscanf(command, "deg %f nm", &angle) > 0)
+			{
+				// Command was matched successfully
+				if (angle > 360.0
+					|| angle < -360.0) {
+					MessageBox("Table cannot be rotated to more than 360 degrees.", "Tomography Control", MB_ICONERROR);
+					return TRUE;
+				}
+			}
+		}
+
 		this -> m_table -> SendTableCommand(command);
 
         return TRUE; // this doesn't need processing anymore
