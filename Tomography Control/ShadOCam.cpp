@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Camera.h"
 
-	ShadOCam::ShadOCam(char* camFile)
+	ShadOCam::ShadOCam(char* camFile, float exposureTimeSeconds)
 {
 	this -> m_bPxdLoaded = FALSE;
 	this -> m_bCamTypeLoaded = FALSE;
@@ -43,6 +43,24 @@
 	if ( !(this -> m_currentFrame = this -> m_pxd.AllocateBuffer (frameGrabberWidth, frameGrabberHeight, PBITS_Y16)) )  {
 		throw "Unable to create image buffer.";
 	}
+
+	const long len = 65536; // length of LUT
+	unsigned short nLUT[len];  // LUT
+
+	//set exposure time
+	float ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
+	this -> m_pxd.SetFramePeriod(this -> m_camType, exposureTimeSeconds);
+	ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
+
+	this -> m_pxd.SetCameraConfig(this -> m_hFrameGrabber, this -> m_camType);
+	this -> m_pxd.ContinuousStrobes(this -> m_hFrameGrabber, TRUE);  // turn on camera frame sync
+
+	// initialize input LUT to shift image data down by two bits
+	for (int i = 0; i < len; i++)
+	{
+		nLUT[i] = i>>2;
+	}
+	this -> m_pxd.SetInputLUT(this -> m_hFrameGrabber, 16, 0, 0, len, nLUT);
 }
 
 ShadOCam::~ShadOCam()
@@ -70,28 +88,6 @@ ShadOCam::~ShadOCam()
 		}
 		imagenation_CloseLibrary(&this -> m_pxd);
 	}
-}
-
-
-void ShadOCam::SetupCamera(float exposureTime)
-{
-	const long len = 65536; // length of LUT
-	unsigned short nLUT[len];  // LUT
-
-	//set exposure time
-	float ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
-	this -> m_pxd.SetFramePeriod(this -> m_camType, exposureTime);
-	ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
-
-	this -> m_pxd.SetCameraConfig(this -> m_hFrameGrabber, this -> m_camType);
-	this -> m_pxd.ContinuousStrobes(this -> m_hFrameGrabber, TRUE);  // turn on camera frame sync
-
-	// initialize input LUT to shift image data down by two bits
-	for (int i = 0; i < len; i++)
-	{
-		nLUT[i] = i>>2;
-	}
-	this -> m_pxd.SetInputLUT(this -> m_hFrameGrabber, 16, 0, 0, len, nLUT);
 }
 
 void ShadOCam::CaptureFrame(char* output_file)

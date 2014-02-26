@@ -5,9 +5,10 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-	PerkinElmerXrd::PerkinElmerXrd()
+	PerkinElmerXrd::PerkinElmerXrd(float exposureTimeSeconds)
 {
 	this -> m_acquisitionBuffer = NULL;
+	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
 	this -> m_offsetBuffer = NULL;
 
 	this -> m_endAcquisitionEvent.ResetEvent();
@@ -75,11 +76,6 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	{
 		// Acquisition_Close(&this -> m_hAcqDesc);
 	}
-}
-
-
-void PerkinElmerXrd::SetupCamera(float exposureTime)
-{
 }
 
 void PerkinElmerXrd::CaptureFrame(char* output_file)

@@ -7,7 +7,6 @@
 class ICamera
 {
 public:
-	virtual void SetupCamera(float exposureTimeSeconds) = 0;
 	virtual void CaptureFrame(char* filename) = 0;
 	virtual void CaptureDarkImage(char* filename) = 0;
 	virtual void CaptureFlatField(char* filename) = 0;
@@ -16,10 +15,9 @@ public:
 class DummyCamera : public ICamera
 {
 public:
-	DummyCamera();
+	DummyCamera(float exposureTime);
 	~DummyCamera();
 
-	virtual void SetupCamera(float exposureTime);
 	virtual void CaptureFrame(char* filename);
 	virtual void CaptureDarkImage(char* filename);
 	virtual void CaptureFlatField(char* filename);
@@ -31,13 +29,12 @@ protected:
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd();
+	PerkinElmerXrd(float exposureTime);
 	~PerkinElmerXrd();
 
 	int m_nWidth;			// width of image
 	int m_nHeight;			// height of image
 
-	virtual void SetupCamera(float exposureTime);
 	virtual void CaptureFrame(char* filename);
 	virtual void CaptureDarkImage(char* filename);
 	virtual void CaptureFlatField(char* filename);
@@ -45,6 +42,7 @@ public:
 protected:
 	void WriteTiff(char* filename, unsigned short *buffer);
 
+	float		m_exposureTimeSeconds;
 	CEvent		m_endAcquisitionEvent;
 	CEvent		m_endFrameEvent;
 	// HACQDESC	m_hAcqDesc;
@@ -57,13 +55,12 @@ protected:
 class ShadOCam : public ICamera
 {
 public:
-	ShadOCam(char* camFile);
+	ShadOCam(char* camFile, float exposureTime);
 	~ShadOCam();
 
 	int m_nWidth;			// width of image
 	int m_nHeight;			// height of image
 
-	virtual void SetupCamera(float exposureTime);
 	virtual void CaptureFrame(char* filename);
 	virtual void CaptureDarkImage(char* filename);
 	virtual void CaptureFlatField(char* filename);

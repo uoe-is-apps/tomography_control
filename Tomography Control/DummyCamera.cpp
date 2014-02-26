@@ -1,20 +1,14 @@
 #include "stdafx.h"
 #include "Camera.h"
 
-	DummyCamera::DummyCamera()
+	DummyCamera::DummyCamera(float exposureTimeSeconds)
 {
-
+	assert (exposureTimeSeconds > 0.000);
+	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 
 DummyCamera::~DummyCamera()
 {
-}
-
-
-void DummyCamera::SetupCamera(float exposureTimeSeconds)
-{
-	assert (exposureTimeSeconds > 0.001);
-	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 
 void DummyCamera::CaptureFrame(char* output_file)
