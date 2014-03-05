@@ -5,6 +5,11 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
+// Values for acquisition types, as used by Perkin-Elmer XRD camera
+#define ACQ_CONT			1
+#define ACQ_OFFSET			2
+#define ACQ_GAIN			4
+
 class ICamera
 {
 public:
@@ -40,11 +45,8 @@ public:
 	PerkinElmerXrd(char* directory, float exposureTime, GBIF_STRING_DATATYPE *ipAddress);
 	~PerkinElmerXrd();
 	
-	CWnd *m_window;
 	u_int m_nWidth;			// width of image
-	u_int m_nHeight;			// height of image
-	CEvent m_endAcquisitionEvent;
-	unsigned short *m_acquisitionBuffer;
+	u_int m_nHeight;		// height of image
 	
 	virtual void CaptureFrames(CWnd* window, u_int frames);
 	virtual void CaptureDarkImages(CWnd* window, u_int frames);
@@ -61,8 +63,20 @@ protected:
 	float		m_exposureTimeSeconds;
 	HACQDESC	m_hAcqDesc;
 	int			m_nChannelNr;
-	DWORD		*m_offsetBuffer;
 	BOOL		m_detectorInitialised;
+};
+
+struct PerkinElmerAcquisition {
+	PerkinElmerXrd *camera;
+	
+	char *directory;
+	CWnd *window;
+	CEvent endAcquisitionEvent;
+
+	u_int acquisitionType;
+	unsigned short *acquisitionBuffer;
+	unsigned short *offsetBuffer;
+	DWORD *gainBuffer;
 };
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc);

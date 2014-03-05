@@ -8,9 +8,7 @@
 PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_STRING_DATATYPE *ipAddress)
 {
 	this -> m_directory = directory;
-	this -> m_acquisitionBuffer = NULL;
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
-	this -> m_offsetBuffer = NULL;
 
 	CHwHeaderInfo headInfo;
 
@@ -24,13 +22,9 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_
 		// TODO: Check detector initialised successfully 
 	}
 	
-	this -> m_endAcquisitionEvent.ResetEvent();
-
-	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
-	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)this);
-
-
-	// Do we need to call Acquisition_Init as well?
+	// TODO: Pull camera mode from network speed tests
+	Acquisition_SetCameraMode(this-> m_hAcqDesc, 1);
+	Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING);
 
 	this -> m_detectorInitialised = TRUE;
 
@@ -47,38 +41,39 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_
 		0, 0,
 		OnEndFramePEX,
 		OnEndAcquisitionPEX);
-	
-	// Note that the buffer requires twice the width * height; this is following the
-	// documentation
-	this -> m_acquisitionBuffer = (unsigned short*)malloc(this -> m_nWidth * this -> m_nHeight * 2);
-		
-	Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
-		this -> m_acquisitionBuffer,
-		1, // Frames,
-		this -> m_nHeight, this -> m_nWidth);
 }
 
 PerkinElmerXrd::~PerkinElmerXrd()
 {
-	if (NULL != this -> m_offsetBuffer)
-	{
-		free(this -> m_offsetBuffer);
-	}
-	if (NULL != this -> m_acquisitionBuffer)
-	{
-		free(this -> m_acquisitionBuffer);
-	}
-
 	if (this -> m_detectorInitialised)
 	{
-		// Acquisition_Close(&this -> m_hAcqDesc);
+		Acquisition_Close(&this -> m_hAcqDesc);
 	}
 }
 
 void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
 {
-	this -> m_window = window;
+	PerkinElmerAcquisition task;
+	
+	task.camera = this;
+	task.directory = this -> m_directory;
+	task.endAcquisitionEvent.ResetEvent();
+	task.window = window;
+	task.acquisitionType = ACQ_CONT;
 
+	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
+	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
+	
+	task.acquisitionBuffer = (unsigned short*)malloc(this -> m_nWidth * this -> m_nHeight * sizeof(unsigned short) * frames);
+	if (NULL == task.acquisitionBuffer)
+	{
+		// TODO: Throw an exception
+		return;
+	}
+	
+	Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
+		task.acquisitionBuffer,
+		frames, this -> m_nHeight, this -> m_nWidth);
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
 		frames, 0, // Frames, skip frames
 		HIS_SEQ_ONE_BUFFER,
@@ -86,12 +81,15 @@ void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
 	);
 
 	// TODO: Handle timeout
-	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 300000);
+	long expectedTimeMillis = this -> m_exposureTimeSeconds * frames * 1000;
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
+
+	free(task.acquisitionBuffer);
 }
 
 void PerkinElmerXrd::CaptureDarkImages(CWnd* window, u_int frames)
 {
-	unsigned short *offsetData;
+	/* unsigned short *offsetData;
 
 	offsetData = (unsigned short *)malloc(sizeof(unsigned short) * this -> m_nHeight * this -> m_nWidth * 2);
 	if (NULL == offsetData)
@@ -106,29 +104,15 @@ void PerkinElmerXrd::CaptureDarkImages(CWnd* window, u_int frames)
 	);
 	
 	// TODO: Handle timeout
-	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
 
-	free(offsetData);
+	free(offsetData); */
 }
 
 void PerkinElmerXrd::CaptureFlatFields(CWnd* window, u_int frames)
 {
-	WORD *offsetData;
-	DWORD *gainData;
-	
-	offsetData = (WORD *)malloc(sizeof(WORD) * this -> m_nHeight * this -> m_nWidth * 2);
-	if (NULL == offsetData)
-	{
-		// TODO: Handle problems allocating buffer
-	}
-	gainData = (DWORD *)malloc(sizeof(DWORD) * this -> m_nHeight * this -> m_nWidth * 2);
-	if (NULL == gainData)
-	{
-		// TODO: Handle problems allocating buffer
-	}
-	
-	// TODO: Handle timeout
-	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
+	/* // TODO: Handle timeout
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
 	Acquisition_Acquire_GainImage(this -> m_hAcqDesc,
 		offsetData, gainData,
 		this -> m_nHeight, this -> m_nWidth,
@@ -136,45 +120,60 @@ void PerkinElmerXrd::CaptureFlatFields(CWnd* window, u_int frames)
 	);
 	
 	// TODO: Handle timeout
-	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
 	
 	free(offsetData);
-	free(gainData);
+	free(gainData); */
 }
 
 int PerkinElmerXrd::GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\IMAGE%4d.tiff", this -> m_directory, frame);
+	return sprintf_s(buffer, maxLength, "%s\\IMAGE%0.4d.tiff", this -> m_directory, frame);
 }
 
 int PerkinElmerXrd::GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\DC%4d.tiff", this -> m_directory, frame);
+	return sprintf_s(buffer, maxLength, "%s\\DC%0.4d.tiff", this -> m_directory, frame);
 }
 
 int PerkinElmerXrd::GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\FF%4d.tiff", this -> m_directory, frame);
+	return sprintf_s(buffer, maxLength, "%s\\FF%0.4d.tiff", this -> m_directory, frame);
 }
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 {
 	DWORD dwAcqData;
+	PerkinElmerAcquisition *task;
+
 	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
+	task = (PerkinElmerAcquisition *)dwAcqData;
 
-	PerkinElmerXrd *camera = (PerkinElmerXrd *)dwAcqData;
-
-	camera -> m_endAcquisitionEvent.PulseEvent();
+	task -> endAcquisitionEvent.PulseEvent();
 }
 
 void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 {
 	char filename[FILENAME_BUFFER_SIZE];
 	DWORD dwAcqData, dwActFrame, dwSecFrame;
+	PerkinElmerXrd *camera;
+	PerkinElmerAcquisition *task;
 
 	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
 	Acquisition_GetActFrame(hAcqDesc, &dwActFrame, &dwSecFrame);
-
-	PerkinElmerXrd *camera = (PerkinElmerXrd *)dwAcqData;
 	
-	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
+	task = (PerkinElmerAcquisition *)dwAcqData;
+	camera = task -> camera;
+	
+	switch (task -> acquisitionType)
+	{
+	case ACQ_CONT:
+		camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
+		break;
+	case ACQ_OFFSET:
+		camera -> GenerateFlatFieldFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
+		break;
+	case ACQ_GAIN:
+		camera -> GenerateDarkImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
+		break;
+	}
 
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
@@ -184,14 +183,22 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
 	
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
+	switch (task -> acquisitionType)
+	{
+	case ACQ_CONT:
+	case ACQ_OFFSET:
+		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
+		break;
+	case ACQ_GAIN:
+		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(DWORD));
+		break;
+	}
 
 	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * 2);
 	for (u_int row = 0; row < camera -> m_nHeight; row++)
 	{
-		WORD *sourceRowStart = camera -> m_acquisitionBuffer + (row * camera -> m_nWidth * 2);
+		WORD *sourceRowStart = task -> acquisitionBuffer + (row * camera -> m_nWidth * 2);
 		memcpy(rowData, sourceRowStart, sizeof(rowData));
 
 		TIFFWriteScanline(tif, rowData, row);
@@ -199,10 +206,9 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 	_TIFFfree(rowData);
 
-
     TIFFClose(tif);
 
-	camera -> m_window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)dwActFrame);
+	task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)dwActFrame);
 
-	Acquisition_SetReady(hAcqDesc, 1);
+	// Acquisition_SetReady(hAcqDesc, 1);
 }
