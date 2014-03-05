@@ -106,8 +106,8 @@ BEGIN_MESSAGE_MAP(CRunProgressDlg, CDialogEx)
 	ON_MESSAGE(WM_USER_RUN_TURN_COMPLETED, &CRunProgressDlg::OnTurnCompleted)
 	ON_MESSAGE(WM_USER_RUN_TABLE_ANGLE_CHANGED, &CRunProgressDlg::OnTableAngleChanged)
 	ON_MESSAGE(WM_USER_RUN_STOP_COMPLETED, &CRunProgressDlg::OnStopCompleted)
-	ON_MESSAGE(WM_USER_RUN_CAPTURING_FRAME, &CRunProgressDlg::OnFrameCaptureStarted)
-	ON_MESSAGE(WM_USER_RUN_FRAME_CAPTURED, &CRunProgressDlg::OnFrameCaptured)
+	ON_MESSAGE(WM_USER_CAPTURING_FRAME, &CRunProgressDlg::OnFrameCaptureStarted)
+	ON_MESSAGE(WM_USER_FRAME_CAPTURED, &CRunProgressDlg::OnFrameCaptured)
 	ON_MESSAGE(WM_USER_THREAD_FINISHED, &CRunProgressDlg::OnThreadFinished)
 	ON_WM_CLOSE()
 	ON_BN_CLICKED(IDCANCEL, &CRunProgressDlg::OnBnClickedCancel)
@@ -134,9 +134,7 @@ void CRunProgressDlg::OnBnClickedCancel()
 
 afx_msg LRESULT CRunProgressDlg::OnFrameCaptured(WPARAM wParam, LPARAM lParam)
 {
-	int* currentPosition = (int*)lParam;
-
-	this -> m_currentPosition = *currentPosition;
+	this -> m_currentPosition = (int)lParam;
 	this -> m_framesCaptured++;
 	this -> UpdateData(FALSE);
 
@@ -227,7 +225,6 @@ UINT captureRunFrames( LPVOID pParam )
 		Sleep(200);
 	}
 	
-	char filenameBuffer[FILENAME_BUFFER_SIZE];
 	char tableCommandBuffer[TABLE_COMMAND_BUFFER_SIZE];
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
@@ -247,17 +244,7 @@ UINT captureRunFrames( LPVOID pParam )
 
 			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			for (task -> m_frameCount = 0; task -> m_frameCount < task -> m_framesPerStop && task -> m_running; task -> m_frameCount++)
-			{
-				task -> m_currentPosition++;
-
-				sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, task -> m_currentPosition);
-				dialog -> PostMessage(WM_USER_RUN_CAPTURING_FRAME, 0, (LPARAM)(filenameBuffer + strlen(task -> m_directoryPath) + 1));
-
-				// TODO: Check return status from the camera
-				task -> m_camera -> CaptureFrame(filenameBuffer);
-				dialog -> PostMessage(WM_USER_RUN_FRAME_CAPTURED, 0, (LPARAM)&task -> m_currentPosition);
-			}
+			task -> m_camera -> CaptureFrames(dialog, task -> m_frameCount);
 			
 			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 		}

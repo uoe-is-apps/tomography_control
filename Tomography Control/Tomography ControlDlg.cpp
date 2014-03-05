@@ -357,11 +357,11 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 
 	if (strcmp(this -> m_cameraName, "Dummy") == 0)
 	{
-		camera = new DummyCamera(this -> m_exposureTimeSeconds);
+		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
 	}
 	else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
 	{
-		camera = new ShadOCam("C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
+		camera = new ShadOCam(this -> m_directoryPath.GetBuffer(), "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
 	}
 	else if (strcmp(this -> m_cameraName, "Perkin-Elmer XRD") == 0)
 	{
@@ -369,7 +369,7 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 
 		ipAddress[0] = NULL; // FIXME: Take from UI
 
-		camera = new PerkinElmerXrd(this -> m_exposureTimeSeconds, ipAddress);
+		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds, ipAddress);
 	}
 	else
 	{

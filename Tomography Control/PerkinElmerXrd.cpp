@@ -1,17 +1,16 @@
 #include "stdafx.h"
+#include "Tomography Control.h"
 #include "Camera.h"
 
 #include "tiffio.h"
 #include "tiff.h"
 
-PerkinElmerXrd::PerkinElmerXrd(float exposureTimeSeconds, GBIF_STRING_DATATYPE *ipAddress)
+PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_STRING_DATATYPE *ipAddress)
 {
+	this -> m_directory = directory;
 	this -> m_acquisitionBuffer = NULL;
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
 	this -> m_offsetBuffer = NULL;
-
-	this -> m_captureData.m_endAcquisitionEvent.ResetEvent();
-	this -> m_captureData.m_endFrameEvent.ResetEvent();
 
 	CHwHeaderInfo headInfo;
 
@@ -24,9 +23,12 @@ PerkinElmerXrd::PerkinElmerXrd(float exposureTimeSeconds, GBIF_STRING_DATATYPE *
 	{
 		// TODO: Check detector initialised successfully 
 	}
+	
+	this -> m_endAcquisitionEvent.ResetEvent();
 
-	// Warning - this will be break on a 64 bit system
-	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&this -> m_captureData);
+	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
+	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)this);
+
 
 	// Do we need to call Acquisition_Init as well?
 
@@ -43,8 +45,8 @@ PerkinElmerXrd::PerkinElmerXrd(float exposureTimeSeconds, GBIF_STRING_DATATYPE *
 	Acquisition_SetCallbacksAndMessages(&this -> m_hAcqDesc,
 		NULL,
 		0, 0,
-		endFrameCallback,
-		endAcquisitionCallback);
+		OnEndFramePEX,
+		OnEndAcquisitionPEX);
 	
 	// Note that the buffer requires twice the width * height; this is following the
 	// documentation
@@ -73,22 +75,21 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	}
 }
 
-void PerkinElmerXrd::CaptureFrame(char* output_file)
+void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
 {
+	this -> m_window = window;
+
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
-		1, 0, // Frames, skip frames
+		frames, 0, // Frames, skip frames
 		HIS_SEQ_ONE_BUFFER,
 		NULL, NULL, NULL // Offset, gain, pixel correction
 	);
 
 	// TODO: Handle timeout
-	::WaitForSingleObject(this -> m_captureData.m_endAcquisitionEvent.m_hObject, 30000);
-	WriteTiff(output_file, this -> m_acquisitionBuffer);
-
-	Acquisition_SetReady(&this -> m_hAcqDesc, 1);
+	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 300000);
 }
 
-void PerkinElmerXrd::CaptureDarkImage(char* output_file)
+void PerkinElmerXrd::CaptureDarkImages(CWnd* window, u_int frames)
 {
 	unsigned short *offsetData;
 
@@ -101,15 +102,16 @@ void PerkinElmerXrd::CaptureDarkImage(char* output_file)
 	Acquisition_Acquire_OffsetImage(this -> m_hAcqDesc,
 		offsetData,
 		this -> m_nHeight, this -> m_nWidth,
-		1 // Frames
+		frames
 	);
 	
-	WriteTiff(output_file, offsetData);
+	// TODO: Handle timeout
+	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
 
 	free(offsetData);
 }
 
-void PerkinElmerXrd::CaptureFlatField(char* output_file)
+void PerkinElmerXrd::CaptureFlatFields(CWnd* window, u_int frames)
 {
 	WORD *offsetData;
 	DWORD *gainData;
@@ -124,83 +126,83 @@ void PerkinElmerXrd::CaptureFlatField(char* output_file)
 	{
 		// TODO: Handle problems allocating buffer
 	}
-
+	
+	// TODO: Handle timeout
+	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
 	Acquisition_Acquire_GainImage(this -> m_hAcqDesc,
 		offsetData, gainData,
 		this -> m_nHeight, this -> m_nWidth,
-		1 // Frames
+		frames
 	);
 	
-	WriteTiff(output_file, gainData);
+	// TODO: Handle timeout
+	::WaitForSingleObject(this -> m_endAcquisitionEvent.m_hObject, 30000);
 	
 	free(offsetData);
 	free(gainData);
 }
 
-void PerkinElmerXrd::WriteTiff(char* output_file, WORD *buffer)
+int PerkinElmerXrd::GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\IMAGE%4d.tiff", this -> m_directory, frame);
+}
+
+int PerkinElmerXrd::GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\DC%4d.tiff", this -> m_directory, frame);
+}
+
+int PerkinElmerXrd::GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\FF%4d.tiff", this -> m_directory, frame);
+}
+
+void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 {
-	TIFF* tif = TIFFOpen(output_file, "w");
-	TIFFSetField (tif, TIFFTAG_IMAGEWIDTH, this -> m_nWidth);
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> m_nHeight);
+	DWORD dwAcqData;
+	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
+
+	PerkinElmerXrd *camera = (PerkinElmerXrd *)dwAcqData;
+
+	camera -> m_endAcquisitionEvent.PulseEvent();
+}
+
+void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
+{
+	char filename[FILENAME_BUFFER_SIZE];
+	DWORD dwAcqData, dwActFrame, dwSecFrame;
+
+	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
+	Acquisition_GetActFrame(hAcqDesc, &dwActFrame, &dwSecFrame);
+
+	PerkinElmerXrd *camera = (PerkinElmerXrd *)dwAcqData;
+	
+	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
+
+	TIFF* tif = TIFFOpen(filename, "w");
+	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+	
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
-	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
-	tdata_t rowData = _TIFFmalloc(this -> m_nWidth * 2);
-	for (u_int row = 0; row < this -> m_nHeight; row++)
+	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * 2);
+	for (u_int row = 0; row < camera -> m_nHeight; row++)
 	{
-		WORD *sourceRowStart = buffer + (row * this -> m_nWidth * 2);
+		WORD *sourceRowStart = camera -> m_acquisitionBuffer + (row * camera -> m_nWidth * 2);
 		memcpy(rowData, sourceRowStart, sizeof(rowData));
 
 		TIFFWriteScanline(tif, rowData, row);
 	}
-    TIFFClose(tif);
+
 	_TIFFfree(rowData);
-}
 
-void PerkinElmerXrd::WriteTiff(char* output_file, DWORD *buffer)
-{
-	TIFF* tif = TIFFOpen(output_file, "w");
-	TIFFSetField (tif, TIFFTAG_IMAGEWIDTH, this -> m_nWidth);
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> m_nHeight);
-	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(DWORD));
-	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
-	tdata_t rowData = _TIFFmalloc(this -> m_nWidth * 2);
-	for (u_int row = 0; row < this -> m_nHeight; row++)
-	{
-		DWORD *sourceRowStart = buffer + (row * this -> m_nWidth * 2);
-		memcpy(rowData, sourceRowStart, sizeof(rowData));
-
-		TIFFWriteScanline(tif, rowData, row);
-	}
     TIFFClose(tif);
-	_TIFFfree(rowData);
-}
 
-void CALLBACK endAcquisitionCallback(HACQDESC hAcqDesc)
-{
-	DWORD dwAcqData;
-	PerkinElmerAcquisitionData *captureData;
+	camera -> m_window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)dwActFrame);
 
-	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
-	captureData = (PerkinElmerAcquisitionData *)dwAcqData;
-	captureData -> m_endAcquisitionEvent.PulseEvent();
-}
-
-void CALLBACK endFrameCallback(HACQDESC hAcqDesc)
-{
-	DWORD dwAcqData;
-	PerkinElmerAcquisitionData *captureData;
-
-	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
-	captureData = (PerkinElmerAcquisitionData *)dwAcqData;
-	captureData -> m_endFrameEvent.PulseEvent();
+	Acquisition_SetReady(hAcqDesc, 1);
 }

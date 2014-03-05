@@ -50,7 +50,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 }
 
 BEGIN_MESSAGE_MAP(CTakingPhotosDlg, CDialogEx)
-	ON_MESSAGE(WM_USER_MANUAL_FRAME_CAPTURED, &CTakingPhotosDlg::OnFrameCaptured)
+	ON_MESSAGE(WM_USER_FRAME_CAPTURED, &CTakingPhotosDlg::OnFrameCaptured)
 	ON_MESSAGE(WM_USER_THREAD_FINISHED, &CTakingPhotosDlg::OnThreadFinished)
 	ON_WM_CLOSE()
 	ON_BN_CLICKED(IDCANCEL, &CTakingPhotosDlg::OnBnClickedCancel)
@@ -116,30 +116,20 @@ CameraTask::CameraTask(TaskType taskType)
 // Worker function for taking a set of manual images from an X-ray camera
 UINT takeManualImages( LPVOID pParam )
 {
-	char filenameBuffer[FILENAME_BUFFER_SIZE];
 	CameraTask* task = (CameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
 	
-	for (short i = 0; i < task -> m_totalImages && task -> m_running; i++) 
+	switch (task -> m_taskType)
 	{
-		// TODO Handle dark images
-		switch (task -> m_taskType)
-		{
-		case DARK:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\DC%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureDarkImage(filenameBuffer);
-			break;
-		case FLAT_FIELD:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\FF%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureFlatField(filenameBuffer);
-			break;
-		default:
-			sprintf_s(filenameBuffer, FILENAME_BUFFER_SIZE, "%s\\IMAGE%04d.raw", task -> m_directoryPath, (i + 1));
-			task -> m_camera -> CaptureFrame(filenameBuffer);
-			break;
-		}
-		
-		dialog -> PostMessage(WM_USER_MANUAL_FRAME_CAPTURED, 0, (LPARAM)i);
+	case DARK:
+		task -> m_camera -> CaptureDarkImages(dialog, task -> m_totalImages);
+		break;
+	case FLAT_FIELD:
+		task -> m_camera -> CaptureFlatFields(dialog, task -> m_totalImages);
+		break;
+	default:
+		task -> m_camera -> CaptureFrames(dialog, task -> m_totalImages);
+		break;
 	}
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);

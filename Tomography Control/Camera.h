@@ -8,74 +8,85 @@
 class ICamera
 {
 public:
-	virtual void CaptureFrame(char* filename) = 0;
-	virtual void CaptureDarkImage(char* filename) = 0;
-	virtual void CaptureFlatField(char* filename) = 0;
+	virtual void CaptureFrames(CWnd* window, u_int frames) = 0;
+	virtual void CaptureDarkImages(CWnd* window, u_int frames) = 0;
+	virtual void CaptureFlatFields(CWnd* window, u_int frames) = 0;
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) = 0;
+	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) = 0;
+	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) = 0;
 };
 
 class DummyCamera : public ICamera
 {
 public:
-	DummyCamera(float exposureTime);
+	DummyCamera(char* directory, float exposureTime);
 	~DummyCamera();
-
-	virtual void CaptureFrame(char* filename);
-	virtual void CaptureDarkImage(char* filename);
-	virtual void CaptureFlatField(char* filename);
+	
+	virtual void CaptureFrames(CWnd* window, u_int frames);
+	virtual void CaptureDarkImages(CWnd* window, u_int frames);
+	virtual void CaptureFlatFields(CWnd* window, u_int frames);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
 
 protected:
+	char *m_directory; // Directory to write images to
 	float m_exposureTimeSeconds;
-};
-
-
-struct PerkinElmerAcquisitionData {
-	CEvent		m_endAcquisitionEvent;
-	CEvent		m_endFrameEvent;
 };
 
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd(float exposureTime, GBIF_STRING_DATATYPE *ipAddress);
+	PerkinElmerXrd(char* directory, float exposureTime, GBIF_STRING_DATATYPE *ipAddress);
 	~PerkinElmerXrd();
-
+	
+	CWnd *m_window;
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;			// height of image
-
-	virtual void CaptureFrame(char* filename);
-	virtual void CaptureDarkImage(char* filename);
-	virtual void CaptureFlatField(char* filename);
+	CEvent m_endAcquisitionEvent;
+	unsigned short *m_acquisitionBuffer;
+	
+	virtual void CaptureFrames(CWnd* window, u_int frames);
+	virtual void CaptureDarkImages(CWnd* window, u_int frames);
+	virtual void CaptureFlatFields(CWnd* window, u_int frames);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
 
 protected:
-	void WriteTiff(char* filename, WORD *buffer);
-	void WriteTiff(char* filename, DWORD *buffer);
+	void WriteTiff(char* directory, WORD *buffer);
+	void WriteTiff(char* directory, DWORD *buffer);
 
+	char		*m_directory;
 	float		m_exposureTimeSeconds;
 	HACQDESC	m_hAcqDesc;
-	PerkinElmerAcquisitionData m_captureData;
 	int			m_nChannelNr;
-	unsigned short *m_acquisitionBuffer;
 	DWORD		*m_offsetBuffer;
 	BOOL		m_detectorInitialised;
 };
 
-void CALLBACK endAcquisitionCallback(HACQDESC hAcqDesc);
-void CALLBACK endFrameCallback(HACQDESC hAcqDesc);
+void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc);
+void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc);
 
 class ShadOCam : public ICamera
 {
 public:
-	ShadOCam(char* camFile, float exposureTime);
+	ShadOCam(char* directory, char* camFile, float exposureTime);
 	~ShadOCam();
 
 	int m_nWidth;			// width of image
 	int m_nHeight;			// height of image
 
-	virtual void CaptureFrame(char* filename);
-	virtual void CaptureDarkImage(char* filename);
-	virtual void CaptureFlatField(char* filename);
+	virtual void CaptureFrames(CWnd* window, u_int frames);
+	virtual void CaptureDarkImages(CWnd* window, u_int frames);
+	virtual void CaptureFlatFields(CWnd* window, u_int frames);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
 
 protected:
+	char		*m_directory; // Directory to write images to
+
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure
 

@@ -1,8 +1,11 @@
 #include "stdafx.h"
+#include "Tomography Control.h"
 #include "Camera.h"
 
-	ShadOCam::ShadOCam(char* camFile, float exposureTimeSeconds)
+	ShadOCam::ShadOCam(char* directory, char* camFile, float exposureTimeSeconds)
 {
+	this -> m_directory = directory;
+
 	this -> m_bPxdLoaded = FALSE;
 	this -> m_bCamTypeLoaded = FALSE;
 	this -> m_bFramelibLoaded = FALSE;
@@ -90,28 +93,89 @@ ShadOCam::~ShadOCam()
 	}
 }
 
-void ShadOCam::CaptureFrame(char* output_file)
+void ShadOCam::CaptureFrames(CWnd* window, u_int frames)
 {
 	long qh; // handle for grab; only needed to confirm image was taken
 			 // successfully, does not reserve memory for the grab.
+	char filename[FILENAME_BUFFER_SIZE];
 
-	// grab
-    qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
-    if (!qh)
-    {
-      	throw "Unable to acquire image.";
-	}
+	for (u_int frame = 0; frame < frames; frame++)
+	{
+		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
+		
+		// grab
+		qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
+		if (!qh)
+		{
+      		throw "Unable to acquire image.";
+		}
       
-    //save file
-	this -> m_framelib.WriteBin(this -> m_currentFrame, output_file, 1);
+		//save file
+		this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
+
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
+	}
 }
 
-void ShadOCam::CaptureDarkImage(char* output_file)
+void ShadOCam::CaptureDarkImages(CWnd* window, u_int frames)
 {
-	ShadOCam::CaptureFrame(output_file);
+	long qh; // handle for grab; only needed to confirm image was taken
+			 // successfully, does not reserve memory for the grab.
+	char filename[FILENAME_BUFFER_SIZE];
+
+	for (u_int frame = 0; frame < frames; frame++)
+	{
+		GenerateDarkImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
+		
+		// grab
+		qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
+		if (!qh)
+		{
+      		throw "Unable to acquire image.";
+		}
+      
+		//save file
+		this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
+
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
+	}
 }
 
-void ShadOCam::CaptureFlatField(char* output_file)
+void ShadOCam::CaptureFlatFields(CWnd* window, u_int frames)
 {
-	ShadOCam::CaptureFrame(output_file); 
+	long qh; // handle for grab; only needed to confirm image was taken
+			 // successfully, does not reserve memory for the grab.
+	char filename[FILENAME_BUFFER_SIZE];
+
+	for (u_int frame = 0; frame < frames; frame++)
+	{
+		GenerateFlatFieldFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
+		
+		// grab
+		qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
+		if (!qh)
+		{
+      		throw "Unable to acquire image.";
+		}
+      
+		//save file
+		this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
+
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
+	}
+}
+
+int ShadOCam::GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\IMAGE%4d.raw", this -> m_directory, frame);
+}
+
+int ShadOCam::GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\DC%4d.raw", this -> m_directory, frame);
+}
+
+int ShadOCam::GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) {
+	return sprintf_s(buffer, maxLength, "%s\\FF%4d.raw", this -> m_directory, frame);
 }
