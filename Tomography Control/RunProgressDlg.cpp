@@ -203,15 +203,16 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 
 void CRunProgressDlg::WriteSettings(char* dest)
 {
-	FILE* file = fopen(dest, "w");
+	FILE* fileHandle;
+	errno_t fileErrno = fopen_s(&fileHandle, dest, "w");
 
-	if (NULL == file)
+	if (0 != fileErrno)
 	{
 		//TODO: Handle problems opening the file
 		return;
 	}
 
-	fclose(file);
+	fclose(fileHandle);
 }
 
 // Worker functions

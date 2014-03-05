@@ -57,7 +57,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libtiff.lib;ilib_32.lib;Scilib20.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>xis\XISL.lib;libtiff.lib;ilib_32.lib;Scilib20.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>libtiff</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>

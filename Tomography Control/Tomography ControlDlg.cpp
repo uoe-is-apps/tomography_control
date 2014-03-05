@@ -267,10 +267,12 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		break;
 	}
 
-	FILE* initialisationFileHandle = fopen(m_tableInitialisationFile, "r");
-	if (NULL == initialisationFileHandle)
+	FILE* initialisationFileHandle;
+	errno_t fileErrno = fopen_s(&initialisationFileHandle, m_tableInitialisationFile, "r");
+
+	if (0 != fileErrno)
 	{
-		MessageBox(strerror(errno), "Tomography Control", MB_ICONERROR);
+		MessageBox(strerror(fileErrno), "Tomography Control", MB_ICONERROR);
 		return;
 	}
 	
@@ -363,7 +365,11 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 	}
 	else if (strcmp(this -> m_cameraName, "Perkin-Elmer XRD") == 0)
 	{
-		camera = new PerkinElmerXrd(this -> m_exposureTimeSeconds);
+		unsigned char ipAddress[1];
+
+		ipAddress[0] = NULL; // FIXME: Take from UI
+
+		camera = new PerkinElmerXrd(this -> m_exposureTimeSeconds, ipAddress);
 	}
 	else
 	{
