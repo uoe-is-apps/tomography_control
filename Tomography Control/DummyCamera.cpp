@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Tomography Control.h"
 #include "Camera.h"
+#include "Exceptions.h"
 
 	DummyCamera::DummyCamera(char *directory, float exposureTimeSeconds)
 {
@@ -14,13 +15,13 @@ DummyCamera::~DummyCamera()
 {
 }
 
-void DummyCamera::CaptureFrames(CWnd* window, u_int frames)
+void DummyCamera::CaptureFrames(u_int frames, FrameType frameType, CWnd* window)
 {
 	char filename[FILENAME_BUFFER_SIZE];
 
 	for (u_int frame = 0; frame < frames; frame++)
 	{
-		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
+		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frameType, frame);
 		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
 
 		// TODO: Write something to disk
@@ -30,46 +31,16 @@ void DummyCamera::CaptureFrames(CWnd* window, u_int frames)
 	}
 }
 
-void DummyCamera::CaptureDarkImages(CWnd* window, u_int frames)
-{
-	char filename[FILENAME_BUFFER_SIZE];
-
-	for (u_int frame = 0; frame < frames; frame++)
+int DummyCamera::GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) {
+	switch (frameType)
 	{
-		GenerateDarkImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
-
-		// TODO: Write something to disk
-		Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
-
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
+	case SINGLE:
+		return sprintf_s(buffer, maxLength, "%s\\IMAGE%04d.tiff", this -> m_directory, frame);
+	case DARK:
+		return sprintf_s(buffer, maxLength, "%s\\DC%04d.tiff", this -> m_directory, frame);
+	case FLAT_FIELD:
+		return sprintf_s(buffer, maxLength, "%s\\FF%04d.tiff", this -> m_directory, frame);
+	default:
+		throw new bad_frame_type_error("Unknown frame type.");
 	}
-}
-
-void DummyCamera::CaptureFlatFields(CWnd* window, u_int frames)
-{
-	char filename[FILENAME_BUFFER_SIZE];
-
-	for (u_int frame = 0; frame < frames; frame++)
-	{
-		GenerateFlatFieldFilename(filename, FILENAME_BUFFER_SIZE - 1, frame);
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
-
-		// TODO: Write something to disk
-		Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
-
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
-	}
-}
-
-int DummyCamera::GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\IMAGE%4d.tiff", this -> m_directory, frame);
-}
-
-int DummyCamera::GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\DC%4d.tiff", this -> m_directory, frame);
-}
-
-int DummyCamera::GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\FF%4d.tiff", this -> m_directory, frame);
 }

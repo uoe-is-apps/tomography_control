@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Tomography Control.h"
+#include "Camera.h"
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
@@ -244,7 +245,7 @@ UINT captureRunFrames( LPVOID pParam )
 
 			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			task -> m_camera -> CaptureFrames(dialog, task -> m_frameCount);
+			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, SINGLE, dialog);
 			
 			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 		}

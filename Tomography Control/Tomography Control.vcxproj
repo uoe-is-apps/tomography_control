@@ -106,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Exceptions.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RunProgressDlg.h" />
     <ClInclude Include="stdafx.h" />
@@ -117,6 +118,7 @@
   <ItemGroup>
     <ClCompile Include="DummyCamera.cpp" />
     <ClCompile Include="DummyTable.cpp" />
+    <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="PerkinElmerXrd.cpp" />
     <ClCompile Include="RunProgressDlg.cpp" />
     <ClCompile Include="ShadOCam.cpp" />

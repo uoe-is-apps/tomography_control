@@ -5,6 +5,8 @@
 #include "tiffio.h"
 #include "tiff.h"
 
+#include "Exceptions.h"
+
 PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_STRING_DATATYPE *ipAddress)
 {
 	this -> m_directory = directory;
@@ -51,7 +53,7 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	}
 }
 
-void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
+void PerkinElmerXrd::CaptureFrames(u_int frames, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
 	
@@ -59,7 +61,7 @@ void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
 	task.directory = this -> m_directory;
 	task.endAcquisitionEvent.ResetEvent();
 	task.window = window;
-	task.acquisitionType = ACQ_CONT;
+	task.frameType = frameType;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
@@ -81,61 +83,25 @@ void PerkinElmerXrd::CaptureFrames(CWnd* window, u_int frames)
 	);
 
 	// TODO: Handle timeout
-	long expectedTimeMillis = this -> m_exposureTimeSeconds * frames * 1000;
+	long millisPerFrame = (long)(this -> m_exposureTimeSeconds * 1000);
+	long expectedTimeMillis = millisPerFrame * frames;
 	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
 
 	free(task.acquisitionBuffer);
 }
 
-void PerkinElmerXrd::CaptureDarkImages(CWnd* window, u_int frames)
-{
-	/* unsigned short *offsetData;
-
-	offsetData = (unsigned short *)malloc(sizeof(unsigned short) * this -> m_nHeight * this -> m_nWidth * 2);
-	if (NULL == offsetData)
+int PerkinElmerXrd::GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) {
+	switch (frameType)
 	{
-		// TODO: Handle problems allocating buffer
+	case SINGLE:
+		return sprintf_s(buffer, maxLength, "%s\\IMAGE%04d.tiff", this -> m_directory, frame);
+	case DARK:
+		return sprintf_s(buffer, maxLength, "%s\\DC%04d.tiff", this -> m_directory, frame);
+	case FLAT_FIELD:
+		return sprintf_s(buffer, maxLength, "%s\\FF%04d.tiff", this -> m_directory, frame);
+	default:
+		throw new bad_frame_type_error("Unknown frame type.");
 	}
-
-	Acquisition_Acquire_OffsetImage(this -> m_hAcqDesc,
-		offsetData,
-		this -> m_nHeight, this -> m_nWidth,
-		frames
-	);
-	
-	// TODO: Handle timeout
-	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
-
-	free(offsetData); */
-}
-
-void PerkinElmerXrd::CaptureFlatFields(CWnd* window, u_int frames)
-{
-	/* // TODO: Handle timeout
-	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
-	Acquisition_Acquire_GainImage(this -> m_hAcqDesc,
-		offsetData, gainData,
-		this -> m_nHeight, this -> m_nWidth,
-		frames
-	);
-	
-	// TODO: Handle timeout
-	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
-	
-	free(offsetData);
-	free(gainData); */
-}
-
-int PerkinElmerXrd::GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\IMAGE%0.4d.tiff", this -> m_directory, frame);
-}
-
-int PerkinElmerXrd::GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\DC%0.4d.tiff", this -> m_directory, frame);
-}
-
-int PerkinElmerXrd::GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) {
-	return sprintf_s(buffer, maxLength, "%s\\FF%0.4d.tiff", this -> m_directory, frame);
 }
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
@@ -162,38 +128,17 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	switch (task -> acquisitionType)
-	{
-	case ACQ_CONT:
-		camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
-		break;
-	case ACQ_OFFSET:
-		camera -> GenerateFlatFieldFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
-		break;
-	case ACQ_GAIN:
-		camera -> GenerateDarkImageFilename(filename, FILENAME_BUFFER_SIZE - 1, dwActFrame);
-		break;
-	}
+	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, task -> frameType, dwActFrame);
 
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-	
-	switch (task -> acquisitionType)
-	{
-	case ACQ_CONT:
-	case ACQ_OFFSET:
-		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
-		break;
-	case ACQ_GAIN:
-		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(DWORD));
-		break;
-	}
 
 	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * 2);
 	for (u_int row = 0; row < camera -> m_nHeight; row++)

@@ -98,7 +98,7 @@ afx_msg LRESULT CTakingPhotosDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
 
 // Helper class for tracking details of the task
 
-CameraTask::CameraTask(TaskType taskType)
+CameraTask::CameraTask(FrameType taskType)
 {
 	this -> m_taskType = taskType;
 
@@ -118,19 +118,8 @@ UINT takeManualImages( LPVOID pParam )
 {
 	CameraTask* task = (CameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
-	
-	switch (task -> m_taskType)
-	{
-	case DARK:
-		task -> m_camera -> CaptureDarkImages(dialog, task -> m_totalImages);
-		break;
-	case FLAT_FIELD:
-		task -> m_camera -> CaptureFlatFields(dialog, task -> m_totalImages);
-		break;
-	default:
-		task -> m_camera -> CaptureFrames(dialog, task -> m_totalImages);
-		break;
-	}
+
+	task -> m_camera -> CaptureFrames(task -> m_totalImages, task -> m_taskType, dialog);
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 

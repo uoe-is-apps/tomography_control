@@ -5,20 +5,13 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
-// Values for acquisition types, as used by Perkin-Elmer XRD camera
-#define ACQ_CONT			1
-#define ACQ_OFFSET			2
-#define ACQ_GAIN			4
+enum FrameType { SINGLE, DARK, FLAT_FIELD };
 
 class ICamera
 {
 public:
-	virtual void CaptureFrames(CWnd* window, u_int frames) = 0;
-	virtual void CaptureDarkImages(CWnd* window, u_int frames) = 0;
-	virtual void CaptureFlatFields(CWnd* window, u_int frames) = 0;
-	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame) = 0;
-	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame) = 0;
-	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame) = 0;
+	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window) = 0;
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) = 0;
 };
 
 class DummyCamera : public ICamera
@@ -27,12 +20,8 @@ public:
 	DummyCamera(char* directory, float exposureTime);
 	~DummyCamera();
 	
-	virtual void CaptureFrames(CWnd* window, u_int frames);
-	virtual void CaptureDarkImages(CWnd* window, u_int frames);
-	virtual void CaptureFlatFields(CWnd* window, u_int frames);
-	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:
 	char *m_directory; // Directory to write images to
@@ -48,12 +37,8 @@ public:
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;		// height of image
 	
-	virtual void CaptureFrames(CWnd* window, u_int frames);
-	virtual void CaptureDarkImages(CWnd* window, u_int frames);
-	virtual void CaptureFlatFields(CWnd* window, u_int frames);
-	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
+	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:
 	void WriteTiff(char* directory, WORD *buffer);
@@ -73,7 +58,7 @@ struct PerkinElmerAcquisition {
 	CWnd *window;
 	CEvent endAcquisitionEvent;
 
-	u_int acquisitionType;
+	FrameType frameType;
 	unsigned short *acquisitionBuffer;
 	unsigned short *offsetBuffer;
 	DWORD *gainBuffer;
@@ -90,13 +75,9 @@ public:
 
 	int m_nWidth;			// width of image
 	int m_nHeight;			// height of image
-
-	virtual void CaptureFrames(CWnd* window, u_int frames);
-	virtual void CaptureDarkImages(CWnd* window, u_int frames);
-	virtual void CaptureFlatFields(CWnd* window, u_int frames);
-	virtual int GenerateImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateDarkImageFilename(char* buffer, size_t maxLength, u_int frame);
-	virtual int GenerateFlatFieldFilename(char* buffer, size_t maxLength, u_int frame);
+	
+	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:
 	char		*m_directory; // Directory to write images to

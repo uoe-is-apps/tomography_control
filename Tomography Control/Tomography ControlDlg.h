@@ -7,16 +7,14 @@
 #include "Camera.h"
 #include "Table.h"
 
-enum TaskType { SINGLE, DARK, FLAT_FIELD };
-
 /* Tracks details of a request sent to the camera */
 class CameraTask
 {
 public:
 
-	CameraTask(TaskType taskType);
+	CameraTask(FrameType taskType);
 
-	TaskType m_taskType;
+	FrameType m_taskType;
 	ICamera* m_camera;
 	CString m_directoryPath;
 	CWnd* m_dialog;
@@ -36,7 +34,7 @@ public:
 	virtual ~CTakingPhotosDlg();
 	virtual BOOL OnInitDialog();
 	
-	TaskType m_taskType;
+	FrameType m_taskType;
 	CString m_directoryPath;
 
 	CameraTask *m_task;
@@ -125,7 +123,7 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	void RunManualImageTask(TaskType taskType);
+	void RunManualImageTask(FrameType taskType);
 	ICamera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
 };

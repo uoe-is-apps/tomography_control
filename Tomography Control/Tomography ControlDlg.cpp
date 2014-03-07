@@ -456,7 +456,7 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 	this -> RunManualImageTask(FLAT_FIELD);
 }
 
-void CTomographyControlDlg::RunManualImageTask(TaskType taskType)
+void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 {
 	this -> UpdateData(TRUE);
 
