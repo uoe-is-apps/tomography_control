@@ -7,8 +7,16 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_STRING_DATATYPE *ipAddress)
+PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, CString macAddress)
 {
+	unsigned char *macAddressVal = (unsigned char *)alloca(macAddress.GetLength() * sizeof(unsigned char));
+
+	// Convert the signed characters in the CString to unsigned
+	for (int charIdx = 0; charIdx < macAddress.GetLength(); charIdx++)
+	{
+		macAddressVal[charIdx] = macAddress.GetAt(charIdx);
+	}
+
 	this -> m_directory = directory;
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
 
@@ -19,7 +27,7 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, GBIF_
 		0,
 		0, 0, // Rows and columns - these are retrieved from the device
 		TRUE, FALSE, // Self init and always open
-		HIS_GbIF_IP, ipAddress))
+		HIS_GbIF_MAC, macAddressVal))
 	{
 		// TODO: Check detector initialised successfully 
 	}

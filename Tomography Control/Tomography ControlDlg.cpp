@@ -96,9 +96,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
-	DDX_Radio(pDX, IDC_RADIO_DEFAULT_TABLE, m_tableType);
 	DDX_Text(pDX, IDC_EDIT_PEX_MAC_ADDRESS, m_perkinElmerXrdMacAddress);
-	DDX_Text(pDX, IDC_EDIT_COM_PORT, m_tableComPort);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -366,11 +364,7 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 		camera = new ShadOCam(this -> m_directoryPath.GetBuffer(), "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
 		break;
 	case 1:
-		unsigned char ipAddress[1];
-
-		ipAddress[0] = NULL; // FIXME: Take from UI
-
-		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds, ipAddress);
+		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds, this -> m_perkinElmerXrdMacAddress);
 		break;
 	case 2:
 		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);

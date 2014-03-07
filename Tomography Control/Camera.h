@@ -39,7 +39,7 @@ protected:
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd(char* directory, float exposureTime, GBIF_STRING_DATATYPE *ipAddress);
+	PerkinElmerXrd(char* directory, float exposureTime, CString macAddress);
 	~PerkinElmerXrd();
 	
 	u_int m_nWidth;			// width of image
