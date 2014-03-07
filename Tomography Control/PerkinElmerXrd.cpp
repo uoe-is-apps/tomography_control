@@ -23,17 +23,31 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, CStri
 	CHwHeaderInfo headInfo;
 
 	memset(&this -> m_hAcqDesc, 0, sizeof(HACQDESC));
-	if (!Acquisition_GbIF_Init(&this -> m_hAcqDesc, this -> m_nChannelNr,
+	if (Acquisition_GbIF_Init(&this -> m_hAcqDesc, this -> m_nChannelNr,
 		0,
 		0, 0, // Rows and columns - these are retrieved from the device
 		TRUE, FALSE, // Self init and always open
-		HIS_GbIF_MAC, macAddressVal))
+		HIS_GbIF_MAC, macAddressVal) != HIS_ALL_OK)
 	{
 		// sprintf(strBuffer,"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
 		throw new camera_init_error("Could not initialise camera.");
 	}
+
+	unsigned short usTiming=0;
+	unsigned short usNetworkLoadPercent=80;
+	long lPacketDelay = 256;
 	
-	// TODO: Pull camera mode from network speed tests
+	// Calibrate connection
+	if (Acquisition_GbIF_CheckNetworkSpeed(this -> m_hAcqDesc, &usTiming, &lPacketDelay, usNetworkLoadPercent) == HIS_ALL_OK)
+	{
+		printf("%s result: suggested timing: %d packetdelay %d @%d networkload\t\t\t\n"
+			,"Acquisition_GbIF_CheckNetworkSpeed",usTiming,lPacketDelay,usNetworkLoadPercent);
+		if (Acquisition_GbIF_SetPacketDelay(this -> m_hAcqDesc, lPacketDelay) != HIS_ALL_OK)
+		{
+			throw new camera_init_error("Could not set packet delay.");
+		}
+	}
+
 	Acquisition_SetCameraMode(this-> m_hAcqDesc, 1);
 	Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING);
 
@@ -41,7 +55,7 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, CStri
 
 	if (!Acquisition_GetHwHeaderInfo(&this -> m_hAcqDesc, &headInfo))
 	{
-		// TODO: Report error
+		throw new camera_init_error("Could not get hardware header info.");
 	}
 	
 	this -> m_nHeight = headInfo.dwNrRows;
