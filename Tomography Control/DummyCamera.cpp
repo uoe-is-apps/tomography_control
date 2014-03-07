@@ -15,19 +15,19 @@ DummyCamera::~DummyCamera()
 {
 }
 
-void DummyCamera::CaptureFrames(u_int frames, FrameType frameType, CWnd* window)
+void DummyCamera::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window)
 {
 	char filename[FILENAME_BUFFER_SIZE];
 
-	for (u_int frame = 0; frame < frames; frame++)
+	for (u_int frame = 0; frame < frames; frame++, (*frameCount)++)
 	{
-		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frameType, frame);
+		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frameType, *frameCount);
 		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
 
 		// TODO: Write something to disk
 		Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
 
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)frame);
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
 	}
 }
 

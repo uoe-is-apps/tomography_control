@@ -10,7 +10,15 @@ enum FrameType { SINGLE, DARK, FLAT_FIELD };
 class ICamera
 {
 public:
-	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window) = 0;
+	/* Captures a series of frames and write them to disk.
+	 *
+	 * frames: number of frames to capture
+	 * frameCount: counter for frames captured in a single run, used to derive filename. Will be updated
+	 * as frames as captured.
+	 * frameType: the type of frame, used to determine filename.
+	 * window: the dialog window to notify of progress.
+	 */
+	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window) = 0;
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) = 0;
 };
 
@@ -20,7 +28,7 @@ public:
 	DummyCamera(char* directory, float exposureTime);
 	~DummyCamera();
 	
-	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:
@@ -37,7 +45,7 @@ public:
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;		// height of image
 	
-	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:
@@ -57,7 +65,8 @@ struct PerkinElmerAcquisition {
 	char *directory;
 	CWnd *window;
 	CEvent endAcquisitionEvent;
-
+	
+	u_int *frameCount;
 	FrameType frameType;
 	unsigned short *acquisitionBuffer;
 	unsigned short *offsetBuffer;
@@ -76,7 +85,7 @@ public:
 	int m_nWidth;			// width of image
 	int m_nHeight;			// height of image
 	
-	virtual void CaptureFrames(u_int frames, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
 
 protected:

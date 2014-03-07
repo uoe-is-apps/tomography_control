@@ -230,7 +230,7 @@ UINT captureRunFrames( LPVOID pParam )
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
-	task -> m_currentPosition = 0;
+	task -> m_currentPosition = 1;
 	
 	for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
 	{
@@ -245,7 +245,7 @@ UINT captureRunFrames( LPVOID pParam )
 
 			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, SINGLE, dialog);
+			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, SINGLE, dialog);
 			
 			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 		}

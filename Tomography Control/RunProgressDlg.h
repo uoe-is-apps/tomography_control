@@ -15,15 +15,14 @@ struct RunTask
 	Table* m_table;
 
 	CString m_directoryPath;
-	int m_turnsTotal;
-	int m_stopsPerTurn;
-	int m_framesPerStop;
+	u_int m_turnsTotal;
+	u_int m_stopsPerTurn;
+	u_int m_framesPerStop;
 	float m_exposureTimeSeconds;
 
-	int m_turnCount;
-	int m_stopCount;
-	int m_frameCount;
-	int m_currentPosition;
+	u_int m_turnCount;
+	u_int m_stopCount;
+	u_int m_currentPosition;
 
 	BOOL m_running;
 };

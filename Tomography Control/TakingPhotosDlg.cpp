@@ -118,8 +118,9 @@ UINT takeManualImages( LPVOID pParam )
 {
 	CameraTask* task = (CameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
+	u_int frameCount = 1;
 
-	task -> m_camera -> CaptureFrames(task -> m_totalImages, task -> m_taskType, dialog);
+	task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_taskType, dialog);
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 

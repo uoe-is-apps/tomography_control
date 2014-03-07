@@ -53,7 +53,7 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	}
 }
 
-void PerkinElmerXrd::CaptureFrames(u_int frames, FrameType frameType, CWnd* window)
+void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
 	
@@ -62,6 +62,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, FrameType frameType, CWnd* wind
 	task.endAcquisitionEvent.ResetEvent();
 	task.window = window;
 	task.frameType = frameType;
+	task.frameCount = frameCount;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
@@ -128,7 +129,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, task -> frameType, dwActFrame);
+	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, task -> frameType, *task -> frameCount);
 
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
@@ -139,6 +140,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
 
 	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * 2);
 	for (u_int row = 0; row < camera -> m_nHeight; row++)
@@ -152,8 +154,9 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	_TIFFfree(rowData);
 
     TIFFClose(tif);
-
-	task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)dwActFrame);
+	
+	task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
+	(*task -> frameCount)++;
 
 	// Acquisition_SetReady(hAcqDesc, 1);
 }
