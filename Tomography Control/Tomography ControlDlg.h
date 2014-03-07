@@ -112,8 +112,10 @@ public:
 	int m_stopsPerRotation;
 	int m_turnsTotal;
 	int m_delayBetweenTurnsSeconds;
-	CString m_cameraName;
-	CComboBox m_cameraComboBox;
+	int m_cameraType;
+	int m_tableType;
+	CString m_perkinElmerXrdMacAddress;
+	int m_tableComPort;
 protected:
 	HICON m_hIcon;
 

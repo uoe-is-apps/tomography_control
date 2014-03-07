@@ -72,7 +72,10 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
 	, m_manualCameraControl(_T(""))
-	, m_cameraName(_T(""))
+	, m_cameraType(0)
+	, m_tableType(0)
+	, m_perkinElmerXrdMacAddress(_T(""))
+	, m_tableComPort(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -92,8 +95,10 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_DIRECTORY_PATH, m_directoryPath);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
-	DDX_CBString(pDX, IDC_COMBO_CAMERA, m_cameraName);
-	DDX_Control(pDX, IDC_COMBO_CAMERA, m_cameraComboBox);
+	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
+	DDX_Radio(pDX, IDC_RADIO_DEFAULT_TABLE, m_tableType);
+	DDX_Text(pDX, IDC_EDIT_PEX_MAC_ADDRESS, m_perkinElmerXrdMacAddress);
+	DDX_Text(pDX, IDC_EDIT_COM_PORT, m_tableComPort);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -355,24 +360,22 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 {
 	ICamera *camera;
 
-	if (strcmp(this -> m_cameraName, "Dummy") == 0)
+	switch (this -> m_cameraType)
 	{
-		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
-	}
-	else if (strcmp(this -> m_cameraName, "Shad-o-cam") == 0)
-	{
+	case 0:
 		camera = new ShadOCam(this -> m_directoryPath.GetBuffer(), "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
-	}
-	else if (strcmp(this -> m_cameraName, "Perkin-Elmer XRD") == 0)
-	{
+		break;
+	case 1:
 		unsigned char ipAddress[1];
 
 		ipAddress[0] = NULL; // FIXME: Take from UI
 
 		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds, ipAddress);
-	}
-	else
-	{
+		break;
+	case 2:
+		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
+		break;
+	default:
 		throw "Unrecognised camera type.";
 	}
 }
