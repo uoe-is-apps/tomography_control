@@ -30,6 +30,9 @@ public:
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	
+	u_int m_nWidth;
+	u_int m_nHeight;
 
 protected:
 	char *m_directory; // Directory to write images to

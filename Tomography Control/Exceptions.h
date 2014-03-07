@@ -4,6 +4,12 @@
 using namespace std;
 
 
+class bad_camera_type_error : public std::logic_error
+{
+public:
+    explicit bad_camera_type_error(const char *message);
+};
+
 class bad_frame_type_error : public std::logic_error
 {
 public:

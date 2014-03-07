@@ -6,6 +6,11 @@
 #include "Exceptions.h"
 
 
+bad_camera_type_error::bad_camera_type_error(const char *message) : logic_error(message)
+{
+
+}
+
 bad_frame_type_error::bad_frame_type_error(const char *message) : logic_error(message)
 {
 

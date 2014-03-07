@@ -350,9 +350,8 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 	return TRUE;
 }
 
-/* Get a camera object, depending on the currently selected
- * type.
- * Throws a string with an error message in case of a problem.
+/* Get a camera object, depending on the currently selected type.
+ * Throws bad_camera_type_error in case of a problem.
  */
 ICamera* CTomographyControlDlg::BuildSelectedCamera()
 {
@@ -370,7 +369,7 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
 		break;
 	default:
-		throw "Unrecognised camera type.";
+		throw new bad_camera_type_error("Unrecognised camera type.");
 	}
 }
 
@@ -464,9 +463,16 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 	try {
 		takingPhotosDlg.m_camera = BuildSelectedCamera();
 	}
-	catch(char* message)
+	catch(bad_camera_type_error *error)
 	{
-		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
+		return;
+	}
+	catch(camera_init_error *error)
+	{
+		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
 		return;
 	}
 	
