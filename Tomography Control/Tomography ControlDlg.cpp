@@ -11,8 +11,8 @@
 
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "Exceptions.h"
 #include "Camera.h"
-#include "Tomography Control.h"
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
@@ -411,9 +411,10 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	try {
 		runProgressDlg.m_camera = BuildSelectedCamera();
 	}
-	catch(char* message)
+	catch(camera_init_error *error)
 	{
-		MessageBox(message, "Tomography Control", MB_ICONERROR);
+		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
 		return;
 	}
 	

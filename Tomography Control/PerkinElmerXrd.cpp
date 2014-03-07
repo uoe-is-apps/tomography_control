@@ -29,7 +29,8 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, CStri
 		TRUE, FALSE, // Self init and always open
 		HIS_GbIF_MAC, macAddressVal))
 	{
-		// TODO: Check detector initialised successfully 
+		// sprintf(strBuffer,"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
+		throw new camera_init_error("Could not initialise camera.");
 	}
 	
 	// TODO: Pull camera mode from network speed tests

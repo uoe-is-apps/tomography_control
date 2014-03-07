@@ -19,24 +19,24 @@
 
 	// Load the image capture libraries
 	if ( !imagenation_OpenLibrary("pxd_32.dll", &this -> m_pxd, sizeof(PXD)) )  {
-		throw "Frame grabber library not loaded.";
+		throw new camera_init_error("Frame grabber library not loaded.");
 	}
 	this -> m_bPxdLoaded = TRUE;
 
 	if ( !imagenation_OpenLibrary("frame_32.dll", &this -> m_framelib, sizeof(FRAMELIB)) )  {
-		throw "Frame library not loaded.";
+		throw new camera_init_error("Frame library not loaded.");
 	}
 	this -> m_bFramelibLoaded = TRUE;
 
 	// request access to frame grabber
 	if ( !(this -> m_hFrameGrabber = this -> m_pxd.AllocateFG(-1)) )  {
-		throw "PXD frame grabber not found.";
+		throw new camera_init_error("PXD frame grabber not found.");
 	}
 	this -> m_bFrameGrabberAllocated = TRUE;
 
 	// initialize camera configuration
 	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(camFile)) )  {
-		throw "Camera configuration not loaded.";
+		throw new camera_init_error("Camera configuration not loaded.");
 	}
 	this -> m_bCamTypeLoaded = TRUE;
 	
@@ -45,7 +45,7 @@
 
 	// set up image destination buffers
 	if ( !(this -> m_currentFrame = this -> m_pxd.AllocateBuffer (frameGrabberWidth, frameGrabberHeight, PBITS_Y16)) )  {
-		throw "Unable to create image buffer.";
+		throw new camera_init_error("Unable to create image buffer.");
 	}
 
 	const long len = 65536; // length of LUT
