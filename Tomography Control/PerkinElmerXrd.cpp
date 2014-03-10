@@ -208,7 +208,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short));
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short) * 8);
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
