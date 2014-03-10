@@ -6,6 +6,7 @@
 #include "Scilib20.h"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
+enum CaptureType { DEFAULT, AVERAGE, SUM };
 
 class ICamera
 {
@@ -20,16 +21,18 @@ public:
 	 */
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window) = 0;
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) = 0;
+	virtual void SetupCamera(float exposureTime) = 0;
 };
 
 class DummyCamera : public ICamera
 {
 public:
-	DummyCamera(char* directory, float exposureTime);
+	DummyCamera(char* directory);
 	~DummyCamera();
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual void SetupCamera(float exposureTime);
 	
 	u_int m_nWidth;
 	u_int m_nHeight;
@@ -42,7 +45,7 @@ protected:
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd(char* directory, float exposureTime);
+	PerkinElmerXrd(char* directory);
 	~PerkinElmerXrd();
 	
 	u_int m_nWidth;			// width of image
@@ -50,6 +53,7 @@ public:
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual void SetupCamera(float exposureTime);
 
 protected:
 	void WriteTiff(char* directory, WORD *buffer);
@@ -83,7 +87,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc);
 class ShadOCam : public ICamera
 {
 public:
-	ShadOCam(char* directory, char* camFile, float exposureTime);
+	ShadOCam(char* directory, char* camFilePath);
 	~ShadOCam();
 
 	int m_nWidth;			// width of image
@@ -91,9 +95,11 @@ public:
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual void SetupCamera(float exposureTime);
 
 protected:
 	char		*m_directory; // Directory to write images to
+	char		*m_camFilePath;
 
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure

@@ -220,6 +220,8 @@ UINT captureRunFrames( LPVOID pParam )
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
 
+	task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+
 	// Wait for the dialog to open before we proceed
 	while (!::IsWindow(dialog -> m_hWnd))
 	{

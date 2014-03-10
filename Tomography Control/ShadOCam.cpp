@@ -3,10 +3,14 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	ShadOCam::ShadOCam(char* directory, char* camFile, float exposureTimeSeconds)
+	ShadOCam::ShadOCam(char* directory, char* camFilePath)
 {
 	this -> m_directory = directory;
+	this -> m_camFilePath = camFilePath;
+}
 
+void ShadOCam::SetupCamera(float exposureTimeSeconds)
+{
 	this -> m_bPxdLoaded = FALSE;
 	this -> m_bCamTypeLoaded = FALSE;
 	this -> m_bFramelibLoaded = FALSE;
@@ -35,7 +39,7 @@
 	this -> m_bFrameGrabberAllocated = TRUE;
 
 	// initialize camera configuration
-	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(camFile)) )  {
+	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(this -> m_camFilePath)) )  {
 		throw new camera_init_error("Camera configuration not loaded.");
 	}
 	this -> m_bCamTypeLoaded = TRUE;

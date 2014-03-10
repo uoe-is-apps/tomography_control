@@ -37,6 +37,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 	// this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_dialog = this;
 	this -> m_task -> m_camera = this -> m_camera;
+	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
 	this -> m_progress.SetRange(0, this -> m_task -> m_totalImages - 1);
@@ -117,6 +118,9 @@ CameraTask::CameraTask(FrameType taskType)
 UINT takeManualImages( LPVOID pParam )
 {
 	CameraTask* task = (CameraTask*)pParam;
+
+	task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
 	u_int frameCount = 1;
 

@@ -6,12 +6,9 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-	DummyCamera::DummyCamera(char *directory, float exposureTimeSeconds)
+	DummyCamera::DummyCamera(char *directory)
 {
-	assert (exposureTimeSeconds > 0.000);
-
 	this -> m_directory = directory;
-	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 	this -> m_nWidth = 1024;
 	this -> m_nHeight = 2048;
 }
@@ -69,4 +66,11 @@ int DummyCamera::GenerateImageFilename(char* buffer, size_t maxLength, FrameType
 	default:
 		return sprintf_s(buffer, maxLength, "%s\\IMAGE%04d.tiff", this -> m_directory, frame);
 	}
+}
+
+void DummyCamera::SetupCamera(float exposureTimeSeconds)
+{
+	assert (exposureTimeSeconds > 0.000);
+
+	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }

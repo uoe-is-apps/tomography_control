@@ -379,13 +379,13 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 	switch (this -> m_cameraType)
 	{
 	case 0:
-		camera = new ShadOCam(this -> m_directoryPathBuffer, "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
+		camera = new ShadOCam(this -> m_directoryPathBuffer, "C:\\ShadoCam\\IniFile.txt");
 		break;
 	case 1:
-		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
+		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer);
 		break;
 	case 2:
-		camera = new DummyCamera(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
+		camera = new DummyCamera(this -> m_directoryPathBuffer);
 		break;
 	default:
 		throw new bad_camera_type_error("Unrecognised camera type.");
@@ -511,12 +511,19 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 	
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
+	takingPhotosDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
 }
 
-
+/*
+ * Updates the path stored in this class, for where images should be written
+ * out to. Also ensures the directory exists.
+ *
+ * Throws bad_directory_error in case of problems accessing/creating the
+ * directory.
+ */
 void CTomographyControlDlg::UpdateDirectoryPath()
 {
 	int mkdir_res = 0;

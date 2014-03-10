@@ -7,7 +7,12 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds)
+PerkinElmerXrd::PerkinElmerXrd(char* directory)
+{
+	this -> m_directory = directory;
+}	
+
+void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 {
 	BOOL bEnableIRQ = TRUE;
 	int iRet;							// Return value
@@ -65,7 +70,6 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds)
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 
-	this -> m_directory = directory;
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
 
 	CHwHeaderInfo headInfo;

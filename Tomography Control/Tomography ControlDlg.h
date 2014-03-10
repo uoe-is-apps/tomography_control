@@ -19,8 +19,12 @@ public:
 
 	FrameType m_taskType;
 	ICamera* m_camera;
+
 	char *m_directoryPath;
+
 	CWnd* m_dialog;
+
+	float m_exposureTimeSeconds;
 	short m_currentImages;
 	short m_totalImages;
 	BOOL m_running;
@@ -41,6 +45,7 @@ public:
 
 	CameraTask *m_task;
 	CWinThread* m_workerThread;
+	float m_exposureTimeSeconds;
 	char *m_directoryPath;
 	ICamera* m_camera;
 
