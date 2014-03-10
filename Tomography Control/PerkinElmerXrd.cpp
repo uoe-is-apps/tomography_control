@@ -7,35 +7,76 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds, CString macAddress)
+PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds)
 {
-	unsigned char *macAddressVal = (unsigned char *)alloca(macAddress.GetLength() * sizeof(unsigned char));
-
-	// Convert the signed characters in the CString to unsigned
-	for (int charIdx = 0; charIdx < macAddress.GetLength(); charIdx++)
+	BOOL bEnableIRQ = TRUE;
+	int iRet;							// Return value
+	BOOL bSelfInit = TRUE;
+	unsigned int dwRows=0, dwColumns=0;
+	long lOpenMode = HIS_GbIF_IP;
+	long lPacketDelay = 256;
+	long ulNumSensors = 0;				// nr of GigE detector in network
+	
+	// find GbIF Detectors in Subnet	
+	iRet = Acquisition_GbIF_GetDeviceCnt(&ulNumSensors);
+	if (iRet != HIS_ALL_OK)
 	{
-		macAddressVal[charIdx] = macAddress.GetAt(charIdx);
+		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
+		throw new camera_init_error(this -> m_errorBuffer);
+	}
+				
+	if(ulNumSensors == 0)
+	{
+		throw new camera_init_error("Could not detect any cameras.");
+	}
+
+	if (ulNumSensors > 1)
+	{
+		sprintf(this -> m_errorBuffer, "Found %l cameras, expected only 1.", ulNumSensors);
+		throw new camera_init_error(this -> m_errorBuffer);
+	}
+
+	// get device params of GbIF Detectors in Subnet
+	GBIF_DEVICE_PARAM pGbIF_DEVICE_PARAM;
+			
+	iRet = Acquisition_GbIF_GetDeviceList(&pGbIF_DEVICE_PARAM, 1);
+	if (iRet != HIS_ALL_OK)
+	{
+		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
+		throw new camera_init_error(this -> m_errorBuffer);
+	}
+			
+	/* for (iCnt = 0 ; iCnt < ulNumSensors; iCnt++)
+	{
+		sprintf(this -> m_errorBuffer, "%d - %s\n",iCnt,(pGbIF_DEVICE_PARAM[iCnt]).cDeviceName);
+		WriteConsole(hOutput, strBuffer, strlen(strBuffer), &dwCharsWritten, NULL);
+	} */
+
+	memset(&this -> m_hAcqDesc, 0, sizeof(HACQDESC));
+	iRet = Acquisition_GbIF_Init(
+		&this -> m_hAcqDesc,
+		//iSelected,							// Index to access individual detector
+		0,										// here set to zero for a single detector device
+		bEnableIRQ, 
+		dwRows, dwColumns,						// Image dimensions
+		bSelfInit,								// retrieve settings (rows,cols.. from detector
+		FALSE,									// If communication port is already reserved by another process, do not open
+		lOpenMode,								// here: HIS_GbIF_IP, i.e. open by IP address 
+		pGbIF_DEVICE_PARAM.ucIP		// IP address of the connection to open
+		);
+
+	if (iRet != HIS_ALL_OK)
+	{
+		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
+		throw new camera_init_error(this -> m_errorBuffer);
 	}
 
 	this -> m_directory = directory;
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
 
 	CHwHeaderInfo headInfo;
-
-	memset(&this -> m_hAcqDesc, 0, sizeof(HACQDESC));
-	if (Acquisition_GbIF_Init(&this -> m_hAcqDesc, this -> m_nChannelNr,
-		0,
-		0, 0, // Rows and columns - these are retrieved from the device
-		TRUE, FALSE, // Self init and always open
-		HIS_GbIF_MAC, macAddressVal) != HIS_ALL_OK)
-	{
-		// sprintf(strBuffer,"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
-		throw new camera_init_error("Could not initialise camera.");
-	}
-
 	unsigned short usTiming=0;
 	unsigned short usNetworkLoadPercent=80;
-	long lPacketDelay = 256;
 	
 	// Calibrate connection
 	if (Acquisition_GbIF_CheckNetworkSpeed(this -> m_hAcqDesc, &usTiming, &lPacketDelay, usNetworkLoadPercent) == HIS_ALL_OK)

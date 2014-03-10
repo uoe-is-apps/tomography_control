@@ -42,7 +42,7 @@ protected:
 class PerkinElmerXrd : public ICamera
 {
 public:
-	PerkinElmerXrd(char* directory, float exposureTime, CString macAddress);
+	PerkinElmerXrd(char* directory, float exposureTime);
 	~PerkinElmerXrd();
 	
 	u_int m_nWidth;			// width of image
@@ -55,6 +55,7 @@ protected:
 	void WriteTiff(char* directory, WORD *buffer);
 	void WriteTiff(char* directory, DWORD *buffer);
 
+	char		m_errorBuffer[2048];
 	char		*m_directory;
 	float		m_exposureTimeSeconds;
 	HACQDESC	m_hAcqDesc;

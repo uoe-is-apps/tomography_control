@@ -74,7 +74,6 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_manualCameraControl(_T(""))
 	, m_cameraType(0)
 	, m_tableType(0)
-	, m_perkinElmerXrdMacAddress(_T(""))
 	, m_tableComPort(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -96,7 +95,6 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
-	DDX_Text(pDX, IDC_EDIT_PEX_MAC_ADDRESS, m_perkinElmerXrdMacAddress);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -363,7 +361,7 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 		camera = new ShadOCam(this -> m_directoryPath.GetBuffer(), "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
 		break;
 	case 1:
-		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds, this -> m_perkinElmerXrdMacAddress);
+		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
 		break;
 	case 2:
 		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
