@@ -74,6 +74,10 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_cameraType(0)
 	, m_tableType(0)
 	, m_tableComPort(0)
+	, m_frameSavingOptions(0)
+	, m_researcherName(_T(""))
+	, m_sampleName(_T(""))
+	, m_timestamp(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -93,6 +97,10 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
+	DDX_Radio(pDX, IDC_RADIO_SAVE_EACH_FRAME, m_frameSavingOptions);
+	DDX_Text(pDX, IDC_EDIT_RESEARCHER_NAME, m_researcherName);
+	DDX_Text(pDX, IDC_EDIT_SAMPLE_NAME, m_sampleName);
+	DDX_Text(pDX, IDC_EDIT_TIMESTAMP, m_timestamp);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)

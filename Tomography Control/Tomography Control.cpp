@@ -80,6 +80,7 @@ BOOL CTomographyControlApp::InitInstance()
 	INT_PTR nResponse = controlDialogue.DoModal();
 
 	controlDialogue.m_table -> Stop();
+	delete controlDialogue.m_table;
 
 	// Delete the shell manager created above.
 	if (pShellManager != NULL)

@@ -105,7 +105,11 @@ public:
 	BOOL m_running; // Not set from the UI, just used by the background thread
 
 	// Run inputs
+	CString m_researcherName;
+	CString m_sampleName;
+	CString m_timestamp;
 	CString m_directoryPath;
+	int m_frameSavingOptions;
 	float m_exposureTimeSeconds;
 	int m_framesPerStop;
 	int m_stopsPerRotation;
