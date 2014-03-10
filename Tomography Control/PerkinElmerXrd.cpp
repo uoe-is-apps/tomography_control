@@ -112,7 +112,7 @@ PerkinElmerXrd::~PerkinElmerXrd()
 {
 	if (this -> m_detectorInitialised)
 	{
-		Acquisition_Close(&this -> m_hAcqDesc);
+		Acquisition_Close(this -> m_hAcqDesc);
 	}
 }
 
@@ -137,9 +137,17 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 		return;
 	}
 	
-	Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
+	if (Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
 		task.acquisitionBuffer,
-		frames, this -> m_nHeight, this -> m_nWidth);
+		frames, this -> m_nHeight, this -> m_nWidth) != HIS_ALL_OK)
+	{
+		DWORD hisError;
+		DWORD boardError;
+		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
+
+		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d, Board Error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
+		throw new camera_acquisition_error(this -> m_errorBuffer);
+	}
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
 		frames, 0, // Frames, skip frames
 		HIS_SEQ_ONE_BUFFER,
@@ -198,26 +206,21 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
+	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned char));
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short));
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+	
 
 	// Find the start of the current frame
+	unsigned int frameSize = camera -> m_nWidth * camera -> m_nHeight;
 	unsigned short *frameBuffer
-		= task -> acquisitionBuffer + ((dwSecFrame - 1) * camera -> m_nWidth * camera -> m_nHeight);
-	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * sizeof(unsigned short));
-	for (u_int row = 0; row < camera -> m_nHeight; row++)
-	{
-		unsigned short *sourceRowStart = frameBuffer + (row * camera -> m_nWidth);
-		memcpy(rowData, sourceRowStart, camera -> m_nWidth * sizeof(unsigned short));
-
-		TIFFWriteScanline(tif, rowData, row);
-	}
-
-	_TIFFfree(rowData);
+		= task -> acquisitionBuffer + ((dwSecFrame - 1) * frameSize);
+	TIFFWriteRawStrip(tif, 0, frameBuffer,
+		frameSize * sizeof(unsigned short));
 
     TIFFClose(tif);
 	

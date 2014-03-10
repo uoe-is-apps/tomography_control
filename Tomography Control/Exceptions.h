@@ -16,6 +16,12 @@ public:
     explicit bad_frame_type_error(const char *message);
 };
 
+class camera_acquisition_error : public std::logic_error
+{
+public:
+    explicit camera_acquisition_error(const char *message);
+};
+
 class camera_init_error : public std::logic_error
 {
 public:

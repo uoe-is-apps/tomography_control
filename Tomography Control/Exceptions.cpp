@@ -16,6 +16,11 @@ bad_frame_type_error::bad_frame_type_error(const char *message) : logic_error(me
 
 }
 
+camera_acquisition_error::camera_acquisition_error(const char *message) : logic_error(message)
+{
+
+}
+
 camera_init_error::camera_init_error(const char *message) : logic_error(message)
 {
 
