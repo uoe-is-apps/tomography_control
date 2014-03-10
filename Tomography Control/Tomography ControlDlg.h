@@ -35,7 +35,6 @@ public:
 	virtual BOOL OnInitDialog();
 	
 	FrameType m_taskType;
-	CString m_directoryPath;
 
 	CameraTask *m_task;
 	CWinThread* m_workerThread;

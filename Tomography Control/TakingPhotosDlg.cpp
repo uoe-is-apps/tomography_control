@@ -34,7 +34,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 
 	this -> m_task = new CameraTask(this -> m_taskType);
 	
-	this -> m_task -> m_directoryPath = this -> m_directoryPath;
+	// this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_dialog = this;
 	this -> m_task -> m_camera = this -> m_camera;
 	this -> m_task -> m_running = TRUE;

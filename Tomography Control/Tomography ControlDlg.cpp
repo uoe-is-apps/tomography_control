@@ -64,7 +64,6 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
-	, m_directoryPath(_T(""))
 	, m_exposureTimeSeconds(0.5f)
 	, m_framesPerStop(10)
 	, m_stopsPerRotation(100)
@@ -91,7 +90,6 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_turnsTotal);
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
 	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
-	DDX_Text(pDX, IDC_BROWSE_DIRECTORY_PATH, m_directoryPath);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
 	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
@@ -475,7 +473,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 	}
 	
 	takingPhotosDlg.m_taskType = taskType;
-	takingPhotosDlg.m_directoryPath = this -> m_directoryPath;
+	// takingPhotosDlg.m_directoryPath = this -> m_directoryPath;
 	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
