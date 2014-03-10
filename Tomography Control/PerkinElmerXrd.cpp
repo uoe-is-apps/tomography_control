@@ -45,12 +45,6 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds)
 		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
-			
-	/* for (iCnt = 0 ; iCnt < ulNumSensors; iCnt++)
-	{
-		sprintf(this -> m_errorBuffer, "%d - %s\n",iCnt,(pGbIF_DEVICE_PARAM[iCnt]).cDeviceName);
-		WriteConsole(hOutput, strBuffer, strlen(strBuffer), &dwCharsWritten, NULL);
-	} */
 
 	memset(&this -> m_hAcqDesc, 0, sizeof(HACQDESC));
 	iRet = Acquisition_GbIF_Init(
@@ -94,15 +88,20 @@ PerkinElmerXrd::PerkinElmerXrd(char* directory, float exposureTimeSeconds)
 
 	this -> m_detectorInitialised = TRUE;
 
-	if (!Acquisition_GetHwHeaderInfo(&this -> m_hAcqDesc, &headInfo))
+	if (Acquisition_GetHwHeaderInfo(this -> m_hAcqDesc, &headInfo) != HIS_ALL_OK)
 	{
-		throw new camera_init_error("Could not get hardware header info.");
+		DWORD hisError;
+		DWORD boardError;
+		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
+
+		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d, Board Error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
+		throw new camera_init_error(this -> m_errorBuffer);
 	}
 	
 	this -> m_nHeight = headInfo.dwNrRows;
 	this -> m_nWidth = headInfo.dwNrColumns;
 
-	Acquisition_SetCallbacksAndMessages(&this -> m_hAcqDesc,
+	Acquisition_SetCallbacksAndMessages(this -> m_hAcqDesc,
 		NULL,
 		0, 0,
 		OnEndFramePEX,
