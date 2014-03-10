@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 
+#include <direct.h>
 #include <errno.h>
 #include <io.h>
 #include <windows.h>
@@ -83,12 +84,12 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 {
 	time_t rawtime;
 	struct tm * timeinfo;
-	char timestampBuffer[256];
+	char timestampBuffer[TIMESTAMP_BUFFER_SIZE];
 
 	time (&rawtime);
 	timeinfo = localtime (&rawtime);
 
-	strftime(timestampBuffer, 256, "%Y-%m-%d_%H_%M", timeinfo);
+	strftime(timestampBuffer, TIMESTAMP_BUFFER_SIZE, "%Y-%m-%d_%H_%M", timeinfo);
 	this -> m_timestamp.Append(timestampBuffer);
 
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -378,13 +379,13 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 	switch (this -> m_cameraType)
 	{
 	case 0:
-		camera = new ShadOCam(this -> m_directoryPath.GetBuffer(), "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
+		camera = new ShadOCam(this -> m_directoryPathBuffer, "C:\\ShadoCam\\IniFile.txt", this -> m_exposureTimeSeconds);
 		break;
 	case 1:
-		camera = new PerkinElmerXrd(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
+		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
 		break;
 	case 2:
-		camera = new DummyCamera(this -> m_directoryPath.GetBuffer(), this -> m_exposureTimeSeconds);
+		camera = new DummyCamera(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
 		break;
 	default:
 		throw new bad_camera_type_error("Unrecognised camera type.");
@@ -394,12 +395,17 @@ ICamera* CTomographyControlDlg::BuildSelectedCamera()
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	UpdateData(TRUE);
-
-	if (this -> m_directoryPath.IsEmpty())
+	
+	try {
+		UpdateDirectoryPath();
+	}
+	catch(bad_directory_error *error)
 	{
-		MessageBox("Please specify a directory path to save the captured images to.", "Tomography Control", MB_ICONERROR);
+		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
 		return;
 	}
+
 	if (this -> m_exposureTimeSeconds < 0.000)
 	{
 		MessageBox("Exposure time must be a positive number of seconds.", "Tomography Control", MB_ICONERROR);
@@ -435,7 +441,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 		return;
 	}
 	
-	runProgressDlg.m_directoryPath = this -> m_directoryPath;
+	runProgressDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	runProgressDlg.m_framesPerStop = this -> m_framesPerStop;
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
@@ -477,7 +483,16 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 
 	CTakingPhotosDlg takingPhotosDlg;
 	
-	
+	try {
+		UpdateDirectoryPath();
+	}
+	catch(bad_directory_error *error)
+	{
+		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
+		return;
+	}
+
 	try {
 		takingPhotosDlg.m_camera = BuildSelectedCamera();
 	}
@@ -495,8 +510,57 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 	}
 	
 	takingPhotosDlg.m_taskType = taskType;
-	// takingPhotosDlg.m_directoryPath = this -> m_directoryPath;
+	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
+}
+
+
+void CTomographyControlDlg::UpdateDirectoryPath()
+{
+	int mkdir_res = 0;
+	CString directoryName;
+
+	if (FAILED(SHGetFolderPath(NULL, 
+        CSIDL_PERSONAL|CSIDL_FLAG_CREATE, 
+        NULL, 
+        0, 
+        this -> m_directoryPathBuffer)))
+	{
+		throw new bad_directory_error("Could not retrieve user home directory.");
+	}
+
+	PathAppend(this -> m_directoryPathBuffer, "CT_Scans");
+
+	// Ensure the outer directory exists
+	if (GetFileAttributesA(this -> m_directoryPathBuffer) == INVALID_FILE_ATTRIBUTES)
+	{
+		if (FAILED(CreateDirectory(this -> m_directoryPathBuffer, NULL)))
+		{
+			throw new bad_directory_error("Could not create outer directory.");
+		}
+	}
+
+	
+	if (!this -> m_researcherName.IsEmpty())
+	{
+		directoryName.Append(m_researcherName);
+		directoryName.Append("_");
+	}
+	if (!this -> m_sampleName.IsEmpty())
+	{
+		directoryName.Append(m_sampleName);
+		directoryName.Append("_");
+	}
+	directoryName.Append(this -> m_timestamp);
+	PathAppend(this -> m_directoryPathBuffer, directoryName.GetBuffer());
+
+	if (GetFileAttributesA(this -> m_directoryPathBuffer) == INVALID_FILE_ATTRIBUTES)
+	{
+		if (FAILED(CreateDirectory(this -> m_directoryPathBuffer, NULL)))
+		{
+			throw new bad_directory_error("Could not create directory to write images to.");
+		}
+	}
 }

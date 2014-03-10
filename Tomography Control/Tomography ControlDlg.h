@@ -7,6 +7,9 @@
 #include "Camera.h"
 #include "Table.h"
 
+#define DIRECTORY_PATH_BUFFER_SIZE 512
+#define TIMESTAMP_BUFFER_SIZE 256
+
 /* Tracks details of a request sent to the camera */
 class CameraTask
 {
@@ -16,7 +19,7 @@ public:
 
 	FrameType m_taskType;
 	ICamera* m_camera;
-	CString m_directoryPath;
+	char *m_directoryPath;
 	CWnd* m_dialog;
 	short m_currentImages;
 	short m_totalImages;
@@ -38,6 +41,7 @@ public:
 
 	CameraTask *m_task;
 	CWinThread* m_workerThread;
+	char *m_directoryPath;
 	ICamera* m_camera;
 
 // Dialog Data
@@ -110,7 +114,6 @@ public:
 	CString m_researcherName;
 	CString m_sampleName;
 	CString m_timestamp;
-	CString m_directoryPath;
 	int m_frameSavingOptions;
 	float m_exposureTimeSeconds;
 	int m_framesPerStop;
@@ -122,6 +125,9 @@ public:
 	int m_tableComPort;
 protected:
 	HICON m_hIcon;
+	char m_directoryPathBuffer[DIRECTORY_PATH_BUFFER_SIZE];
+
+	void UpdateDirectoryPath();
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -132,6 +138,7 @@ protected:
 	void RunManualImageTask(FrameType taskType);
 	ICamera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
+
 };
 
 
