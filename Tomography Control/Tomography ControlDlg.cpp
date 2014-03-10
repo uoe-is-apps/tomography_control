@@ -502,12 +502,6 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 		delete error;
 		return;
 	}
-	catch(camera_init_error *error)
-	{
-		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
-		return;
-	}
 	
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;

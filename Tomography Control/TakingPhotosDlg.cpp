@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "Exceptions.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "afxdialogex.h"
@@ -118,10 +119,19 @@ CameraTask::CameraTask(FrameType taskType)
 UINT takeManualImages( LPVOID pParam )
 {
 	CameraTask* task = (CameraTask*)pParam;
-
-	task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
-
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
+	
+	try {
+		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+	}
+	catch(camera_init_error *error)
+	{
+		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
+		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
+		return 0;
+	}
+
 	u_int frameCount = 1;
 
 	task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_taskType, dialog);

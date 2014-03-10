@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Tomography Control.h"
 #include "Camera.h"
+#include "Exceptions.h"
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
@@ -220,7 +221,16 @@ UINT captureRunFrames( LPVOID pParam )
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
 
-	task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+	try {
+		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+	}
+	catch(camera_init_error *error)
+	{
+		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
+		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
+		return 0;
+	}
 
 	// Wait for the dialog to open before we proceed
 	while (!::IsWindow(dialog -> m_hWnd))
