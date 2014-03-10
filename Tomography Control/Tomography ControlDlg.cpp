@@ -78,7 +78,19 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_researcherName(_T(""))
 	, m_sampleName(_T(""))
 	, m_timestamp(_T(""))
+	, m_numImages(0)
+	, m_numAvSumImages(0)
 {
+	time_t rawtime;
+	struct tm * timeinfo;
+	char timestampBuffer[256];
+
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+
+	strftime(timestampBuffer, 256, "%Y-%m-%d_%H_%M", timeinfo);
+	this -> m_timestamp.Append(timestampBuffer);
+
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
@@ -101,6 +113,8 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_RESEARCHER_NAME, m_researcherName);
 	DDX_Text(pDX, IDC_EDIT_SAMPLE_NAME, m_sampleName);
 	DDX_Text(pDX, IDC_EDIT_TIMESTAMP, m_timestamp);
+	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES, m_numImages);
+	DDX_Text(pDX, IDC_EDIT_NUM_AVSUM, m_numAvSumImages);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -323,9 +337,9 @@ void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 
 void CTomographyControlDlg::OnBnClickedButtonResetTable()
 {
-	// TODO: Add your control notification handler code here
 	this -> m_tableCommandOutput.Empty();
 	this -> UpdateData(FALSE);
+	this -> m_table -> SendTableCommand("nreset\r\n");
 }
 
 

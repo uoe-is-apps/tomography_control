@@ -93,6 +93,8 @@ public:
 
 	// Camera controls
 	CString m_manualCameraControl;
+	int m_numImages;
+	int m_numAvSumImages;
 	
 	// Table controls
 	CString m_tableCommand;
