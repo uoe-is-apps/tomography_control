@@ -130,7 +130,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
 	
-	task.acquisitionBuffer = (unsigned short*)malloc(this -> m_nWidth * this -> m_nHeight * sizeof(unsigned short) * frames);
+	task.acquisitionBuffer = (unsigned short*)calloc(this -> m_nWidth * this -> m_nHeight * frames, sizeof(unsigned short));
 	if (NULL == task.acquisitionBuffer)
 	{
 		// TODO: Throw an exception
@@ -193,23 +193,26 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	camera = task -> camera;
 	
 	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, task -> frameType, *task -> frameCount);
+	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
 
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(WORD));
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned char));
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
 
-
-	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * 2);
+	// Find the start of the current frame
+	unsigned short *frameBuffer
+		= task -> acquisitionBuffer + ((dwSecFrame - 1) * camera -> m_nWidth * camera -> m_nHeight);
+	tdata_t rowData = _TIFFmalloc(camera -> m_nWidth * sizeof(unsigned short));
 	for (u_int row = 0; row < camera -> m_nHeight; row++)
 	{
-		WORD *sourceRowStart = task -> acquisitionBuffer + (row * camera -> m_nWidth * 2);
-		memcpy(rowData, sourceRowStart, sizeof(rowData));
+		unsigned short *sourceRowStart = frameBuffer + (row * camera -> m_nWidth);
+		memcpy(rowData, sourceRowStart, camera -> m_nWidth * sizeof(unsigned short));
 
 		TIFFWriteScanline(tif, rowData, row);
 	}
