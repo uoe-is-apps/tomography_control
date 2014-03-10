@@ -33,7 +33,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 {
 	BOOL retVal = CDialogEx::OnInitDialog();
 
-	this -> m_task = new CameraTask(this -> m_taskType);
+	this -> m_task = new CameraTask(this -> m_taskType, this -> m_totalImages);
 	
 	// this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_dialog = this;
@@ -100,19 +100,10 @@ afx_msg LRESULT CTakingPhotosDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
 
 // Helper class for tracking details of the task
 
-CameraTask::CameraTask(FrameType taskType)
+CameraTask::CameraTask(FrameType taskType, unsigned short totalImages)
 {
 	this -> m_taskType = taskType;
-
-	switch (taskType)
-	{
-	case SINGLE:
-		this -> m_totalImages = 1;
-		break;
-	default:
-		this -> m_totalImages = 10;
-		break;
-	}
+	this -> m_totalImages = totalImages;
 }
 
 // Worker function for taking a set of manual images from an X-ray camera

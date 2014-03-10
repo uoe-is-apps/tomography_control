@@ -79,9 +79,10 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_researcherName(_T(""))
 	, m_sampleName(_T(""))
 	, m_timestamp(_T(""))
-	, m_numImages(0)
-	, m_numAvSumImages(0)
+	, m_numImages(10)
+	, m_numAvSumImages(1)
 {
+	// Fill in a sensible timestamp
 	time_t rawtime;
 	struct tm * timeinfo;
 	char timestampBuffer[TIMESTAMP_BUFFER_SIZE];
@@ -443,7 +444,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	
 	runProgressDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
-	runProgressDlg.m_framesPerStop = this -> m_framesPerStop;
+	runProgressDlg.m_framesPerStop = this -> m_framesPerStop; // What about m_numImages?
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 	runProgressDlg.m_turnsTotal = this -> m_turnsTotal;
 
@@ -501,6 +502,17 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
 		delete error;
 		return;
+	}
+
+	switch (taskType)
+	{
+	case SINGLE:
+		takingPhotosDlg.m_totalImages = 1;
+		break;
+	case FLAT_FIELD:
+	case DARK:
+		takingPhotosDlg.m_totalImages = this -> m_numAvSumImages;
+		break;
 	}
 	
 	takingPhotosDlg.m_taskType = taskType;
