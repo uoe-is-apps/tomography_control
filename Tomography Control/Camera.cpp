@@ -8,6 +8,31 @@
 	this -> m_directory = directory;
 }
 
+void Camera::AddFrameToBuffer(unsigned int *dest, unsigned short *src)
+{
+	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+	{
+      	for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
+      	{	
+      		*(dest++) += *(src++);
+      	}
+	}
+}
+	
+double Camera::CalculatePixelAverage(unsigned short *frameBuffer)
+{
+	long pixelSum = 0;
+
+	for (unsigned short row = 0; row < GetImageHeight(); row++)
+	{
+      	for (unsigned short col = 0; col < GetImageWidth(); col++)
+      	{	
+      		pixelSum += *(frameBuffer++);
+      	}
+	}
+
+	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
+}
 	
 char *Camera::GetDirectory()
 {

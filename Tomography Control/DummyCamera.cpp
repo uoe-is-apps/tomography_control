@@ -14,24 +14,102 @@
 
 DummyCamera::~DummyCamera()
 {
+	if (NULL != this -> m_avgSumBuffer)
+	{
+		free(this -> m_avgSumBuffer);
+	}
 }
 
-void DummyCamera::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
+void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
+	unsigned short capturedImages = 0;
+	char *filename;
+	BOOL lastPixelAverageValid = FALSE;
+	double lastPixelAverage;
 	unsigned short *frameBuffer = (unsigned short *)calloc(sizeof(unsigned short), this -> GetImageWidth() * this -> GetImageHeight());
 
-	// Should handle out of memory condition
+	// Should handle out of memory condition when allocating buffer
+	memset(this -> m_avgSumBuffer, 0, sizeof(unsigned short) * this -> GetImageWidth() * this -> GetImageHeight());
 
-	for (u_int frame = 0; frame < frames; frame++, (*frameCount)++)
+	for (u_int frame = 0; frame < frames; frame++, (*imageCount)++)
 	{
-		char *filename = GenerateImageFilename(frameType, *frameCount);
+		// Verify the beam is still active, by checking pixel average against last value for
+		// this set.
+		double pixelAverage = this -> CalculatePixelAverage(frameBuffer);
+
+		// We can only check against previous value, if we actually have a previous value.
+		if (lastPixelAverageValid)
+		{
+			double pixelRatio = pixelAverage / lastPixelAverage;
+			double variation = abs(1.0 - pixelRatio);
+
+			if (variation >= PIXEL_AVERAGE_TOLERANCE)
+			{
+				// Likely beam failure, skip
+				continue;
+			}
+		}
+
+		lastPixelAverage = pixelAverage;
+		lastPixelAverageValid = TRUE;
+		
+		switch (captureType)
+		{
+		case SUM:
+		case AVERAGE:
+			this -> AddFrameToBuffer(this -> m_avgSumBuffer, frameBuffer);
+			break;
+		default:
+			filename = GenerateImageFilename(frameType, *imageCount);
+			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+			Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
+
+			this -> WriteTiff(filename, frameBuffer);
+
+			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
+			break;
+		}
+		capturedImages++;
+	}
+	
+	// Generate filename for end of capture file, incase we need it
+	filename = GenerateImageFilename(frameType, *imageCount);
+	switch (captureType)
+	{
+	case SUM:
 		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
+		this -> WriteTiff(filename, this -> m_avgSumBuffer);
+	
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
+		(*imageCount)++;
+		break;
+	case AVERAGE:
+		unsigned int *sourceBufferPtr = this -> m_avgSumBuffer;
+		unsigned short *averageBuffer = (unsigned short *)malloc(this -> GetImageWidth() * this -> GetImageHeight() * sizeof(unsigned short));
+		unsigned short *averageBufferPtr = averageBuffer;
 
-		this -> WriteTiff(filename, frameBuffer);
+		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		{
+			for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
+			{
+				double sum = *(sourceBufferPtr++);
 
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
+				*(averageBufferPtr++) = (unsigned short)(sum / capturedImages);
+			}
+		}
+
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		this -> WriteTiff(filename, averageBuffer);
+	
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
+		(*imageCount)++;
+
+		free(averageBuffer);
+
+		break;
 	}
 
 	free(frameBuffer);
@@ -55,4 +133,7 @@ void DummyCamera::SetupCamera(float exposureTimeSeconds)
 	assert (exposureTimeSeconds > 0.000);
 
 	this -> m_exposureTimeSeconds = exposureTimeSeconds;
+	this -> m_avgSumBuffer = (unsigned int *)malloc(sizeof(unsigned int) * this -> GetImageWidth() * this -> GetImageHeight());
+
+	// Report error if we can't allocate buffer
 }

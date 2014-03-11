@@ -133,21 +133,6 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	}
 }
 
-double PerkinElmerXrd::CalculatePixelAverage(unsigned short *frameBuffer)
-{
-	long pixelSum = 0;
-
-	for (unsigned short row = 0; row < GetImageHeight(); row++)
-	{
-      	for (unsigned short col = 0; col < GetImageWidth(); col++)
-      	{	
-      		pixelSum += *(frameBuffer++);
-      	}
-	}
-
-	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
-}
-
 void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
@@ -243,9 +228,9 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 
 		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
 		{
-			for (unsigned short col = 0; col < camera -> GetImageHeight(); col++)
+			for (unsigned short col = 0; col < camera -> GetImageWidth(); col++)
 			{
-				double sum = (*sourceBufferPtr++);
+				double sum = *(sourceBufferPtr++);
 
 				*(averageBufferPtr++) = (unsigned short)(sum / task -> capturedImages);
 			}
@@ -257,6 +242,9 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
+
+		free(averageBuffer);
+
 		break;
 	}
 
@@ -307,14 +295,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	{
 	case SUM:
 	case AVERAGE:
-		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
-		{
-      		for (unsigned short col = 0; col < camera -> GetImageWidth(); col++)
-      		{	
-      			*(avgSumBufferPtr++) += *(frameBuffer++);
-      		}
-		}
-
+		camera -> AddFrameToBuffer(camera -> m_avgSumBuffer, frameBuffer);
 		break;
 	default:
 		filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);

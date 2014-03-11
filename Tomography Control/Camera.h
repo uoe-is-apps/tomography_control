@@ -27,6 +27,9 @@ class Camera
 {
 public:
 	Camera::Camera(char* directory);
+	
+	void AddFrameToBuffer(unsigned int *dest, unsigned short *src);
+	double CalculatePixelAverage(unsigned short *frameBuffer);
 
 	/* Captures a series of frames and write them to disk.
 	 *
@@ -77,6 +80,9 @@ public:
 
 protected:
 	float m_exposureTimeSeconds;
+
+	/* Common buffer used when doing an acquisition for summed frames. */
+	unsigned int *m_avgSumBuffer;
 };
 
 class PerkinElmerXrd : public Camera
@@ -85,7 +91,6 @@ public:
 	PerkinElmerXrd(char* directory);
 	~PerkinElmerXrd();
 	
-	double CalculatePixelAverage(unsigned short *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
@@ -123,6 +128,7 @@ public:
 	u_short m_nWidth;			// width of image
 	u_short m_nHeight;			// height of image
 	
+	double CalculatePixelAverage(FRAME *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
