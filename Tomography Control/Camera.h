@@ -82,7 +82,7 @@ protected:
 	float m_exposureTimeSeconds;
 
 	/* Common buffer used when doing an acquisition for summed frames. */
-	unsigned int *m_avgSumBuffer;
+	unsigned int *m_avgSumFrame;
 };
 
 class PerkinElmerXrd : public Camera
@@ -98,7 +98,7 @@ public:
 	virtual void SetupCamera(float exposureTime);
 
 	/* Common buffer used when doing an acquisition for summed frames. */
-	unsigned int *m_avgSumBuffer;
+	unsigned int *m_avgSumFrame;
 
 protected:	
 	u_int m_nWidth;			// width of image
@@ -122,11 +122,15 @@ public:
 	 * "directory" - where to write images to.
 	 * "camFilePath" - the location on disk of the camera configuration file ("xxxx.CAM")
 	 */
-	ShadOCam(char* directory, char* camFilePath);
+	ShadOCam(char* directory, char* camFilePath, char* pixMapFilePath);
 	~ShadOCam();
+	
+	void AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame);
 
-	u_short m_nWidth;			// width of image
-	u_short m_nHeight;			// height of image
+	/* Get the width of the frame buffer (which may be larger than the captured image) */
+	u_short GetFrameBufferWidth();
+	/* Get the height of the frame buffer (which may be larger than the captured image) */
+	u_short GetFrameBufferHeight();
 	
 	double CalculatePixelAverage(FRAME *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
@@ -136,18 +140,27 @@ public:
 	virtual void SetupCamera(float exposureTime);
 
 protected:
+	u_short m_nWidth;			// width of image
+	u_short m_nHeight;			// height of image
+	
+	u_short m_frameGrabberWidth;
+	u_short m_frameGrabberHeight;
+
 	char*		m_camFilePath;	// Path of the camera configuration file (used by PXD)
+	char*		m_pixMapFilePath;
 
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure
+	
+	PIXMAPENTRY* m_pixMap;	// pointer to pixel map object
+	int m_pixMapEntries;	// number of pixel corrections in pixel map
 
-	long m_hFrameGrabber;	// adress of frame grabber
+	long m_hFrameGrabber;	// address of frame grabber
 
 	CAMERA_TYPE* m_camType;	// pointer to camera object
 	
 	FRAME* m_currentFrame;	// pointer to FRAME object
-	short* m_currentFramePtr;	// pointer to start of frame
-	FRAME* m_avgSumFrame;	// pointer to average/sum frame
+	unsigned int* m_avgSumFrame;	// pointer to average/sum frame
 
 	BOOL m_bPxdLoaded;
 	BOOL m_bFramelibLoaded;

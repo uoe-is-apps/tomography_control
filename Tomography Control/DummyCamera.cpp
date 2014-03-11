@@ -14,9 +14,9 @@
 
 DummyCamera::~DummyCamera()
 {
-	if (NULL != this -> m_avgSumBuffer)
+	if (NULL != this -> m_avgSumFrame)
 	{
-		free(this -> m_avgSumBuffer);
+		free(this -> m_avgSumFrame);
 	}
 }
 
@@ -29,7 +29,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 	unsigned short *frameBuffer = (unsigned short *)calloc(sizeof(unsigned short), this -> GetImageWidth() * this -> GetImageHeight());
 
 	// Should handle out of memory condition when allocating buffer
-	memset(this -> m_avgSumBuffer, 0, sizeof(unsigned short) * this -> GetImageWidth() * this -> GetImageHeight());
+	memset(this -> m_avgSumFrame, 0, sizeof(unsigned short) * this -> GetImageWidth() * this -> GetImageHeight());
 
 	for (u_int frame = 0; frame < frames; frame++, (*imageCount)++)
 	{
@@ -57,7 +57,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 		{
 		case SUM:
 		case AVERAGE:
-			this -> AddFrameToBuffer(this -> m_avgSumBuffer, frameBuffer);
+			this -> AddFrameToBuffer(this -> m_avgSumFrame, frameBuffer);
 			break;
 		default:
 			filename = GenerateImageFilename(frameType, *imageCount);
@@ -80,13 +80,13 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 	case SUM:
 		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		this -> WriteTiff(filename, this -> m_avgSumBuffer);
+		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
 		(*imageCount)++;
 		break;
 	case AVERAGE:
-		unsigned int *sourceBufferPtr = this -> m_avgSumBuffer;
+		unsigned int *sourceBufferPtr = this -> m_avgSumFrame;
 		unsigned short *averageBuffer = (unsigned short *)malloc(this -> GetImageWidth() * this -> GetImageHeight() * sizeof(unsigned short));
 		unsigned short *averageBufferPtr = averageBuffer;
 
@@ -133,7 +133,7 @@ void DummyCamera::SetupCamera(float exposureTimeSeconds)
 	assert (exposureTimeSeconds > 0.000);
 
 	this -> m_exposureTimeSeconds = exposureTimeSeconds;
-	this -> m_avgSumBuffer = (unsigned int *)malloc(sizeof(unsigned int) * this -> GetImageWidth() * this -> GetImageHeight());
+	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) * this -> GetImageWidth() * this -> GetImageHeight());
 
 	// Report error if we can't allocate buffer
 }

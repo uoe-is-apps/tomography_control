@@ -381,7 +381,7 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	switch (this -> m_cameraType)
 	{
 	case 0:
-		camera = new ShadOCam(this -> m_directoryPathBuffer, SHAD_O_CAM_CONFIG_FILE);
+		camera = new ShadOCam(this -> m_directoryPathBuffer, SHAD_O_CAM_CONFIG_FILE, "C:\\ShadoCam\\SensorGapPM");
 		break;
 	case 1:
 		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer);

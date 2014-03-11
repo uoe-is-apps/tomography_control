@@ -106,9 +106,9 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	
 	this -> m_nHeight = headInfo.dwNrRows;
 	this -> m_nWidth = headInfo.dwNrColumns;
-	this -> m_avgSumBuffer = (unsigned int *)malloc(sizeof (unsigned int) * this -> m_nHeight * this -> m_nWidth);
+	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof (unsigned int) * this -> m_nHeight * this -> m_nWidth);
 
-	if (NULL == this -> m_avgSumBuffer)
+	if (NULL == this -> m_avgSumFrame)
 	{
 		throw new camera_init_error("Could not allocate buffer to hold average/sum data.");
 	}
@@ -122,9 +122,9 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 PerkinElmerXrd::~PerkinElmerXrd()
 {
-	if (NULL != this -> m_avgSumBuffer)
+	if (NULL != this -> m_avgSumFrame)
 	{
-		free (this -> m_avgSumBuffer);
+		free (this -> m_avgSumFrame);
 	}
 
 	if (this -> m_detectorInitialised)
@@ -150,7 +150,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavin
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
 
 	// Clear the average/sum buffer
-	memset(this -> m_avgSumBuffer, 0, sizeof(unsigned int) * this -> m_nWidth * this -> m_nHeight);
+	memset(this -> m_avgSumFrame, 0, sizeof(unsigned int) * this -> m_nWidth * this -> m_nHeight);
 	
 	// We have to allocate the acquisition buffer here, as we need to know how many frames
 	// we're taking, before we can allocate it.
@@ -216,13 +216,13 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	case SUM:
 		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		camera -> WriteTiff(filename, camera -> m_avgSumBuffer);
+		camera -> WriteTiff(filename, camera -> m_avgSumFrame);
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
 		break;
 	case AVERAGE:
-		unsigned int *sourceBufferPtr = camera -> m_avgSumBuffer;
+		unsigned int *sourceBufferPtr = camera -> m_avgSumFrame;
 		unsigned short *averageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
 		unsigned short *averageBufferPtr = averageBuffer;
 
@@ -289,13 +289,13 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task -> lastPixelAverage = pixelAverage;
 	task -> lastPixelAverageValid = TRUE;
 
-	unsigned int *avgSumBufferPtr = camera -> m_avgSumBuffer;
+	unsigned int *avgSumBufferPtr = camera -> m_avgSumFrame;
 
 	switch (task -> captureType)
 	{
 	case SUM:
 	case AVERAGE:
-		camera -> AddFrameToBuffer(camera -> m_avgSumBuffer, frameBuffer);
+		camera -> AddFrameToBuffer(camera -> m_avgSumFrame, frameBuffer);
 		break;
 	default:
 		filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
