@@ -6,6 +6,7 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
+#define ERROR_BUFFER_SIZE 1024
 #define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\DEFAULT.CAM"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
@@ -47,10 +48,9 @@ public:
 	virtual u_short GetImageWidth() = 0;
 	virtual void SetupCamera(float exposureTime) = 0;
 
-	char filenameBuffer[FILENAME_BUFFER_SIZE];
-
 protected:
 	char *m_directory; // Directory to write images to
+	char filenameBuffer[FILENAME_BUFFER_SIZE];
 };
 
 class DummyCamera : public Camera
@@ -78,9 +78,6 @@ public:
 	PerkinElmerXrd(char* directory);
 	~PerkinElmerXrd();
 	
-	u_int m_nWidth;			// width of image
-	u_int m_nHeight;		// height of image
-	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
@@ -90,26 +87,33 @@ public:
 protected:
 	void WriteTiff(char* directory, WORD *buffer);
 	void WriteTiff(char* directory, DWORD *buffer);
-
-	char		m_errorBuffer[2048];
+	
+	u_int m_nWidth;			// width of image
+	u_int m_nHeight;		// height of image
+	
+	/* Common buffer used when doing an acquisition for averaged frames. */
+	unsigned short *m_avgBuffer;
+	/* Common buffer used when doing an acquisition for summed frames. */
+	unsigned int *m_sumBuffer;
+	char		m_errorBuffer[ERROR_BUFFER_SIZE];
 	float		m_exposureTimeSeconds;
 	HACQDESC	m_hAcqDesc;
 	int			m_nChannelNr;
 	BOOL		m_detectorInitialised;
 };
 
+/* Structure for tracking a specific acquisition from the Perkin-Elmer
+ * camera.
+ */
 struct PerkinElmerAcquisition {
 	PerkinElmerXrd *camera;
 	
-	char *directory;
 	CWnd *window;
 	CEvent endAcquisitionEvent;
 	
 	u_int *frameCount;
 	FrameType frameType;
 	unsigned short *acquisitionBuffer;
-	unsigned short *offsetBuffer;
-	DWORD *gainBuffer;
 };
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc);

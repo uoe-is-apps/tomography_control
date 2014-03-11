@@ -25,7 +25,8 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	iRet = Acquisition_GbIF_GetDeviceCnt(&ulNumSensors);
 	if (iRet != HIS_ALL_OK)
 	{
-		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 				
@@ -36,7 +37,8 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 	if (ulNumSensors > 1)
 	{
-		sprintf(this -> m_errorBuffer, "Found %l cameras, expected only 1.", ulNumSensors);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"Found %l cameras, expected only 1.", ulNumSensors);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 
@@ -46,7 +48,8 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	iRet = Acquisition_GbIF_GetDeviceList(&pGbIF_DEVICE_PARAM, 1);
 	if (iRet != HIS_ALL_OK)
 	{
-		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 
@@ -65,7 +68,8 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 	if (iRet != HIS_ALL_OK)
 	{
-		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 
@@ -78,8 +82,6 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	// Calibrate connection
 	if (Acquisition_GbIF_CheckNetworkSpeed(this -> m_hAcqDesc, &usTiming, &lPacketDelay, usNetworkLoadPercent) == HIS_ALL_OK)
 	{
-		printf("%s result: suggested timing: %d packetdelay %d @%d networkload\t\t\t\n"
-			,"Acquisition_GbIF_CheckNetworkSpeed",usTiming,lPacketDelay,usNetworkLoadPercent);
 		if (Acquisition_GbIF_SetPacketDelay(this -> m_hAcqDesc, lPacketDelay) != HIS_ALL_OK)
 		{
 			throw new camera_init_error("Could not set packet delay.");
@@ -97,12 +99,15 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 		DWORD boardError;
 		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
 
-		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d, Board Error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s fail! Error Code %d, Board Error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
 		throw new camera_init_error(this -> m_errorBuffer);
 	}
 	
 	this -> m_nHeight = headInfo.dwNrRows;
 	this -> m_nWidth = headInfo.dwNrColumns;
+	this -> m_avgBuffer = (unsigned short *)malloc(sizeof (unsigned short) * this -> m_nHeight * this -> m_nWidth);
+	this -> m_sumBuffer = (unsigned int *)malloc(sizeof (unsigned int) * this -> m_nHeight * this -> m_nWidth);
 
 	Acquisition_SetCallbacksAndMessages(this -> m_hAcqDesc,
 		NULL,
@@ -113,6 +118,15 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 PerkinElmerXrd::~PerkinElmerXrd()
 {
+	if (NULL != this -> m_avgBuffer)
+	{
+		free (this -> m_avgBuffer);
+	}
+	if (NULL != this -> m_sumBuffer)
+	{
+		free (this -> m_sumBuffer);
+	}
+
 	if (this -> m_detectorInitialised)
 	{
 		Acquisition_Close(this -> m_hAcqDesc);
@@ -124,7 +138,6 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 	PerkinElmerAcquisition task;
 	
 	task.camera = this;
-	task.directory = this -> m_directory;
 	task.endAcquisitionEvent.ResetEvent();
 	task.window = window;
 	task.frameType = frameType;
@@ -148,7 +161,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 		DWORD boardError;
 		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
 
-		sprintf(this -> m_errorBuffer, "%s fail! Error Code %d, Board Error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1, "%s fail! Error Code %d, Board Error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
 		throw new camera_acquisition_error(this -> m_errorBuffer);
 	}
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
@@ -205,9 +218,9 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 	TIFF* tif = TIFFOpen(filename, "w");
-	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> m_nHeight);
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, camera -> m_nHeight);
+	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> GetImageWidth());
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> GetImageHeight());
+	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, camera -> GetImageHeight());
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short) * 8);
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -217,7 +230,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	
 
 	// Find the start of the current frame
-	unsigned int frameSize = camera -> m_nWidth * camera -> m_nHeight;
+	unsigned int frameSize = camera -> GetImageWidth() * camera -> GetImageHeight();
 	unsigned short *frameBuffer
 		= task -> acquisitionBuffer + ((dwSecFrame - 1) * frameSize);
 	TIFFWriteRawStrip(tif, 0, frameBuffer,
