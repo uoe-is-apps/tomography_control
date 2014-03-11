@@ -3,9 +3,8 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	ShadOCam::ShadOCam(char* directory, char* camFilePath)
+	ShadOCam::ShadOCam(char* directory, char* camFilePath) : Camera(directory)
 {
-	this -> m_directory = directory;
 	this -> m_camFilePath = camFilePath;
 }
 
@@ -102,12 +101,12 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameTyp
 {
 	long qh; // handle for grab; only needed to confirm image was taken
 			 // successfully, does not reserve memory for the grab.
-	char filename[FILENAME_BUFFER_SIZE];
+	char *filename;
 
 	for (u_int frame = 0; frame < frames; frame++, *frameCount++)
 	{
-		GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, frameType, (*frameCount)++);
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
+		filename = GenerateImageFilename(frameType, (*frameCount)++);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 		
 		// grab
 		qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
@@ -123,18 +122,8 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameTyp
 	}
 }
 
-int ShadOCam::GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) {
-	switch (frameType)
-	{
-	case SINGLE:
-		return sprintf_s(buffer, maxLength, "%s\\IMAGE%04d.raw", this -> m_directory, frame);
-	case DARK:
-		return sprintf_s(buffer, maxLength, "%s\\DC%04d.raw", this -> m_directory, frame);
-	case FLAT_FIELD:
-		return sprintf_s(buffer, maxLength, "%s\\FF%04d.raw", this -> m_directory, frame);
-	default:
-		throw new bad_frame_type_error("Unknown frame type.");
-	}
+char *ShadOCam::GenerateImageFilename(FrameType frameType, u_int frame) {
+	return Camera::GenerateImageFilename(frameType, frame, "raw");
 }
 
 u_short ShadOCam::GetImageHeight() {

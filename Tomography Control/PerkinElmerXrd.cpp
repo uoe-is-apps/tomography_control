@@ -7,9 +7,8 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(char* directory)
+PerkinElmerXrd::PerkinElmerXrd(char* directory) : Camera(directory)
 {
-	this -> m_directory = directory;
 }	
 
 void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
@@ -166,18 +165,16 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 	free(task.acquisitionBuffer);
 }
 
-int PerkinElmerXrd::GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) {
-	switch (frameType)
-	{
-	case SINGLE:
-		return sprintf_s(buffer, maxLength, "%s\\IMAGE%04d.tiff", this -> m_directory, frame);
-	case DARK:
-		return sprintf_s(buffer, maxLength, "%s\\DC%04d.tiff", this -> m_directory, frame);
-	case FLAT_FIELD:
-		return sprintf_s(buffer, maxLength, "%s\\FF%04d.tiff", this -> m_directory, frame);
-	default:
-		throw new bad_frame_type_error("Unknown frame type.");
-	}
+u_short PerkinElmerXrd::GetImageHeight() {
+	return this -> m_nHeight;
+}
+
+u_short PerkinElmerXrd::GetImageWidth() {
+	return this -> m_nWidth;
+}
+
+char *PerkinElmerXrd::GenerateImageFilename(FrameType frameType, u_int frame) {
+	return Camera::GenerateImageFilename(frameType, frame, "tiff");
 }
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
@@ -193,7 +190,7 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 
 void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 {
-	char filename[FILENAME_BUFFER_SIZE];
+	char *filename;
 	DWORD dwAcqData, dwActFrame, dwSecFrame;
 	PerkinElmerXrd *camera;
 	PerkinElmerAcquisition *task;
@@ -204,8 +201,8 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	camera -> GenerateImageFilename(filename, FILENAME_BUFFER_SIZE - 1, task -> frameType, *task -> frameCount);
-	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)&filename);
+	filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
+	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 	TIFF* tif = TIFFOpen(filename, "w");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> m_nWidth);

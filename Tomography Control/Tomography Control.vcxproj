@@ -116,6 +116,7 @@
     <ClInclude Include="Tomography ControlDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DummyCamera.cpp" />
     <ClCompile Include="DummyTable.cpp" />
     <ClCompile Include="Exceptions.cpp" />

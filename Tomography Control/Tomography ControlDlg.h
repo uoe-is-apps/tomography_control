@@ -18,7 +18,7 @@ public:
 	CameraTask(FrameType taskType, unsigned short totalImages);
 
 	FrameType m_taskType;
-	ICamera* m_camera;
+	Camera* m_camera;
 
 	char *m_directoryPath;
 
@@ -48,7 +48,7 @@ public:
 	unsigned short m_totalImages;
 	float m_exposureTimeSeconds;
 	char *m_directoryPath;
-	ICamera* m_camera;
+	Camera* m_camera;
 
 // Dialog Data
 	enum { IDD = IDD_TAKING_PHOTOS_DIALOG };
@@ -142,7 +142,7 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	void RunManualImageTask(FrameType taskType);
-	ICamera* BuildSelectedCamera();
+	Camera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
 
 };

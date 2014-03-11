@@ -84,13 +84,13 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 {
 	// Fill in a sensible timestamp
 	time_t rawtime;
-	struct tm * timeinfo;
+	struct tm timeinfo;
 	char timestampBuffer[TIMESTAMP_BUFFER_SIZE];
 
 	time (&rawtime);
-	timeinfo = localtime (&rawtime);
+	localtime_s(&timeinfo, &rawtime);
 
-	strftime(timestampBuffer, TIMESTAMP_BUFFER_SIZE, "%Y-%m-%d_%H_%M", timeinfo);
+	strftime(timestampBuffer, TIMESTAMP_BUFFER_SIZE, "%Y-%m-%d_%H_%M", &timeinfo);
 	this -> m_timestamp.Append(timestampBuffer);
 
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -373,9 +373,9 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 /* Get a camera object, depending on the currently selected type.
  * Throws bad_camera_type_error in case of a problem.
  */
-ICamera* CTomographyControlDlg::BuildSelectedCamera()
+Camera* CTomographyControlDlg::BuildSelectedCamera()
 {
-	ICamera *camera;
+	Camera *camera;
 
 	switch (this -> m_cameraType)
 	{

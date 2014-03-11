@@ -11,7 +11,7 @@ struct RunTask
 {
 	CWnd* m_dialog;
 
-	ICamera* m_camera;
+	Camera* m_camera;
 	Table* m_table;
 
 	CString m_directoryPath;
@@ -64,7 +64,7 @@ public:
 
 	CProgressCtrl m_progressCtl;
 	
-	ICamera* m_camera;
+	Camera* m_camera;
 	Table* m_table;
 	CWinThread* m_workerThread;
 	RunTask *m_task;
