@@ -106,8 +106,12 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	
 	this -> m_nHeight = headInfo.dwNrRows;
 	this -> m_nWidth = headInfo.dwNrColumns;
-	this -> m_avgBuffer = (unsigned short *)malloc(sizeof (unsigned short) * this -> m_nHeight * this -> m_nWidth);
-	this -> m_sumBuffer = (unsigned int *)malloc(sizeof (unsigned int) * this -> m_nHeight * this -> m_nWidth);
+	this -> m_avgSumBuffer = (unsigned int *)malloc(sizeof (unsigned int) * this -> m_nHeight * this -> m_nWidth);
+
+	if (NULL == this -> m_avgSumBuffer)
+	{
+		throw new camera_init_error("Could not allocate buffer to hold average/sum data.");
+	}
 
 	Acquisition_SetCallbacksAndMessages(this -> m_hAcqDesc,
 		NULL,
@@ -118,19 +122,30 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 PerkinElmerXrd::~PerkinElmerXrd()
 {
-	if (NULL != this -> m_avgBuffer)
+	if (NULL != this -> m_avgSumBuffer)
 	{
-		free (this -> m_avgBuffer);
-	}
-	if (NULL != this -> m_sumBuffer)
-	{
-		free (this -> m_sumBuffer);
+		free (this -> m_avgSumBuffer);
 	}
 
 	if (this -> m_detectorInitialised)
 	{
 		Acquisition_Close(this -> m_hAcqDesc);
 	}
+}
+
+double PerkinElmerXrd::CalculatePixelAverage(unsigned short *frameBuffer)
+{
+	long pixelSum = 0;
+
+	for (unsigned short row = 0; row < GetImageHeight(); row++)
+	{
+      	for (unsigned short col = 0; col < GetImageWidth(); col++)
+      	{	
+      		pixelSum += *(frameBuffer++);
+      	}
+	}
+
+	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
 }
 
 void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window)
@@ -142,9 +157,14 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 	task.window = window;
 	task.frameType = frameType;
 	task.frameCount = frameCount;
+	task.lastPixelAverageValid = FALSE;
+	task.capturedImages = 0;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
+
+	// Clear the average/sum buffer
+	memset(this -> m_avgSumBuffer, 0, sizeof(unsigned int) * this -> m_nWidth * this -> m_nHeight);
 	
 	// We have to allocate the acquisition buffer here, as we need to know how many frames
 	// we're taking, before we can allocate it.
@@ -194,11 +214,50 @@ char *PerkinElmerXrd::GenerateImageFilename(FrameType frameType, u_int frame) {
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 {
+	char *filename;
 	DWORD dwAcqData;
+	PerkinElmerXrd *camera;
 	PerkinElmerAcquisition *task;
 
 	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
 	task = (PerkinElmerAcquisition *)dwAcqData;
+	camera = task -> camera;
+	
+	filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
+
+	switch (task -> frameType)
+	{
+	case DARK:
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		camera -> WriteTiff(filename, camera -> m_avgSumBuffer);
+	
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
+		(*task -> frameCount)++;
+		break;
+	case FLAT_FIELD:
+		unsigned int *sourceBufferPtr = camera -> m_avgSumBuffer;
+		unsigned short *averageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
+		unsigned short *averageBufferPtr = averageBuffer;
+
+		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
+		{
+			for (unsigned short col = 0; col < camera -> GetImageHeight(); col++)
+			{
+				double sum = (*sourceBufferPtr++);
+
+				*(averageBufferPtr++) = (unsigned short)(sum / task -> capturedImages);
+			}
+		}
+
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		camera -> WriteTiff(filename, averageBuffer);
+	
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
+		(*task -> frameCount)++;
+		break;
+	}
 
 	task -> endAcquisitionEvent.PulseEvent();
 }
@@ -216,18 +275,56 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
-	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-	
 	// Find the start of the current frame
 	unsigned int frameSize = camera -> GetImageWidth() * camera -> GetImageHeight();
 	unsigned short *frameBuffer
 		= task -> acquisitionBuffer + ((dwSecFrame - 1) * frameSize);
-
-	camera -> WriteTiff(filename, frameBuffer);
 	
-	task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
-	(*task -> frameCount)++;
+	// Verify the beam is still active, by checking pixel average against last value for
+	// this set.
+	double pixelAverage = camera -> CalculatePixelAverage(frameBuffer);
 
-	// Acquisition_SetReady(hAcqDesc, 1);
+	// We can only check against previous value, if we actually have a previous value.
+	if (task -> lastPixelAverageValid)
+	{
+		double pixelRatio = pixelAverage / task -> lastPixelAverage;
+		double variation = abs(1.0 - pixelRatio);
+
+		if (variation >= PIXEL_AVERAGE_TOLERANCE)
+		{
+			// Likely beam failure, skip
+			return;
+		}
+	}
+
+	task -> lastPixelAverage = pixelAverage;
+	task -> lastPixelAverageValid = TRUE;
+
+	unsigned int *avgSumBufferPtr = camera -> m_avgSumBuffer;
+
+	switch (task -> frameType)
+	{
+	case DARK:
+	case FLAT_FIELD:
+
+		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
+		{
+      		for (unsigned short col = 0; col < camera -> GetImageWidth(); col++)
+      		{	
+      			*(avgSumBufferPtr++) += *(frameBuffer++);
+      		}
+		}
+
+		break;
+	default:
+		filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		camera -> WriteTiff(filename, frameBuffer);
+	
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
+		(*task -> frameCount)++;
+		break;
+	}
+	task -> capturedImages++;
 }

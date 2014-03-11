@@ -10,6 +10,7 @@
 #include "tiff.h"
 
 #define ERROR_BUFFER_SIZE 1024
+#define PIXEL_AVERAGE_TOLERANCE 0.1
 #define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\DEFAULT.CAM"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
@@ -84,39 +85,25 @@ public:
 	PerkinElmerXrd(char* directory);
 	~PerkinElmerXrd();
 	
+	double CalculatePixelAverage(unsigned short *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 
+	/* Common buffer used when doing an acquisition for summed frames. */
+	unsigned int *m_avgSumBuffer;
+
 protected:	
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;		// height of image
 	
-	/* Common buffer used when doing an acquisition for averaged frames. */
-	unsigned short *m_avgBuffer;
-	/* Common buffer used when doing an acquisition for summed frames. */
-	unsigned int *m_sumBuffer;
 	char		m_errorBuffer[ERROR_BUFFER_SIZE];
 	float		m_exposureTimeSeconds;
 	HACQDESC	m_hAcqDesc;
 	int			m_nChannelNr;
 	BOOL		m_detectorInitialised;
-};
-
-/* Structure for tracking a specific acquisition from the Perkin-Elmer
- * camera.
- */
-struct PerkinElmerAcquisition {
-	PerkinElmerXrd *camera;
-	
-	CWnd *window;
-	CEvent endAcquisitionEvent;
-	
-	u_int *frameCount;
-	FrameType frameType;
-	unsigned short *acquisitionBuffer;
 };
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc);
@@ -143,7 +130,7 @@ public:
 	virtual void SetupCamera(float exposureTime);
 
 protected:
-	char		*m_camFilePath;
+	char*		m_camFilePath;	// Path of the camera configuration file (used by PXD)
 
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure
@@ -151,12 +138,31 @@ protected:
 	long m_hFrameGrabber;	// adress of frame grabber
 
 	CAMERA_TYPE* m_camType;	// pointer to camera object
-
+	
 	FRAME* m_currentFrame;	// pointer to FRAME object
 	short* m_currentFramePtr;	// pointer to start of frame
+	FRAME* m_avgSumFrame;	// pointer to average/sum frame
 
 	BOOL m_bPxdLoaded;
 	BOOL m_bFramelibLoaded;
 	BOOL m_bCamTypeLoaded;
 	BOOL m_bFrameGrabberAllocated;
+};
+
+/* Structure for tracking a specific acquisition from the Perkin-Elmer
+ * camera. This is needed because the process is asynchronous, so this
+ * data needs to be passed into the frame event handler.
+ */
+struct PerkinElmerAcquisition {
+	PerkinElmerXrd *camera;
+	
+	CWnd *window;
+	CEvent endAcquisitionEvent;
+	
+	BOOL lastPixelAverageValid;
+	double lastPixelAverage;
+	u_int *frameCount;
+	u_int capturedImages;
+	FrameType frameType;
+	unsigned short *acquisitionBuffer;
 };
