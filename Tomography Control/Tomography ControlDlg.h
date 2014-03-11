@@ -10,63 +10,6 @@
 #define DIRECTORY_PATH_BUFFER_SIZE 512
 #define TIMESTAMP_BUFFER_SIZE 256
 
-/* Tracks details of a request sent to the camera */
-class CameraTask
-{
-public:
-
-	CameraTask(FrameType taskType, unsigned short totalImages);
-
-	FrameType m_taskType;
-	Camera* m_camera;
-
-	char *m_directoryPath;
-
-	CWnd* m_dialog;
-
-	float m_exposureTimeSeconds;
-	unsigned short m_currentImages;
-	unsigned short m_totalImages;
-	BOOL m_running;
-};
-
-// CTakingPhotosDlg dialog
-
-class CTakingPhotosDlg : public CDialogEx
-{
-	DECLARE_DYNAMIC(CTakingPhotosDlg)
-
-public:
-	CTakingPhotosDlg(CWnd* pParent = NULL);   // standard constructor
-	virtual ~CTakingPhotosDlg();
-	virtual BOOL OnInitDialog();
-	
-	FrameType m_taskType;
-
-	CameraTask *m_task;
-	CWinThread* m_workerThread;
-	unsigned short m_totalImages;
-	float m_exposureTimeSeconds;
-	char *m_directoryPath;
-	Camera* m_camera;
-
-// Dialog Data
-	enum { IDD = IDD_TAKING_PHOTOS_DIALOG };
-
-	afx_msg void OnClose();
-	void OnBnClickedCancel();
-	afx_msg LRESULT OnFrameCaptured(WPARAM wParam, LPARAM lParam);
-	afx_msg LRESULT OnThreadFinished(WPARAM wParam, LPARAM lParam);
-
-protected:
-	CProgressCtrl m_progress;
-
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-	// CWinThread *m_workerThread;
-
-	DECLARE_MESSAGE_MAP()
-};
 
 // CTomographyControlDlg dialog
 class CTomographyControlDlg : public CDialogEx
@@ -105,6 +48,7 @@ public:
 	CString m_manualCameraControl;
 	int m_numImages;
 	int m_numAvSumImages;
+	int m_cameraType;
 	
 	// Table controls
 	CString m_tableCommand;
@@ -126,13 +70,13 @@ public:
 	int m_stopsPerRotation;
 	int m_turnsTotal;
 	int m_delayBetweenTurnsSeconds;
-	int m_cameraType;
 	int m_tableType;
 	int m_tableComPort;
 protected:
 	HICON m_hIcon;
 	char m_directoryPathBuffer[DIRECTORY_PATH_BUFFER_SIZE];
 
+	FrameSavingOptions GetFrameSavingOptions();
 	void UpdateDirectoryPath();
 
 	// Generated message map functions
@@ -144,7 +88,6 @@ protected:
 	void RunManualImageTask(FrameType taskType);
 	Camera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
-
 };
 
 

@@ -16,7 +16,7 @@ DummyCamera::~DummyCamera()
 {
 }
 
-void DummyCamera::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window)
+void DummyCamera::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	unsigned short *frameBuffer = (unsigned short *)calloc(sizeof(unsigned short), this -> GetImageWidth() * this -> GetImageHeight());
 

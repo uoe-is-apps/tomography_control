@@ -74,6 +74,8 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_task -> m_dialog = this;
 	this -> m_task -> m_camera = this -> m_camera;
 	this -> m_task -> m_table = this -> m_table;
+
+	this -> m_task -> m_frameSavingOptions = this -> m_frameSavingOptions;
 	this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_turnsTotal = this -> m_turnsTotal;
 	this -> m_task -> m_stopsPerTurn = this -> m_stopsPerRotation;
@@ -257,7 +259,7 @@ UINT captureRunFrames( LPVOID pParam )
 
 			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, SINGLE, dialog);
+			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog);
 			
 			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 		}

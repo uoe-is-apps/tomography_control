@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Exceptions.h"
+#include "TakingPhotosDlg.h"
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "afxdialogex.h"
@@ -33,7 +34,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 {
 	BOOL retVal = CDialogEx::OnInitDialog();
 
-	this -> m_task = new CameraTask(this -> m_taskType, this -> m_totalImages);
+	this -> m_task = new ManualCameraTask(this -> m_taskType, this -> m_frameSavingOptions, this -> m_totalImages);
 	
 	// this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_dialog = this;
@@ -100,8 +101,9 @@ afx_msg LRESULT CTakingPhotosDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
 
 // Helper class for tracking details of the task
 
-CameraTask::CameraTask(FrameType taskType, unsigned short totalImages)
+ManualCameraTask::ManualCameraTask(FrameType taskType, FrameSavingOptions captureType, unsigned short totalImages)
 {
+	this -> m_frameSavingOptions = captureType;
 	this -> m_taskType = taskType;
 	this -> m_totalImages = totalImages;
 }
@@ -109,7 +111,7 @@ CameraTask::CameraTask(FrameType taskType, unsigned short totalImages)
 // Worker function for taking a set of manual images from an X-ray camera
 UINT takeManualImages( LPVOID pParam )
 {
-	CameraTask* task = (CameraTask*)pParam;
+	ManualCameraTask* task = (ManualCameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
 	
 	try {
@@ -125,7 +127,7 @@ UINT takeManualImages( LPVOID pParam )
 
 	u_int frameCount = 1;
 
-	task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_taskType, dialog);
+	task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_frameSavingOptions, task -> m_taskType, dialog);
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 

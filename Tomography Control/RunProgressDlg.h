@@ -14,6 +14,7 @@ struct RunTask
 	Camera* m_camera;
 	Table* m_table;
 
+	FrameSavingOptions m_frameSavingOptions;
 	CString m_directoryPath;
 	u_int m_turnsTotal;
 	u_int m_stopsPerTurn;
@@ -46,6 +47,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	FrameSavingOptions m_frameSavingOptions;
+
 	CString m_directoryPath;
 	CString m_imageFilename;
 	int m_currentPosition;

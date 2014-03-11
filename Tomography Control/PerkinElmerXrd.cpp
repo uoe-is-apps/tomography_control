@@ -148,15 +148,16 @@ double PerkinElmerXrd::CalculatePixelAverage(unsigned short *frameBuffer)
 	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
 }
 
-void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window)
+void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
 	
 	task.camera = this;
 	task.endAcquisitionEvent.ResetEvent();
 	task.window = window;
+	task.captureType = captureType;
 	task.frameType = frameType;
-	task.frameCount = frameCount;
+	task.imageCount = imageCounter;
 	task.lastPixelAverageValid = FALSE;
 	task.capturedImages = 0;
 
@@ -223,19 +224,19 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
+	filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
 
-	switch (task -> frameType)
+	switch (task -> captureType)
 	{
-	case DARK:
+	case SUM:
 		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 		camera -> WriteTiff(filename, camera -> m_avgSumBuffer);
 	
-		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
-		(*task -> frameCount)++;
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
+		(*task -> imageCount)++;
 		break;
-	case FLAT_FIELD:
+	case AVERAGE:
 		unsigned int *sourceBufferPtr = camera -> m_avgSumBuffer;
 		unsigned short *averageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
 		unsigned short *averageBufferPtr = averageBuffer;
@@ -254,8 +255,8 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 
 		camera -> WriteTiff(filename, averageBuffer);
 	
-		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
-		(*task -> frameCount)++;
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
+		(*task -> imageCount)++;
 		break;
 	}
 
@@ -302,11 +303,10 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 	unsigned int *avgSumBufferPtr = camera -> m_avgSumBuffer;
 
-	switch (task -> frameType)
+	switch (task -> captureType)
 	{
-	case DARK:
-	case FLAT_FIELD:
-
+	case SUM:
+	case AVERAGE:
 		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
 		{
       		for (unsigned short col = 0; col < camera -> GetImageWidth(); col++)
@@ -317,13 +317,13 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 		break;
 	default:
-		filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
+		filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
 		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 		camera -> WriteTiff(filename, frameBuffer);
 	
-		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
-		(*task -> frameCount)++;
+		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
+		(*task -> imageCount)++;
 		break;
 	}
 	task -> capturedImages++;

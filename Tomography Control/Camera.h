@@ -11,10 +11,10 @@
 
 #define ERROR_BUFFER_SIZE 1024
 #define PIXEL_AVERAGE_TOLERANCE 0.1
-#define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\DEFAULT.CAM"
+#define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\INDIVIDUAL.CAM"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
-enum CaptureType { DEFAULT, AVERAGE, SUM };
+enum FrameSavingOptions { INDIVIDUAL, AVERAGE, SUM };
 
 /* Abstract class for cameras to extend. Provides basic functions for retrieving
  * information about the camera (width, height), filename creation, image sum/average
@@ -31,12 +31,12 @@ public:
 	/* Captures a series of frames and write them to disk.
 	 *
 	 * frames: number of frames to capture
-	 * frameCount: counter for frames captured in a single run, used to derive filename. Will be updated
-	 * as frames as captured.
+	 * imageCount: counter for images captured in a single run, used to derive filename. Will be updated
+	 * as images are written to disk.
 	 * frameType: the type of frame, used to determine filename.
 	 * window: the dialog window to notify of progress.
 	 */
-	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window) = 0;
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window) = 0;
 	/* Construct a filename for an image to be written to disk. Returns an pointer
 	 * to a buffer containing the filename. This buffer is overwritten when this method
 	 * is called next.
@@ -66,7 +66,7 @@ public:
 	DummyCamera(char* directory);
 	~DummyCamera();
 	
-	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -86,7 +86,7 @@ public:
 	~PerkinElmerXrd();
 	
 	double CalculatePixelAverage(unsigned short *frameBuffer);
-	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -123,7 +123,7 @@ public:
 	u_short m_nWidth;			// width of image
 	u_short m_nHeight;			// height of image
 	
-	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -155,14 +155,16 @@ protected:
  */
 struct PerkinElmerAcquisition {
 	PerkinElmerXrd *camera;
-	
 	CWnd *window;
+
+	FrameSavingOptions captureType;
+	FrameType frameType;
+
 	CEvent endAcquisitionEvent;
 	
 	BOOL lastPixelAverageValid;
 	double lastPixelAverage;
-	u_int *frameCount;
+	u_int *imageCount;
 	u_int capturedImages;
-	FrameType frameType;
 	unsigned short *acquisitionBuffer;
 };

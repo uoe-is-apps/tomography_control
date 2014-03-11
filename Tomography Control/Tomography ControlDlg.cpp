@@ -12,6 +12,7 @@
 
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "TakingPhotosDlg.h"
 #include "Exceptions.h"
 #include "Camera.h"
 #include "RunProgressDlg.h"
@@ -393,6 +394,21 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	}
 }
 
+FrameSavingOptions CTomographyControlDlg::GetFrameSavingOptions()
+{
+	switch (this -> m_frameSavingOptions)
+	{
+	case 0:
+		return INDIVIDUAL;
+	case 1:
+		return AVERAGE;
+	case 2:
+		return SUM;
+	default:
+		return INDIVIDUAL;
+	}
+}
+
 void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 {
 	UpdateData(TRUE);
@@ -442,6 +458,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 		return;
 	}
 	
+	runProgressDlg.m_frameSavingOptions = GetFrameSavingOptions();
 	runProgressDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	runProgressDlg.m_framesPerStop = this -> m_framesPerStop; // What about m_numImages?
