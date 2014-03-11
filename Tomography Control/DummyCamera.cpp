@@ -68,6 +68,14 @@ int DummyCamera::GenerateImageFilename(char* buffer, size_t maxLength, FrameType
 	}
 }
 
+u_short DummyCamera::GetImageHeight() {
+	return this -> m_nHeight;
+}
+
+u_short DummyCamera::GetImageWidth() {
+	return this -> m_nWidth;
+}
+
 void DummyCamera::SetupCamera(float exposureTimeSeconds)
 {
 	assert (exposureTimeSeconds > 0.000);

@@ -136,3 +136,11 @@ int ShadOCam::GenerateImageFilename(char* buffer, size_t maxLength, FrameType fr
 		throw new bad_frame_type_error("Unknown frame type.");
 	}
 }
+
+u_short ShadOCam::GetImageHeight() {
+	return this -> m_nHeight;
+}
+
+u_short ShadOCam::GetImageWidth() {
+	return this -> m_nWidth;
+}

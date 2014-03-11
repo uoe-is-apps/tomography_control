@@ -5,6 +5,8 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
+#define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\DEFAULT.CAM"
+
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
 enum CaptureType { DEFAULT, AVERAGE, SUM };
 
@@ -21,6 +23,8 @@ public:
 	 */
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window) = 0;
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame) = 0;
+	virtual u_short GetImageHeight() = 0;
+	virtual u_short GetImageWidth() = 0;
 	virtual void SetupCamera(float exposureTime) = 0;
 };
 
@@ -32,10 +36,12 @@ public:
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual u_short GetImageHeight();
+	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 	
-	u_int m_nWidth;
-	u_int m_nHeight;
+	u_short m_nWidth;
+	u_short m_nHeight;
 
 protected:
 	char *m_directory; // Directory to write images to
@@ -53,6 +59,8 @@ public:
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual u_short GetImageHeight();
+	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 
 protected:
@@ -87,14 +95,21 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc);
 class ShadOCam : public ICamera
 {
 public:
+	/* Construct an abstraction layer around a Shad-o-Cam and image capture.
+	 *
+	 * "directory" - where to write images to.
+	 * "camFilePath" - the location on disk of the camera configuration file ("xxxx.CAM")
+	 */
 	ShadOCam(char* directory, char* camFilePath);
 	~ShadOCam();
 
-	int m_nWidth;			// width of image
-	int m_nHeight;			// height of image
+	u_short m_nWidth;			// width of image
+	u_short m_nHeight;			// height of image
 	
 	virtual void CaptureFrames(u_int frames, u_int *frameCount, FrameType frameType, CWnd* window);
 	virtual int GenerateImageFilename(char* buffer, size_t maxLength, FrameType frameType, u_int frame);
+	virtual u_short GetImageHeight();
+	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 
 protected:
