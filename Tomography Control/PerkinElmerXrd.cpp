@@ -146,6 +146,8 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *frameCount, FrameType fr
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
 	
+	// We have to allocate the acquisition buffer here, as we need to know how many frames
+	// we're taking, before we can allocate it.
 	task.acquisitionBuffer = (unsigned short*)calloc(this -> m_nWidth * this -> m_nHeight * frames, sizeof(unsigned short));
 	if (NULL == task.acquisitionBuffer)
 	{
@@ -216,27 +218,13 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	
 	filename = camera -> GenerateImageFilename(task -> frameType, *task -> frameCount);
 	task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-
-	TIFF* tif = TIFFOpen(filename, "w");
-	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, camera -> GetImageWidth());
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, camera -> GetImageHeight());
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, camera -> GetImageHeight());
-	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short) * 8);
-	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
 	
-
 	// Find the start of the current frame
 	unsigned int frameSize = camera -> GetImageWidth() * camera -> GetImageHeight();
 	unsigned short *frameBuffer
 		= task -> acquisitionBuffer + ((dwSecFrame - 1) * frameSize);
-	TIFFWriteRawStrip(tif, 0, frameBuffer,
-		frameSize * sizeof(unsigned short));
 
-    TIFFClose(tif);
+	camera -> WriteTiff(filename, frameBuffer);
 	
 	task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> frameCount));
 	(*task -> frameCount)++;

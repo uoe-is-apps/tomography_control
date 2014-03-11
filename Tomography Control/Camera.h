@@ -6,6 +6,9 @@
 #include "pxd.h"
 #include "Scilib20.h"
 
+#include "tiffio.h"
+#include "tiff.h"
+
 #define ERROR_BUFFER_SIZE 1024
 #define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\DEFAULT.CAM"
 
@@ -48,6 +51,9 @@ public:
 	virtual u_short GetImageWidth() = 0;
 	virtual void SetupCamera(float exposureTime) = 0;
 
+	void WriteTiff(char* filename, unsigned short *buffer);
+	void WriteTiff(char* filename, unsigned int *buffer);
+
 protected:
 	char *m_directory; // Directory to write images to
 	char filenameBuffer[FILENAME_BUFFER_SIZE];
@@ -84,10 +90,7 @@ public:
 	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 
-protected:
-	void WriteTiff(char* directory, WORD *buffer);
-	void WriteTiff(char* directory, DWORD *buffer);
-	
+protected:	
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;		// height of image
 	

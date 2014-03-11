@@ -32,3 +32,44 @@ char *Camera::GenerateImageFilename(FrameType frameType, u_int frame, char* file
 
 	return this -> filenameBuffer;
 }
+
+
+void Camera::WriteTiff(char* filename, unsigned short *frameBuffer)
+{
+	TIFF* tif = TIFFOpen(filename, "w");
+	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, this -> GetImageWidth());
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> GetImageHeight());
+	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, this -> GetImageHeight());
+	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned short) * 8);
+	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+	unsigned int frameSize = this -> GetImageWidth() * this -> GetImageHeight();
+	TIFFWriteRawStrip(tif, 0, frameBuffer,
+		frameSize * sizeof(unsigned short));
+
+    TIFFClose(tif);
+}
+
+void Camera::WriteTiff(char* filename, unsigned int *frameBuffer)
+{
+	TIFF* tif = TIFFOpen(filename, "w");
+	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, this -> GetImageWidth());
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> GetImageHeight());
+	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, this -> GetImageHeight());
+	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(unsigned int) * 8);
+	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+	unsigned int frameSize = this -> GetImageWidth() * this -> GetImageHeight();
+	TIFFWriteRawStrip(tif, 0, frameBuffer,
+		frameSize * sizeof(unsigned int));
+
+    TIFFClose(tif);
+}
