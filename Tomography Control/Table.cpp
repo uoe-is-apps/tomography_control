@@ -172,7 +172,7 @@ UINT communicateWithTable( LPVOID pParam )
 	{
 		table -> DoIO();
 
-		::WaitForSingleObject(table -> m_inputEvent.m_hObject, 50);
+		::WaitForSingleObject(table -> m_inputEvent.m_hObject, TABLE_IO_DELAY_MILLIS);
 	}
 
 	return 0;

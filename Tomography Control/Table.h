@@ -3,6 +3,8 @@
 #include <string>
 #include "afxwin.h"
 
+#define TABLE_IO_DELAY_MILLIS 40
+
 class Table
 {
 public:

@@ -253,13 +253,14 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 		this -> m_tableCommand.Empty();
 
 		this -> UpdateData(FALSE);
-
-		// Check if the command starts "deg"
-		if (strstr(command, "deg") == command)
+		
+		// Check if the command ends with the "nm" command
+		if (strstr(command, " nm\r\n") > 0)
 		{
 			float angle;
+			int axis;
 
-			if (sscanf(command, "deg %f nm", &angle) > 0)
+			if (sscanf(command, "%f %d nm", &angle, &axis) > 0)
 			{
 				// Command was matched successfully
 				if (angle > 360.0
@@ -334,7 +335,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		}
 
 		this -> m_table -> SendTableCommand(line);
-		Sleep(500);
+		Sleep(TABLE_IO_DELAY_MILLIS * 2);
 		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
 	}
 
