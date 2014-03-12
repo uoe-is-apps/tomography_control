@@ -169,7 +169,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 		capturedImages++;
 	}
 
-	/* if (frameSavingOptions == INDIVIDUAL)
+	if (frameSavingOptions == INDIVIDUAL)
 	{
 		// Nothing more to do
 		return;
@@ -221,7 +221,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
 		(*frameCount)++;
-	} */
+	}
 }
 
 char *ShadOCam::GenerateImageFilename(FrameType frameType, u_int frame) {
@@ -246,33 +246,26 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	
 	this -> m_currentFrame = NULL;
 	this -> m_avgSumFrame = NULL;
-	
-	PXD pxd;				// pxd library structure
-	FRAMELIB framelib;		// frame library structure
-	long hFG;				// adress of frame grabber
 
 	// Load the image capture libraries
-	if ( !imagenation_OpenLibrary("pxd_32.dll", &pxd, sizeof(PXD)) )  {
+	if ( !imagenation_OpenLibrary("pxd_32.dll", &this -> m_pxd, sizeof(PXD)) )  {
 		throw new camera_init_error("Frame grabber library not loaded.");
 	}
-	this -> m_pxd = pxd;
 	this -> m_bPxdLoaded = TRUE;
 	
-	if ( !imagenation_OpenLibrary("frame_32.dll", &framelib, sizeof(FRAMELIB)) )  {
+	if ( !imagenation_OpenLibrary("frame_32.dll", &this -> m_framelib, sizeof(FRAMELIB)) )  {
 		throw new camera_init_error("Frame library not loaded.");
 	}
-	this -> m_framelib = framelib;
 	this -> m_bFramelibLoaded = TRUE;
 
 	// request access to frame grabber
-	if ( !(hFG = pxd.AllocateFG(-1)) )  {
+	if ( !(this -> m_hFG = this -> m_pxd.AllocateFG(-1)) )  {
 		throw new camera_init_error("PXD frame grabber not found.");
 	}
-	this -> m_hFG = hFG;
 	this -> m_bFrameGrabberAllocated = TRUE;
 
 	// initialize camera configuration
-	if ( !(this -> m_camType = pxd.LoadConfig(this -> m_camFilePath)) )  {
+	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(this -> m_camFilePath)) )  {
 		throw new camera_init_error("Camera configuration not loaded.");
 	}
 	this -> m_bCamTypeLoaded = TRUE;
@@ -285,8 +278,8 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	this -> m_pxd.SetFramePeriod(this -> m_camType, exposureTimeSeconds);
 	ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
 
-	this -> m_pxd.SetCameraConfig(hFG, this -> m_camType);
-	this -> m_pxd.ContinuousStrobes(hFG, TRUE);  // turn on camera frame sync
+	this -> m_pxd.SetCameraConfig(this -> m_hFG, this -> m_camType);
+	this -> m_pxd.ContinuousStrobes(this -> m_hFG, TRUE);  // turn on camera frame sync
 
 	// initialize input LUT to shift image data down by two bits
 	for (int i = 0; i < len; i++)
@@ -296,12 +289,13 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	this -> m_pxd.SetInputLUT(this -> m_hFG, 16, 0, 0, len, nLUT);
 
 	// set up image destination buffers
-	if ( !(this -> m_currentFrame = pxd.AllocateBuffer(pxd.GetWidth(hFG), pxd.GetHeight(hFG), PBITS_Y16)) )  {
+	if ( !(this -> m_currentFrame = this -> m_pxd.AllocateBuffer(
+		this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG), PBITS_Y16)) )  {
 		throw new camera_init_error("Unable to create image buffer.");
 	}
 
 	// set up image destination buffers
-	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) * pxd.GetWidth(hFG) * pxd.GetHeight(hFG));
+	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) *this -> m_pxd.GetWidth(this -> m_hFG) *this -> m_pxd.GetHeight(this -> m_hFG));
 	if (NULL == this -> m_avgSumFrame)  {
 		throw new camera_init_error("Unable to create average/sum image buffer.");
 	}
