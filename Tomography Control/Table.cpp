@@ -1,6 +1,8 @@
 #include "stdafx.h"
+
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
+#include "Exceptions.h"
 
 #define BUFFER_SIZE 2000
 
@@ -9,32 +11,47 @@ SerialTable::SerialTable(char* gszPort)
 	this -> m_inputEvent.ResetEvent();
 	this -> m_inputBuffer.clear();
 	this -> m_outputBuffer.clear();
+	
+    FillMemory(&this -> m_dcb, sizeof(this -> m_dcb), 0);
+    FillMemory(&this -> m_commTimeouts, sizeof(this -> m_commTimeouts), 0);
+    this -> m_dcb.DCBlength = sizeof(this -> m_dcb);
 
-    DCB dcb;
     this -> m_hComm = CreateFile( gszPort,  
                     GENERIC_READ | GENERIC_WRITE, 
                     0, 
-                    0, 
+                    NULL, 
                     OPEN_EXISTING,
-                    FILE_FLAG_OVERLAPPED,
-                    0);
+                    0,
+                    NULL);
 
     if (this -> m_hComm == INVALID_HANDLE_VALUE) {
-		throw "Could not open serial port.";
+		throw new bad_serial_port_error("Could not open serial port.");
     }
 
 	// Set up the port details
-    FillMemory(&dcb, sizeof(dcb), 0);
-    dcb.DCBlength = sizeof(dcb);
-    if (!BuildCommDCB("9600,n,8,1", &dcb)) {   
+    if (!BuildCommDCB("baud=19200 parity=N data=8 stop=1", &this -> m_dcb)) {   
         // Couldn't build the DCB. Usually a problem
         // with the communications specification string.
-        throw "Could not construct serial port configuration.";
+        throw new bad_serial_port_error("Could not construct serial port configuration.");
     }
     else
 	{
 		// DCB is ready for use.
 	}
+
+	if (SetCommState(this -> m_hComm, &this -> m_dcb) == 0)
+	{
+        throw new bad_serial_port_error("Could not set port state.");
+	}
+	
+	this -> m_commTimeouts.ReadIntervalTimeout = MAXDWORD;
+	this -> m_commTimeouts.ReadTotalTimeoutMultiplier = 0;
+	this -> m_commTimeouts.ReadTotalTimeoutConstant = 0;
+	this -> m_commTimeouts.WriteTotalTimeoutMultiplier = 0;
+	this -> m_commTimeouts.WriteTotalTimeoutConstant = 0;
+
+	SetCommTimeouts(this -> m_hComm, &this -> m_commTimeouts);
+
 }
 
 SerialTable::~SerialTable() 
@@ -47,21 +64,20 @@ void SerialTable::DoIO()
 {
 	DWORD inputBufferSize = sizeof(char) * BUFFER_SIZE;
 	DWORD outputBufferSize = sizeof(char) * BUFFER_SIZE;
-	DWORD bufferFilled = 0;
-	DWORD bytesRead;
+	DWORD bytesRead = 0;
 	char tempBuffer[BUFFER_SIZE];
-	memset(tempBuffer, 0, sizeof(char) * BUFFER_SIZE);
+	
+	tempBuffer[0] = NULL;
+	
+	if (!ReadFile(this -> m_hComm, tempBuffer, sizeof(tempBuffer) - 1, &bytesRead, NULL))
+	{
+		char errorBuffer[ERROR_BUFFER_SIZE];
 
-	do {
-		if (ReadFile(this -> m_hComm, tempBuffer, sizeof(tempBuffer) - bytesRead - 1, &bytesRead, NULL) == 0)
-		{
-			// TODO: Indicate failure somehow
-			return;
-		}
+		sprintf_s(errorBuffer, ERROR_BUFFER_SIZE - 1, "Error reading from table: %d", GetLastError());
 
-		bytesRead += bufferFilled;
-	} while(bytesRead > 0
-		&& bufferFilled < (sizeof(tempBuffer) - 1));
+		MessageBox(NULL, errorBuffer, "Tomography Control", MB_ICONERROR);
+		return;
+	}
 
 	// Lock the IO buffers while we exchange data with them
 	this -> m_bufferLock.Lock();
@@ -69,7 +85,9 @@ void SerialTable::DoIO()
 	// Copy the incoming string to the output buffer
 	if (bytesRead > 0)
 	{
+		tempBuffer[bytesRead] = NULL;
 		this -> m_outputBuffer += tempBuffer;
+		tempBuffer[0] = NULL;
 		
 		this -> PulseMessageReceived();
 	}
@@ -78,6 +96,10 @@ void SerialTable::DoIO()
 	if (!this -> m_inputBuffer.empty())
 	{
 		memcpy(tempBuffer, this -> m_inputBuffer.data(), this -> m_inputBuffer.size());
+
+		// Copy the input to the temporary buffer as if we'd just read it in
+		this -> m_outputBuffer += this -> m_inputBuffer;
+		this -> PulseMessageReceived();
 
 		// Clear the input buffer
 		this -> m_inputBuffer.clear();
@@ -89,11 +111,15 @@ void SerialTable::DoIO()
 
 	this -> m_bufferLock.Unlock();
 
-	DWORD bytesWritten;
+	if (strlen(tempBuffer) > 0)
+	{
+		DWORD bytesWritten;
 
-	WriteFile(this -> m_hComm, tempBuffer, strlen(tempBuffer), &bytesWritten, NULL);
+		// Write the contents of the temp buffer out to serial
+		WriteFile(this -> m_hComm, tempBuffer, strlen(tempBuffer), &bytesWritten, NULL);
 
-	// TODO: Report error if not all bytes have been written
+		// TODO: Report error if not all bytes have been written
+	}
 }
 
 void Table::PulseMessageReceived()
@@ -143,7 +169,7 @@ UINT communicateWithTable( LPVOID pParam )
 	{
 		table -> DoIO();
 
-		::WaitForSingleObject(table -> m_inputEvent.m_hObject, 5000);
+		::WaitForSingleObject(table -> m_inputEvent.m_hObject, 50);
 	}
 
 	return 0;

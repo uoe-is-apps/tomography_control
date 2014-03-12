@@ -12,7 +12,7 @@ public:
 	virtual void SetMessageReceiver(CWnd* wnd);
 	virtual void Start();
 	virtual void Stop();
-
+	
 	CEvent m_inputEvent;
 	BOOL m_running;
 	CCriticalSection m_bufferLock;
@@ -34,6 +34,8 @@ public:
 
 protected:
 	HANDLE m_hComm;
+    DCB m_dcb;
+	COMMTIMEOUTS m_commTimeouts;
 };
 
 class DummyTable : public Table
@@ -42,6 +44,7 @@ public:
 	DummyTable();
 	~DummyTable();
 	void DoIO();
+
 
 protected:
 };

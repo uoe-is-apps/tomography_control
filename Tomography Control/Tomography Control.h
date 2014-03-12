@@ -21,7 +21,8 @@
 #define WM_USER_RUN_STOP_COMPLETED (WM_USER_RUN_TABLE_ANGLE_CHANGED + 1) 
 #define WM_USER_RUN_FINISHED (WM_USER_RUN_STOP_COMPLETED + 1) 
 
-#define FILENAME_BUFFER_SIZE 256
+#define FILENAME_BUFFER_SIZE 512
+#define ERROR_BUFFER_SIZE 1024
 
 // CTomographyControlApp:
 // See Tomography Control.cpp for the implementation of this class

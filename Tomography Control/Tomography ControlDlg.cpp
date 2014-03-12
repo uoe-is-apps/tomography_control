@@ -75,7 +75,6 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_manualCameraControl(_T(""))
 	, m_cameraType(0)
 	, m_tableType(0)
-	, m_tableComPort(0)
 	, m_frameSavingOptions(0)
 	, m_researcherName(_T(""))
 	, m_sampleName(_T(""))
@@ -93,6 +92,21 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 
 	strftime(timestampBuffer, TIMESTAMP_BUFFER_SIZE, "%Y-%m-%d_%H_%M", &timeinfo);
 	this -> m_timestamp.Append(timestampBuffer);
+
+	// Guess at location of airtable file
+	if (FAILED(SHGetFolderPath(NULL, 
+        CSIDL_PERSONAL|CSIDL_FLAG_CREATE, 
+        NULL, 
+        0, 
+        this -> m_directoryPathBuffer)))
+	{
+		throw new bad_directory_error("Could not retrieve user home directory.");
+	}
+	
+	PathAppend(this -> m_directoryPathBuffer, "..");
+	PathAppend(this -> m_directoryPathBuffer, "Desktop");
+	PathAppend(this -> m_directoryPathBuffer, "airtable.txt");
+	this -> m_tableInitialisationFile += this -> m_directoryPathBuffer;
 
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -118,6 +132,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TIMESTAMP, m_timestamp);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES, m_numImages);
 	DDX_Text(pDX, IDC_EDIT_NUM_AVSUM, m_numAvSumImages);
+	DDX_Control(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableOutputControl);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -319,6 +334,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		}
 
 		this -> m_table -> SendTableCommand(line);
+		Sleep(500);
 		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
 	}
 
@@ -367,6 +383,9 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 	table -> m_outputBuffer.clear();
 	table -> m_bufferLock.Unlock();
 	UpdateData(FALSE);
+
+	// Scroll to the end of the buffer
+	this -> m_tableOutputControl.LineScroll(m_tableOutputControl.GetLineCount());
 
 	return TRUE;
 }

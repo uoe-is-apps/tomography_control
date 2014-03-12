@@ -71,7 +71,6 @@ public:
 	int m_turnsTotal;
 	int m_delayBetweenTurnsSeconds;
 	int m_tableType;
-	int m_tableComPort;
 protected:
 	HICON m_hIcon;
 	char m_directoryPathBuffer[DIRECTORY_PATH_BUFFER_SIZE];
@@ -88,6 +87,8 @@ protected:
 	void RunManualImageTask(FrameType taskType);
 	Camera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
+public:
+	CEdit m_tableOutputControl;
 };
 
 

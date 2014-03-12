@@ -8,6 +8,7 @@
 #include "Tomography Control.h"
 #include "Tomography ControlDlg.h"
 #include "Table.h"
+#include "Exceptions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -72,7 +73,15 @@ BOOL CTomographyControlApp::InitInstance()
 	
 	CTomographyControlDlg controlDialogue;
 
-	controlDialogue.m_table = new DummyTable();
+	try {
+		controlDialogue.m_table = new SerialTable("COM1");
+	}
+	catch(bad_serial_port_error *ex)
+	{
+		MessageBox(NULL, ex -> what(), "Tomography Control", MB_ICONERROR);
+		delete ex;
+		return 0;
+	}
 	controlDialogue.m_table -> SetMessageReceiver(&controlDialogue);
 	controlDialogue.m_table -> Start();
 

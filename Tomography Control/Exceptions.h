@@ -22,6 +22,12 @@ public:
     explicit bad_frame_type_error(const char *message);
 };
 
+class bad_serial_port_error : public std::logic_error
+{
+public:
+    explicit bad_serial_port_error(const char *message);
+};
+
 class camera_acquisition_error : public std::logic_error
 {
 public:

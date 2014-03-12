@@ -251,7 +251,7 @@ UINT captureRunFrames( LPVOID pParam )
 		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
 		{
 			float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
-			sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "deg %.2f nm\r\n", calculatedAngle);
+			sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "%.2f 1 nm\r\n", calculatedAngle);
 
 			task -> m_table -> SendTableCommand(tableCommandBuffer);
 			// TODO: See if we can get a verification of state from the table instead of just waiting blindly

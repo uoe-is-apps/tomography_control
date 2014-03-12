@@ -9,7 +9,6 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-#define ERROR_BUFFER_SIZE 1024
 #define PIXEL_AVERAGE_TOLERANCE 0.1
 #define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\INDIVIDUAL.CAM"
 
