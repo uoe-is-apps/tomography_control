@@ -246,25 +246,32 @@ UINT captureRunFrames( LPVOID pParam )
 
 	task -> m_currentPosition = 1;
 	
-	for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
-	{
-		for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
+	try {
+		for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
 		{
-			float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
-			sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "%.2f 1 nm\r\n", calculatedAngle);
+			for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
+			{
+				float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
+				sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "%.2f 1 nm\r\n", calculatedAngle);
 
-			task -> m_table -> SendTableCommand(tableCommandBuffer);
-			// TODO: See if we can get a verification of state from the table instead of just waiting blindly
-			Sleep(1000);
+				task -> m_table -> SendTableCommand(tableCommandBuffer);
+				// TODO: See if we can get a verification of state from the table instead of just waiting blindly
+				Sleep(1000);
 
-			dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
+				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
-			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog);
+				task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog);
 			
-			dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
-		}
+				dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
+			}
 		
-		dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
+			dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
+		}
+	}
+	catch (camera_acquisition_error *error)
+	{
+		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
+		delete error;
 	}
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);

@@ -120,14 +120,20 @@ UINT takeManualImages( LPVOID pParam )
 	catch(camera_init_error *error)
 	{
 		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
 		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 		return 0;
 	}
 
 	u_int frameCount = 1;
-
-	task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_frameSavingOptions, task -> m_taskType, dialog);
+	
+	try {
+		task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_frameSavingOptions,
+			task -> m_taskType, dialog);
+	}
+	catch (camera_acquisition_error *error)
+	{
+		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
+	}
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 

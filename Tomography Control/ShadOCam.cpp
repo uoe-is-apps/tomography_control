@@ -5,8 +5,8 @@
 
 	ShadOCam::ShadOCam(char* directory, char* camFilePath, char *pixMapFilePath) : Camera(directory)
 {
-	this -> m_camFilePath = camFilePath;
-	this -> m_pixMapFilePath = pixMapFilePath;
+	strcpy(this -> m_camFilePath, camFilePath);
+	strcpy(this -> m_pixMapFilePath, pixMapFilePath);
 }
 
 ShadOCam::~ShadOCam()
@@ -37,7 +37,7 @@ ShadOCam::~ShadOCam()
 
 			if (this -> m_bFrameGrabberAllocated)
 			{
-				this -> m_pxd.FreeFG(this -> m_hFrameGrabber);
+				this -> m_pxd.FreeFG(this -> m_hFG);
 			}
 
 			imagenation_CloseLibrary(&this -> m_framelib);
@@ -50,9 +50,9 @@ void ShadOCam::AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame)
 {
 	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(currentFrame);
 
-	for (unsigned short row = 0; row < this -> GetFrameBufferHeight(); row++)
+	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 	{
-      	for (unsigned short col = 0; col < this -> GetFrameBufferWidth(); col++)
+      	for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
       	{	
       		*(dest++) += *(currentFramePtr++);
       	}
@@ -64,21 +64,21 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 	long pixelSum = 0;
 	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(currentFrame);
 	
-	for (unsigned short row = 0; row < this -> GetFrameBufferHeight(); row++)
+	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 	{
-      	for (unsigned short col = 0; col < this -> GetFrameBufferWidth(); col++)
+      	for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
       	{
 			pixelSum += *(currentFramePtr++);
 		}
 	}
 
-	return ((double)pixelSum) / (this -> GetFrameBufferHeight() * this -> GetFrameBufferWidth());
+	return ((double)pixelSum) / (this -> GetImageHeight() * this -> GetImageWidth());
 }
 
 void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedImages = 0;
-	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
+	short *currentFramePtr;
 	BOOL lastPixelAverageValid = FALSE;
 	double lastPixelAverage = 0.0;
 	long qh; // handle for grab; only needed to confirm image was taken
@@ -88,10 +88,14 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 	for (u_int frame = 0; frame < frames; frame++, *frameCount++)
 	{
 		// grab
-		qh = this -> m_pxd.Grab(this -> m_hFrameGrabber, this -> m_currentFrame, 0); // 0 indicates the method should not return until the image has been captured
+		qh = this -> m_pxd.Grab(this -> m_hFG, this -> m_currentFrame,
+			0); // 0 indicates the method should not return until the image has been captured
 		if (!qh)
 		{
-      		throw "Unable to acquire image.";
+			sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE, "Unable to acquire image: %d",
+				this -> m_pxd.CheckError(this -> m_hFG));
+
+      		throw new camera_acquisition_error(this -> m_errorBuffer);
 		}
 
 		// Verify the beam is still active, by checking pixel average against last value for
@@ -101,6 +105,8 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 		// We can only check against previous value, if we actually have a previous value.
 		if (lastPixelAverageValid)
 		{
+			lastPixelAverage = pixelAverage;
+
 			double pixelRatio = pixelAverage / lastPixelAverage;
 			double variation = abs(1.0 - pixelRatio);
 
@@ -110,27 +116,35 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 				continue;
 			}
 		}
+		else
+		{
+			lastPixelAverageValid = TRUE;
+			lastPixelAverage = pixelAverage;
+		}
       
       	// deinterlace image
-      	ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
-			this -> GetFrameBufferWidth(), this -> GetFrameBufferHeight(),
+		
+		currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
+		currentFramePtr++;
+      	/* ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
+			this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG),
 			SCCAMTYPE_4K , TRUE);
 		
       	//pixel map correction
       	ScPixelCorrection(currentFramePtr,
-			this -> GetFrameBufferWidth(), this -> GetFrameBufferHeight(),
+			this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG),
 			this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
 		
 		short *currentTempPtr = currentFramePtr;
-		for (unsigned short row = 0; row < this -> GetFrameBufferHeight(); row++)
+		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 		{
-      		for (unsigned short col = 0; col < this -> GetFrameBufferWidth(); col++)
+      		for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
       		{
          		// swap bytes
    				*currentTempPtr = (*currentTempPtr>>8) + (((unsigned char)*currentTempPtr)<<8);
 				currentTempPtr++;
         	}
-		}
+		} */
       
 		switch (captureType)
 		{
@@ -162,7 +176,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 		// Write out sum/average files
 		filename = GenerateImageFilename(frameType, (*frameCount)++);
 		// Clear the current frame, so we can use it to generate the file to be written out.
-		memset(currentFramePtr, 0, this -> GetFrameBufferWidth() * this -> GetFrameBufferHeight() * sizeof(short));
+		memset(currentFramePtr, 0, this -> GetImageWidth() * this -> GetImageHeight() * sizeof(short));
 	
 		short *averageBufferPtr = currentFramePtr;
 		unsigned int *sourceFramePtr = this -> m_avgSumFrame;
@@ -171,9 +185,9 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 		{
 		case SUM:
 			// Copy sum values into current frame buffer
-			for (unsigned short row = 0; row < this -> GetFrameBufferHeight(); row++)
+			for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 			{
-				for (unsigned short col = 0; col < this -> GetFrameBufferWidth(); col++)
+				for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
 				{
 					*(averageBufferPtr++) = *(sourceFramePtr++);
 				}
@@ -182,9 +196,9 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 			break;
 		case AVERAGE:
 			// Calculate averages and write them into the current frame buffer
-			for (unsigned short row = 0; row < this -> GetFrameBufferHeight(); row++)
+			for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 			{
-				for (unsigned short col = 0; col < this -> GetFrameBufferWidth(); col++)
+				for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
 				{
 					double sum = *(sourceFramePtr++);
 
@@ -209,14 +223,6 @@ char *ShadOCam::GenerateImageFilename(FrameType frameType, u_int frame) {
 	return Camera::GenerateImageFilename(frameType, frame, "raw");
 }
 
-u_short ShadOCam::GetFrameBufferHeight() {
-	return this -> m_frameGrabberHeight;
-}
-
-u_short ShadOCam::GetFrameBufferWidth() {
-	return this -> m_frameGrabberWidth;
-}
-
 u_short ShadOCam::GetImageHeight() {
 	return this -> m_nHeight;
 }
@@ -232,49 +238,39 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	this -> m_bCamTypeLoaded = FALSE;
 	this -> m_bFramelibLoaded = FALSE;
 	this -> m_bFrameGrabberAllocated = FALSE;
-
-	this -> m_nWidth  = 2048;		// width of image
-	this -> m_nHeight = 2000;		// height of image
 	
 	this -> m_currentFrame = NULL;
 	this -> m_avgSumFrame = NULL;
+	
+	PXD pxd;				// pxd library structure
+	FRAMELIB framelib;		// frame library structure
+	long hFG;				// adress of frame grabber
 
 	// Load the image capture libraries
-	if ( !imagenation_OpenLibrary("pxd_32.dll", &this -> m_pxd, sizeof(PXD)) )  {
+	if ( !imagenation_OpenLibrary("pxd_32.dll", &pxd, sizeof(PXD)) )  {
 		throw new camera_init_error("Frame grabber library not loaded.");
 	}
+	this -> m_pxd = pxd;
 	this -> m_bPxdLoaded = TRUE;
-
-	if ( !imagenation_OpenLibrary("frame_32.dll", &this -> m_framelib, sizeof(FRAMELIB)) )  {
+	
+	if ( !imagenation_OpenLibrary("frame_32.dll", &framelib, sizeof(FRAMELIB)) )  {
 		throw new camera_init_error("Frame library not loaded.");
 	}
+	this -> m_framelib = framelib;
 	this -> m_bFramelibLoaded = TRUE;
 
 	// request access to frame grabber
-	if ( !(this -> m_hFrameGrabber = this -> m_pxd.AllocateFG(-1)) )  {
+	if ( !(hFG = pxd.AllocateFG(-1)) )  {
 		throw new camera_init_error("PXD frame grabber not found.");
 	}
+	this -> m_hFG = hFG;
 	this -> m_bFrameGrabberAllocated = TRUE;
 
 	// initialize camera configuration
-	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(this -> m_camFilePath)) )  {
+	if ( !(this -> m_camType = pxd.LoadConfig(this -> m_camFilePath)) )  {
 		throw new camera_init_error("Camera configuration not loaded.");
 	}
 	this -> m_bCamTypeLoaded = TRUE;
-	
-	this -> m_frameGrabberWidth = this -> m_pxd.GetWidth(this -> m_hFrameGrabber);
-	this -> m_frameGrabberHeight = this -> m_pxd.GetHeight(this -> m_hFrameGrabber);
-
-	// set up image destination buffers
-	if ( !(this -> m_currentFrame = this -> m_pxd.AllocateBuffer (this -> m_frameGrabberWidth, this -> m_frameGrabberHeight, PBITS_Y16)) )  {
-		throw new camera_init_error("Unable to create image buffer.");
-	}
-
-	// set up image destination buffers
-	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) * this -> m_frameGrabberWidth * this -> m_frameGrabberHeight);
-	if (NULL == this -> m_avgSumFrame)  {
-		throw new camera_init_error("Unable to create average/sum image buffer.");
-	}
 
 	const long len = 65536; // length of LUT
 	unsigned short nLUT[len];  // LUT
@@ -284,16 +280,30 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	this -> m_pxd.SetFramePeriod(this -> m_camType, exposureTimeSeconds);
 	ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
 
-	this -> m_pxd.SetCameraConfig(this -> m_hFrameGrabber, this -> m_camType);
-	this -> m_pxd.ContinuousStrobes(this -> m_hFrameGrabber, TRUE);  // turn on camera frame sync
+	this -> m_pxd.SetCameraConfig(hFG, this -> m_camType);
+	this -> m_pxd.ContinuousStrobes(hFG, TRUE);  // turn on camera frame sync
 
 	// initialize input LUT to shift image data down by two bits
 	for (int i = 0; i < len; i++)
 	{
 		nLUT[i] = i>>2;
 	}
-	this -> m_pxd.SetInputLUT(this -> m_hFrameGrabber, 16, 0, 0, len, nLUT);
+	this -> m_pxd.SetInputLUT(this -> m_hFG, 16, 0, 0, len, nLUT);
+
+	// set up image destination buffers
+	if ( !(this -> m_currentFrame = pxd.AllocateBuffer(pxd.GetWidth(hFG), pxd.GetHeight(hFG), PBITS_Y16)) )  {
+		throw new camera_init_error("Unable to create image buffer.");
+	}
+
+	// set up image destination buffers
+	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) * pxd.GetWidth(hFG) * pxd.GetHeight(hFG));
+	if (NULL == this -> m_avgSumFrame)  {
+		throw new camera_init_error("Unable to create average/sum image buffer.");
+	}
 
     this -> m_pixMap = (PIXMAPENTRY*)GlobalAlloc(0, SCMAXPIXMAPSIZE* sizeof(PIXMAPENTRY));
     ScReadPixMap(this -> m_pixMapFilePath, this -> m_pixMap, &this -> m_pixMapEntries);
+	
+	this -> m_nWidth  = 2048;
+	this -> m_nHeight = 2000;
 }

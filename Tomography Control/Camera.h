@@ -10,7 +10,7 @@
 #include "tiff.h"
 
 #define PIXEL_AVERAGE_TOLERANCE 0.1
-#define SHAD_O_CAM_CONFIG_FILE "C:\\ShadoCam\\INDIVIDUAL.CAM"
+#define SHAD_O_CAM_CONFIG_FILE "C:\\Program Files\\Imagenation PXD1000\\Bin\\DEFAULT.CAM"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
 enum FrameSavingOptions { INDIVIDUAL, AVERAGE, SUM };
@@ -125,11 +125,6 @@ public:
 	~ShadOCam();
 	
 	void AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame);
-
-	/* Get the width of the frame buffer (which may be larger than the captured image) */
-	u_short GetFrameBufferWidth();
-	/* Get the height of the frame buffer (which may be larger than the captured image) */
-	u_short GetFrameBufferHeight();
 	
 	double CalculatePixelAverage(FRAME *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
@@ -139,14 +134,13 @@ public:
 	virtual void SetupCamera(float exposureTime);
 
 protected:
+	char		m_errorBuffer[ERROR_BUFFER_SIZE];
+
 	u_short m_nWidth;			// width of image
 	u_short m_nHeight;			// height of image
-	
-	u_short m_frameGrabberWidth;
-	u_short m_frameGrabberHeight;
 
-	char*		m_camFilePath;	// Path of the camera configuration file (used by PXD)
-	char*		m_pixMapFilePath;
+	char	m_camFilePath[FILENAME_BUFFER_SIZE];	// Path of the camera configuration file (used by PXD)
+	char	m_pixMapFilePath[FILENAME_BUFFER_SIZE];
 
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure
@@ -154,7 +148,7 @@ protected:
 	PIXMAPENTRY* m_pixMap;	// pointer to pixel map object
 	int m_pixMapEntries;	// number of pixel corrections in pixel map
 
-	long m_hFrameGrabber;	// address of frame grabber
+	long m_hFG;	// address of frame grabber
 
 	CAMERA_TYPE* m_camType;	// pointer to camera object
 	

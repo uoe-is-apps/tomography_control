@@ -401,7 +401,22 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	switch (this -> m_cameraType)
 	{
 	case 0:
-		camera = new ShadOCam(this -> m_directoryPathBuffer, SHAD_O_CAM_CONFIG_FILE, "C:\\ShadoCam\\SensorGapPM");
+		char pixelMapFilename[FILENAME_BUFFER_SIZE];
+
+		// Guess at location of airtable file
+		if (FAILED(SHGetFolderPath(NULL, 
+			CSIDL_PERSONAL|CSIDL_FLAG_CREATE, 
+			NULL, 
+			0, 
+			pixelMapFilename)))
+		{
+			throw new bad_directory_error("Could not retrieve user home directory.");
+		}
+	
+		PathAppend(pixelMapFilename, "Pixel Map");
+
+		camera = new ShadOCam(this -> m_directoryPathBuffer,
+			SHAD_O_CAM_CONFIG_FILE, pixelMapFilename);
 		break;
 	case 1:
 		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer);
