@@ -16,6 +16,12 @@ public:
     explicit bad_directory_error(const char *message);
 };
 
+class bad_frame_saving_options_error : public std::logic_error
+{
+public:
+    explicit bad_frame_saving_options_error(const char *message);
+};
+
 class bad_frame_type_error : public std::logic_error
 {
 public:

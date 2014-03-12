@@ -75,7 +75,8 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 	return ((double)pixelSum) / (this -> GetImageHeight() * this -> GetImageWidth());
 }
 
-void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
+void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
+	FrameSavingOptions frameSavingOptions, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedImages = 0;
 	short *currentFramePtr;
@@ -125,7 +126,6 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
       	// deinterlace image
 		
 		currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
-		currentFramePtr++;
       	/* ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
 			this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG),
 			SCCAMTYPE_4K , TRUE);
@@ -146,27 +146,30 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
         	}
 		} */
       
-		switch (captureType)
+		switch (frameSavingOptions)
 		{
 		case SUM:
 		case AVERAGE:
 			this -> AddFrameToBuffer(this -> m_avgSumFrame, this -> m_currentFrame);
 			break;
-		default:
-			filename = GenerateImageFilename(frameType, (*frameCount)++);
+		case INDIVIDUAL:
+			filename = GenerateImageFilename(frameType, *frameCount);
 			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 			//save file
 			this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
 
 			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
-			*(frameCount)++;
+			(*frameCount)++;
+			break;
+		default:
+			throw new bad_frame_saving_options_error("Unknown frame saving options specified.");
 		}
 
 		capturedImages++;
 	}
 
-	if (captureType == INDIVIDUAL)
+	/* if (frameSavingOptions == INDIVIDUAL)
 	{
 		// Nothing more to do
 		return;
@@ -174,14 +177,14 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 	else
 	{
 		// Write out sum/average files
-		filename = GenerateImageFilename(frameType, (*frameCount)++);
+		filename = GenerateImageFilename(frameType, *frameCount);
 		// Clear the current frame, so we can use it to generate the file to be written out.
 		memset(currentFramePtr, 0, this -> GetImageWidth() * this -> GetImageHeight() * sizeof(short));
 	
 		short *averageBufferPtr = currentFramePtr;
 		unsigned int *sourceFramePtr = this -> m_avgSumFrame;
 
-		switch (captureType)
+		switch (frameSavingOptions)
 		{
 		case SUM:
 			// Copy sum values into current frame buffer
@@ -207,6 +210,8 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 			}
 
 			break;
+		default:
+			throw new bad_frame_saving_options_error("Unknown frame saving options specified.");
 		}
 
 		// Write out the current frame buffer
@@ -215,8 +220,8 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount, FrameSavingOptions
 		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
-		*(frameCount)++;
-	}
+		(*frameCount)++;
+	} */
 }
 
 char *ShadOCam::GenerateImageFilename(FrameType frameType, u_int frame) {

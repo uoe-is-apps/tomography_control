@@ -567,6 +567,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 		break;
 	}
 	
+	takingPhotosDlg.m_frameSavingOptions = GetFrameSavingOptions();
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	takingPhotosDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;

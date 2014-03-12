@@ -21,6 +21,11 @@ bad_frame_type_error::bad_frame_type_error(const char *message) : logic_error(me
 
 }
 
+bad_frame_saving_options_error::bad_frame_saving_options_error(const char *message) : logic_error(message)
+{
+
+}
+
 bad_serial_port_error::bad_serial_port_error(const char *message) : logic_error(message)
 {
 
