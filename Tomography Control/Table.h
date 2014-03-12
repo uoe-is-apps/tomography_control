@@ -33,6 +33,9 @@ public:
 	void DoIO();
 
 protected:
+	void DoRead();
+	void DoWrite();
+
 	HANDLE m_hComm;
     DCB m_dcb;
 	COMMTIMEOUTS m_commTimeouts;

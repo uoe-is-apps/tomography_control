@@ -62,14 +62,18 @@ SerialTable::~SerialTable()
 /* Get pending input from the table, and write new input out to it. */
 void SerialTable::DoIO()
 {
-	DWORD inputBufferSize = sizeof(char) * BUFFER_SIZE;
-	DWORD outputBufferSize = sizeof(char) * BUFFER_SIZE;
+	DoWrite();
+	DoRead();
+}
+	
+void SerialTable::DoRead()
+{
 	DWORD bytesRead = 0;
 	char tempBuffer[BUFFER_SIZE];
 	
 	tempBuffer[0] = NULL;
 	
-	if (!ReadFile(this -> m_hComm, tempBuffer, sizeof(tempBuffer) - 1, &bytesRead, NULL))
+	if (!ReadFile(this -> m_hComm, tempBuffer, BUFFER_SIZE - 1, &bytesRead, NULL))
 	{
 		char errorBuffer[ERROR_BUFFER_SIZE];
 
@@ -79,23 +83,36 @@ void SerialTable::DoIO()
 		return;
 	}
 
-	// Lock the IO buffers while we exchange data with them
-	this -> m_bufferLock.Lock();
-	
 	// Copy the incoming string to the output buffer
 	if (bytesRead > 0)
 	{
+		// Lock the IO buffers while we exchange data with them
+		this -> m_bufferLock.Lock();
+
 		tempBuffer[bytesRead] = NULL;
 		this -> m_outputBuffer += tempBuffer;
-		tempBuffer[0] = NULL;
 		
 		this -> PulseMessageReceived();
+
+		this -> m_bufferLock.Unlock();
 	}
+}
+
+void SerialTable::DoWrite()
+{
+	// Lock the IO buffers while we exchange data with them
+	this -> m_bufferLock.Lock();
 
 	// If we have input to be sent, take a copy then release the locks on the buffers
 	if (!this -> m_inputBuffer.empty())
 	{
-		memcpy(tempBuffer, this -> m_inputBuffer.data(), this -> m_inputBuffer.size());
+		const char *input = this -> m_inputBuffer.c_str();
+		DWORD bytesWritten;
+
+		// Write the contents of the temp buffer out to serial
+		WriteFile(this -> m_hComm, input, strlen(input), &bytesWritten, NULL);
+
+		// TODO: Report error if not all bytes have been written
 
 		// Copy the input to the temporary buffer as if we'd just read it in
 		this -> m_outputBuffer += this -> m_inputBuffer;
@@ -104,22 +121,8 @@ void SerialTable::DoIO()
 		// Clear the input buffer
 		this -> m_inputBuffer.clear();
 	}
-	else
-	{
-		tempBuffer[0] = NULL;
-	}
 
 	this -> m_bufferLock.Unlock();
-
-	if (strlen(tempBuffer) > 0)
-	{
-		DWORD bytesWritten;
-
-		// Write the contents of the temp buffer out to serial
-		WriteFile(this -> m_hComm, tempBuffer, strlen(tempBuffer), &bytesWritten, NULL);
-
-		// TODO: Report error if not all bytes have been written
-	}
 }
 
 void Table::PulseMessageReceived()
