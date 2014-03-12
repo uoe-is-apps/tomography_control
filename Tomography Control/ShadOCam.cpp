@@ -13,33 +13,33 @@ ShadOCam::~ShadOCam()
 {
 	if (this -> m_bPxdLoaded)
 	{
+		if (NULL != this -> m_pixMap)
+		{
+			GlobalFree(this -> m_pixMap);
+		}
+
+		if (NULL != m_avgSumFrame)
+		{
+			free(this -> m_avgSumFrame);
+		}
+
+		if (NULL != m_currentFrame)
+		{
+			this -> m_pxd.FreeFrame(this -> m_currentFrame);
+		}
+
+		if (this -> m_bCamTypeLoaded)
+		{
+			this -> m_pxd.FreeConfig(this -> m_camType);
+		}
+
+		if (this -> m_bFrameGrabberAllocated)
+		{
+			this -> m_pxd.FreeFG(this -> m_hFG);
+		}
+
 		if (this -> m_bFramelibLoaded)
 		{
-			if (NULL != this -> m_pixMap)
-			{
-				GlobalFree(this -> m_pixMap);
-			}
-
-			if (NULL != m_avgSumFrame)
-			{
-				free(this -> m_avgSumFrame);
-			}
-
-			if (NULL != m_currentFrame)
-			{
-				this -> m_pxd.FreeFrame(this -> m_currentFrame);
-			}
-
-			if (this -> m_bCamTypeLoaded)
-			{
-				this -> m_pxd.FreeConfig(this -> m_camType);
-			}
-
-			if (this -> m_bFrameGrabberAllocated)
-			{
-				this -> m_pxd.FreeFG(this -> m_hFG);
-			}
-
 			imagenation_CloseLibrary(&this -> m_framelib);
 		}
 		imagenation_CloseLibrary(&this -> m_pxd);
@@ -126,13 +126,14 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
       	// deinterlace image
 		
 		currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
-      	/* ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
-			this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG),
+		currentFramePtr++; // point to first pixel in buffer1
+      	ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
+			this -> m_nWidth, (this -> m_nHeight/2),
 			SCCAMTYPE_4K , TRUE);
 		
       	//pixel map correction
       	ScPixelCorrection(currentFramePtr,
-			this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG),
+			this -> m_nWidth + 2, this -> m_nHeight,
 			this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
 		
 		short *currentTempPtr = currentFramePtr;
@@ -144,7 +145,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
    				*currentTempPtr = (*currentTempPtr>>8) + (((unsigned char)*currentTempPtr)<<8);
 				currentTempPtr++;
         	}
-		} */
+		}
       
 		switch (frameSavingOptions)
 		{
