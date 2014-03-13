@@ -178,7 +178,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavin
 		NULL, NULL, NULL // Offset, gain, pixel correction
 	);
 
-	// TODO: Handle timeout
+	// TODO: Handle timeout on acquisition
 	long millisPerFrame = (long)(this -> m_exposureTimeSeconds * 1000);
 	long expectedTimeMillis = millisPerFrame * frames;
 	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
@@ -214,7 +214,8 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	switch (task -> captureType)
 	{
 	case SUM:
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		// Notify the dialog of the updated filename
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
 
 		camera -> WriteTiff(filename, camera -> m_avgSumFrame);
 	
@@ -235,8 +236,9 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 				*(averageBufferPtr++) = (unsigned short)(sum / task -> capturedImages);
 			}
 		}
-
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		
+		// Notify the dialog of the updated filename
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
 
 		camera -> WriteTiff(filename, averageBuffer);
 	
@@ -299,7 +301,8 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 		break;
 	default:
 		filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		// Notify the dialog of the updated filename
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
 
 		camera -> WriteTiff(filename, frameBuffer);
 	

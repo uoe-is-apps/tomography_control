@@ -74,7 +74,7 @@ BOOL CTomographyControlApp::InitInstance()
 	CTomographyControlDlg controlDialogue;
 
 	try {
-		controlDialogue.m_table = new SerialTable("COM1");
+		controlDialogue.m_table = new DummyTable(); // SerialTable("COM1");
 	}
 	catch(bad_serial_port_error *ex)
 	{

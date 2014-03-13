@@ -61,7 +61,8 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 			break;
 		default:
 			filename = GenerateImageFilename(frameType, *imageCount);
-			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+			// Notify the dialog of the updated filename
+			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
 			Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
 
@@ -78,16 +79,21 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 	switch (captureType)
 	{
 	case SUM:
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		// Notify the dialog of the updated filename
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
 		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
 		(*imageCount)++;
+
 		break;
 	case AVERAGE:
+		// Notify the dialog of the updated filename
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+
 		unsigned int *sourceBufferPtr = this -> m_avgSumFrame;
-		unsigned short *averageBuffer = (unsigned short *)malloc(this -> GetImageWidth() * this -> GetImageHeight() * sizeof(unsigned short));
+		unsigned short *averageBuffer = frameBuffer;
 		unsigned short *averageBufferPtr = averageBuffer;
 
 		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
@@ -100,14 +106,10 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 			}
 		}
 
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-
 		this -> WriteTiff(filename, averageBuffer);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
 		(*imageCount)++;
-
-		free(averageBuffer);
 
 		break;
 	}
