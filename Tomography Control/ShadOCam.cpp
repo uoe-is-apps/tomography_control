@@ -155,7 +155,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 			break;
 		case INDIVIDUAL:
 			filename = GenerateImageFilename(frameType, *frameCount);
-			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
 			//save file
 			this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
@@ -216,7 +216,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 		}
 
 		// Write out the current frame buffer
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
 		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
