@@ -400,7 +400,7 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	switch (this -> m_cameraType)
 	{
 	case 0:
-		char pixelMapFilename[FILENAME_BUFFER_SIZE];
+		char pixelMapFilename[MAX_PATH];
 
 		// Guess at location of airtable file
 		if (FAILED(SHGetFolderPath(NULL, 

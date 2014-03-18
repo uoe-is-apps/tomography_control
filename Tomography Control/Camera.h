@@ -59,7 +59,7 @@ public:
 
 protected:
 	char *m_directory; // Directory to write images to
-	char filenameBuffer[FILENAME_BUFFER_SIZE];
+	char filenameBuffer[MAX_PATH];
 };
 
 class DummyCamera : public Camera
@@ -139,8 +139,8 @@ protected:
 	u_short m_nWidth;			// width of image
 	u_short m_nHeight;			// height of image
 
-	char	m_camFilePath[FILENAME_BUFFER_SIZE];	// Path of the camera configuration file (used by PXD)
-	char	m_pixMapFilePath[FILENAME_BUFFER_SIZE];
+	char	m_camFilePath[MAX_PATH];	// Path of the camera configuration file (used by PXD)
+	char	m_pixMapFilePath[MAX_PATH];
 
 	PXD m_pxd;				// pxd library structure
 	FRAMELIB m_framelib;	// frame library structure

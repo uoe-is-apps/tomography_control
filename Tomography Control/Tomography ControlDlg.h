@@ -7,7 +7,6 @@
 #include "Camera.h"
 #include "Table.h"
 
-#define DIRECTORY_PATH_BUFFER_SIZE 512
 #define TIMESTAMP_BUFFER_SIZE 256
 
 
@@ -73,7 +72,7 @@ public:
 	int m_tableType;
 protected:
 	HICON m_hIcon;
-	char m_directoryPathBuffer[DIRECTORY_PATH_BUFFER_SIZE];
+	char m_directoryPathBuffer[MAX_PATH];
 
 	FrameSavingOptions GetFrameSavingOptions();
 	void UpdateDirectoryPath();

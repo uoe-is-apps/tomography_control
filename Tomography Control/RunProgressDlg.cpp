@@ -83,8 +83,8 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
-	char settingsFilename[FILENAME_BUFFER_SIZE];
-	sprintf_s(settingsFilename, FILENAME_BUFFER_SIZE - 1, "%s\\settings.txt", this -> m_directoryPath);
+	char settingsFilename[MAX_PATH];
+	sprintf_s(settingsFilename, MAX_PATH - 1, "%s\\settings.txt", this -> m_directoryPath);
 	WriteSettings(settingsFilename);
 
 	this -> m_workerThread = AfxBeginThread(captureRunFrames, this -> m_task, THREAD_PRIORITY_NORMAL, 
