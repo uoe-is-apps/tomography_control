@@ -11,8 +11,8 @@ DummyTable::DummyTable()
 {
 	this -> m_running = TRUE;
 	this -> m_inputEvent.ResetEvent();
-	this -> m_inputBuffer.clear();
-	this -> m_outputBuffer.clear();
+	this -> m_inputBuffer.Empty();
+	this -> m_outputBuffer.Empty();
 }
 
 DummyTable::~DummyTable() 
@@ -25,13 +25,13 @@ void DummyTable::DoIO()
 	// Lock the IO buffers while we exchange data between them
 	this -> m_bufferLock.Lock();
 	
-	if (!this -> m_inputBuffer.empty())
+	if (!this -> m_inputBuffer.IsEmpty())
 	{
 		// Copy the input to the temporary buffer as if we'd just read it in
 		this -> m_outputBuffer += this -> m_inputBuffer;
 
 		// Clear the input buffer
-		this -> m_inputBuffer.clear();
+		this -> m_inputBuffer.IsEmpty();
 
 		this -> PulseMessageReceived();
 	}

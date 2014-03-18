@@ -346,7 +346,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 {
 	this -> m_table -> m_bufferLock.Lock();
-	this -> m_table -> m_outputBuffer[0] = NULL;
+	this -> m_table -> m_outputBuffer.Empty();
 	this -> m_table -> m_bufferLock.Unlock();
 	
 	UpdateData(TRUE);
@@ -380,8 +380,8 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 
 	UpdateData(TRUE);
 	table -> m_bufferLock.Lock();
-	this -> m_tableCommandOutput += table -> m_outputBuffer.data();
-	table -> m_outputBuffer.clear();
+	this -> m_tableCommandOutput += table -> m_outputBuffer;
+	table -> m_outputBuffer.Empty();
 	table -> m_bufferLock.Unlock();
 	UpdateData(FALSE);
 
@@ -427,6 +427,8 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	default:
 		throw new bad_camera_type_error("Unrecognised camera type.");
 	}
+
+	return camera;
 }
 
 FrameSavingOptions CTomographyControlDlg::GetFrameSavingOptions()

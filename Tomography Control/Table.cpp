@@ -6,11 +6,11 @@
 
 #define BUFFER_SIZE 2000
 
-SerialTable::SerialTable(char* gszPort) 
+SerialTable::SerialTable(LPCSTR gszPort) 
 {
 	this -> m_inputEvent.ResetEvent();
-	this -> m_inputBuffer.clear();
-	this -> m_outputBuffer.clear();
+	this -> m_inputBuffer.Empty();
+	this -> m_outputBuffer.Empty();
 	
     FillMemory(&this -> m_dcb, sizeof(this -> m_dcb), 0);
     FillMemory(&this -> m_commTimeouts, sizeof(this -> m_commTimeouts), 0);
@@ -104,20 +104,21 @@ void SerialTable::DoWrite()
 	this -> m_bufferLock.Lock();
 
 	// If we have input to be sent, take a copy then release the locks on the buffers
-	if (!this -> m_inputBuffer.empty())
+	if (!this -> m_inputBuffer.IsEmpty())
 	{
-		const char *input = this -> m_inputBuffer.c_str();
+		LPCSTR input = this -> m_inputBuffer;
 		DWORD bytesWritten;
 
 		// Write the contents of the temp buffer out to serial
 		WriteFile(this -> m_hComm, input, strlen(input), &bytesWritten, NULL);
 		
+		CString copiedChars = this -> m_inputBuffer.Left(bytesWritten);
 
 		// Copy the input to the temporary buffer as if we'd just read it in
-		this -> m_outputBuffer.append(this -> m_inputBuffer, 0, bytesWritten);
+		this -> m_outputBuffer += copiedChars;
 
 		// Clear the input buffer
-		this -> m_inputBuffer.erase(0, bytesWritten);
+		this -> m_inputBuffer.Delete(0, bytesWritten);
 
 		this -> PulseMessageReceived();
 	}
@@ -134,7 +135,7 @@ void Table::PulseMessageReceived()
 	}
 }
 
-void Table::SendTableCommand(char* command)
+void Table::SendTableCommand(LPCTSTR command)
 {
 	this -> m_bufferLock.Lock();
 	m_inputBuffer += command;

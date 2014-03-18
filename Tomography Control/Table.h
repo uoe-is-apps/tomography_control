@@ -10,7 +10,7 @@ class Table
 public:
 	virtual void DoIO() = 0;
 	virtual void PulseMessageReceived();
-	virtual void SendTableCommand(char* command);
+	virtual void SendTableCommand(LPCTSTR command);
 	virtual void SetMessageReceiver(CWnd* wnd);
 	virtual void Start();
 	virtual void Stop();
@@ -18,8 +18,8 @@ public:
 	CEvent m_inputEvent;
 	BOOL m_running;
 	CCriticalSection m_bufferLock;
-	std::string m_inputBuffer; // Communication waiting to be sent to the table
-	std::string m_outputBuffer; // Communication back from the table
+	CString m_inputBuffer; // Communication waiting to be sent to the table
+	CString m_outputBuffer; // Communication back from the table
 
 protected:
 
@@ -30,7 +30,7 @@ protected:
 class SerialTable : public Table
 {
 public:
-	SerialTable(char* gszPort);
+	SerialTable(LPCTSTR gszPort);
 	~SerialTable();
 	void DoIO();
 
