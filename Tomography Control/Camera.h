@@ -153,6 +153,7 @@ public:
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
+	void ShadOCam::WriteTiff(char* filename, short *frameBuffer);
 
 protected:
 	char		m_errorBuffer[ERROR_BUFFER_SIZE];
