@@ -85,10 +85,6 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
-	char settingsFilename[MAX_PATH];
-	sprintf_s(settingsFilename, MAX_PATH - 1, "%s\\settings.txt", this -> m_directoryPath);
-	WriteSettings(settingsFilename);
-
 	this -> m_workerThread = AfxBeginThread(captureRunFrames, this -> m_task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
 	this -> m_workerThread -> m_bAutoDelete = FALSE;
@@ -207,18 +203,74 @@ afx_msg LRESULT CRunProgressDlg::OnStopCompleted(WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
-void CRunProgressDlg::WriteSettings(char* dest)
+void CRunProgressDlg::WriteSettings(CString dest)
 {
-	FILE* fileHandle;
-	errno_t fileErrno = fopen_s(&fileHandle, dest, "w");
-
-	if (0 != fileErrno)
+	CString settings;
+	CString setting;	
+	
+	switch (this -> m_frameSavingOptions)
 	{
-		//TODO: Handle problems opening the file
-		return;
+	case INDIVIDUAL:
+		settings = "frame saving=individual\r\n";
+		break;
+	case SUM:
+		settings = "frame saving=sum\r\n";
+		break;
+	case AVERAGE:
+		settings = "frame saving=average\r\n";
+		break;
 	}
 
-	fclose(fileHandle);
+	setting.Format("exposure seconds=%f\r\n", this -> m_exposureTimeSeconds);
+	settings += setting;
+
+	setting.Format("frames per stop=%d\r\n", this -> m_framesPerStop);
+	settings += setting;
+
+	setting.Format("stops per rotation=%d\r\n", this -> m_stopsPerRotation);
+	settings += setting;
+
+	setting.Format("turns total=%d\r\n", this -> m_turnsTotal);
+	settings += setting;
+
+	HANDLE settingsFileHandle = CreateFile(dest,
+		GENERIC_READ, FILE_SHARE_WRITE,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if (settingsFileHandle == INVALID_HANDLE_VALUE)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			settingsFileHandle,
+			GetLastError(),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			this -> m_errorBuffer,
+			ERROR_BUFFER_SIZE - 1, NULL );
+
+		throw file_error(this -> m_errorBuffer);
+	}
+	
+	/* DWORD bytesWritten;
+	if (!WriteFile(settingsFileHandle, (LPCSTR)settings, settings.GetLength(),
+		&bytesWritten, NULL))
+	{
+		CloseHandle(settingsFileHandle);
+
+		memset(this -> m_errorBuffer, 0, ERROR_BUFFER_SIZE);
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			settingsFileHandle,
+			GetLastError(),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			this -> m_errorBuffer,
+			ERROR_BUFFER_SIZE - 1, NULL );
+
+		throw file_error(this -> m_errorBuffer);
+	} */
+
+	CloseHandle(settingsFileHandle);
 }
 
 // Worker functions
@@ -246,6 +298,25 @@ UINT captureRunFrames( LPVOID pParam )
 	while (!::IsWindow(dialog -> m_hWnd))
 	{
 		Sleep(200);
+	}
+
+	// Write settings to disk
+	char settingsFilename[MAX_PATH];
+
+	strcpy(settingsFilename, dialog -> m_directoryPath);
+	PathAppend(settingsFilename, "settings.txt");
+
+	try
+	{
+		dialog -> WriteSettings(settingsFilename);
+	}
+	catch(file_error error)
+	{
+		MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
+
+		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
+
+		return 0;
 	}
 
 	task -> m_currentPosition = 1;

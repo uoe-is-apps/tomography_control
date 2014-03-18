@@ -344,16 +344,16 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		))
 	{
 		DWORD dw = GetLastError();
-		char buffer[ERROR_BUFFER_SIZE];
+		char errorBuffer[ERROR_BUFFER_SIZE];
 
 		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
 			initialisationFileHandle,
 			dw,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR)buffer,
+			(LPTSTR)errorBuffer,
 			ERROR_BUFFER_SIZE - 1, NULL );
 
-		MessageBox(buffer, "Tomography Control", MB_ICONERROR);
+		MessageBox(errorBuffer, "Tomography Control", MB_ICONERROR);
 
 		return;
 	}

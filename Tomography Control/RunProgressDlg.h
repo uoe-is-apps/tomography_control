@@ -42,11 +42,6 @@ public:
 // Dialog Data
 	enum { IDD = IDD_RUN_DIALOG };
 
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-	DECLARE_MESSAGE_MAP()
-public:
 	FrameSavingOptions m_frameSavingOptions;
 
 	CString m_directoryPath;
@@ -96,7 +91,14 @@ public:
 	afx_msg void OnClose();
 	afx_msg void OnBnClickedCancel();
 
-	void WriteSettings(char* dest);
+	void WriteSettings(CString dest);
+
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+
+	DECLARE_MESSAGE_MAP()
+
+	char m_errorBuffer[ERROR_BUFFER_SIZE];
 };
 
 // Function for the manual camera worker thread

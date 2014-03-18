@@ -40,3 +40,8 @@ camera_init_error::camera_init_error(const char *message) : logic_error(message)
 {
 
 }
+
+file_error::file_error(const char *message) : logic_error(message)
+{
+
+}
