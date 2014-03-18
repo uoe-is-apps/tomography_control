@@ -5,7 +5,7 @@
 #include "Exceptions.h"
 
 #define BUFFER_SIZE 2000
-#define TABLE_MIN_WRITE_INTERVAL_TICKS 400
+#define TABLE_MIN_WRITE_INTERVAL_TICKS 200
 
 SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 {

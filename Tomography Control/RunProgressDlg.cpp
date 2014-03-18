@@ -8,7 +8,8 @@
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
-#define ROTATION_SLEEP_MILLIS 1000
+#define ROTATION_EST_SLEEP_MILLIS 800
+#define ROTATION_MAX_SLEEP_MILLIS (5 * ROTATION_EST_SLEEP_MILLIS)
 #define MAX_PROGRESS 1000
 #define TABLE_COMMAND_BUFFER_SIZE 128
 
@@ -102,7 +103,7 @@ void CRunProgressDlg::CalculateTimeRemaining(CTimeSpan* dest) {
 	unsigned int stopsRemaining = totalStops - stopsCompleted;
 
 	unsigned int exposureTimePerStopMillis = (unsigned int)(this -> m_exposureTimeSeconds * this -> m_framesPerStop * 1000);
-	unsigned int timePerStopMillis = exposureTimePerStopMillis + ROTATION_SLEEP_MILLIS; // Add in rotation time
+	unsigned int timePerStopMillis = exposureTimePerStopMillis + ROTATION_EST_SLEEP_MILLIS; // Add in rotation time
 	unsigned int timeRemainingMillis = timePerStopMillis * stopsRemaining;
 
 	*dest = timeRemainingMillis / 1000;
@@ -225,6 +226,10 @@ UINT captureRunFrames( LPVOID pParam )
 {
 	RunTask* task = (RunTask*)pParam;
 	CRunProgressDlg* dialog = (CRunProgressDlg*)task -> m_dialog;
+	Table* table = task -> m_table;
+	CString tableCommandBuffer;
+	const float tableResolution = 0.0005f; // Degrees
+	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
 	try {
 		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
@@ -242,10 +247,6 @@ UINT captureRunFrames( LPVOID pParam )
 	{
 		Sleep(200);
 	}
-	
-	char tableCommandBuffer[TABLE_COMMAND_BUFFER_SIZE];
-	const float tableResolution = 0.0005f; // Degrees
-	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
 	task -> m_currentPosition = 1;
 	
@@ -255,11 +256,13 @@ UINT captureRunFrames( LPVOID pParam )
 			for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
 			{
 				float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
-				sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "%.2f 1 nm\r\n", calculatedAngle);
 
-				task -> m_table -> SendToTable(tableCommandBuffer);
-				// TODO: See if we can get a verification of state from the table instead of just waiting blindly
-				Sleep(ROTATION_SLEEP_MILLIS);
+				tableCommandBuffer.Format("%.2f 1 nm\r\n", calculatedAngle);
+				table -> SendToTable(tableCommandBuffer);
+				table -> SendToTable("0 1 nr\r\n");
+				table -> SendToTable("1 nst\r\n");
+				::WaitForSingleObject(table -> m_outputReceivedFromTableEvent.m_hObject,
+					ROTATION_MAX_SLEEP_MILLIS);
 
 				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
