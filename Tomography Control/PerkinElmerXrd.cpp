@@ -133,7 +133,8 @@ PerkinElmerXrd::~PerkinElmerXrd()
 	}
 }
 
-void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
+void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
+	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
 	
@@ -142,7 +143,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *imageCounter, FrameSavin
 	task.window = window;
 	task.captureType = captureType;
 	task.frameType = frameType;
-	task.imageCount = imageCounter;
+	task.imageCount = current_position;
 	task.lastPixelAverageValid = FALSE;
 	task.capturedImages = 0;
 

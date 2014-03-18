@@ -138,7 +138,7 @@ void CRunProgressDlg::OnBnClickedCancel()
 
 afx_msg LRESULT CRunProgressDlg::OnFrameCaptured(WPARAM wParam, LPARAM lParam)
 {
-	this -> m_currentPosition = (int)lParam;
+	this -> m_currentPosition = (u_int)lParam;
 	this -> m_framesCaptured++;
 	this -> UpdateData(FALSE);
 
@@ -273,6 +273,9 @@ UINT captureRunFrames( LPVOID pParam )
 		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
 		delete error;
 	}
+	
+	// Send the table back to 0
+	task -> m_table -> SendTableCommand("0.0 1 nm\r\n");
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 

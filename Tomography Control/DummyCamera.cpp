@@ -20,7 +20,8 @@ DummyCamera::~DummyCamera()
 	}
 }
 
-void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window)
+void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
+	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedImages = 0;
 	char *filename;
@@ -31,7 +32,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 	// Should handle out of memory condition when allocating buffer
 	memset(this -> m_avgSumFrame, 0, sizeof(unsigned short) * this -> GetImageWidth() * this -> GetImageHeight());
 
-	for (u_int frame = 0; frame < frames; frame++, (*imageCount)++)
+	for (u_int frame = 0; frame < frames; frame++, (*current_position)++)
 	{
 		// Verify the beam is still active, by checking pixel average against last value for
 		// this set.
@@ -60,7 +61,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 			this -> AddFrameToBuffer(this -> m_avgSumFrame, frameBuffer);
 			break;
 		default:
-			filename = GenerateImageFilename(frameType, *imageCount);
+			filename = GenerateImageFilename(frameType, *current_position);
 			// Notify the dialog of the updated filename
 			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
@@ -68,14 +69,14 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 
 			this -> WriteTiff(filename, frameBuffer);
 
-			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
+			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 			break;
 		}
 		capturedImages++;
 	}
 	
 	// Generate filename for end of capture file, incase we need it
-	filename = GenerateImageFilename(frameType, *imageCount);
+	filename = GenerateImageFilename(frameType, *current_position);
 	switch (captureType)
 	{
 	case SUM:
@@ -84,8 +85,8 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 
 		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
-		(*imageCount)++;
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
+		(*current_position)++;
 
 		break;
 	case AVERAGE:
@@ -108,8 +109,8 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOpti
 
 		this -> WriteTiff(filename, averageBuffer);
 	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*imageCount));
-		(*imageCount)++;
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
+		(*current_position)++;
 
 		break;
 	}

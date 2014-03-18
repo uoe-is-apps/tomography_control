@@ -111,15 +111,15 @@ void SerialTable::DoWrite()
 
 		// Write the contents of the temp buffer out to serial
 		WriteFile(this -> m_hComm, input, strlen(input), &bytesWritten, NULL);
-
-		// TODO: Report error if not all bytes have been written
+		
 
 		// Copy the input to the temporary buffer as if we'd just read it in
-		this -> m_outputBuffer += this -> m_inputBuffer;
-		this -> PulseMessageReceived();
+		this -> m_outputBuffer.append(this -> m_inputBuffer, 0, bytesWritten);
 
 		// Clear the input buffer
-		this -> m_inputBuffer.clear();
+		this -> m_inputBuffer.erase(0, bytesWritten);
+
+		this -> PulseMessageReceived();
 	}
 
 	this -> m_bufferLock.Unlock();

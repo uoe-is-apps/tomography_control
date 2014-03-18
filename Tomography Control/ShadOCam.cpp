@@ -75,18 +75,17 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 	return ((double)pixelSum) / (this -> GetImageHeight() * this -> GetImageWidth());
 }
 
-void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
+void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	FrameSavingOptions frameSavingOptions, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedImages = 0;
-	short *currentFramePtr;
 	BOOL lastPixelAverageValid = FALSE;
 	double lastPixelAverage = 0.0;
 	long qh; // handle for grab; only needed to confirm image was taken
 			 // successfully, does not reserve memory for the grab.
 	char *filename;
 
-	for (u_int frame = 0; frame < frames; frame++, *frameCount++)
+	for (u_int frame = 0; frame < frames; frame++)
 	{
 		// grab
 		qh = this -> m_pxd.Grab(this -> m_hFG, this -> m_currentFrame,
@@ -125,12 +124,13 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
       
       	// deinterlace image
 		
-		currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
+		short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
 		currentFramePtr++; // point to first pixel in buffer1
+
       	ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
 			this -> m_nWidth, (this -> m_nHeight/2),
 			SCCAMTYPE_4K , TRUE);
-		
+
       	//pixel map correction
       	ScPixelCorrection(currentFramePtr,
 			this -> m_nWidth + 2, this -> m_nHeight,
@@ -139,10 +139,10 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 		short *currentTempPtr = currentFramePtr;
 		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 		{
-      		for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
+      		for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
       		{
          		// swap bytes
-   				*currentTempPtr = (*currentTempPtr>>8) + (((unsigned char)*currentTempPtr)<<8);
+   				*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
 				currentTempPtr++;
         	}
 		}
@@ -154,14 +154,14 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 			this -> AddFrameToBuffer(this -> m_avgSumFrame, this -> m_currentFrame);
 			break;
 		case INDIVIDUAL:
-			filename = GenerateImageFilename(frameType, *frameCount);
+			filename = GenerateImageFilename(frameType, *current_position);
 			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
 
 			//save file
 			this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
 
-			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
-			(*frameCount)++;
+			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
+			(*current_position)++;
 			break;
 		default:
 			throw new bad_frame_saving_options_error("Unknown frame saving options specified.");
@@ -178,11 +178,9 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 	else
 	{
 		// Write out sum/average files
-		filename = GenerateImageFilename(frameType, *frameCount);
-		// Clear the current frame, so we can use it to generate the file to be written out.
-		memset(currentFramePtr, 0, this -> GetImageWidth() * this -> GetImageHeight() * sizeof(short));
+		filename = GenerateImageFilename(frameType, *current_position);
 	
-		short *averageBufferPtr = currentFramePtr;
+		short *averageBufferPtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
 		unsigned int *sourceFramePtr = this -> m_avgSumFrame;
 
 		switch (frameSavingOptions)
@@ -220,8 +218,8 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *frameCount,
 
 		this -> WriteTiff(filename, this -> m_avgSumFrame);
 	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*frameCount));
-		(*frameCount)++;
+		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
+		(*current_position)++;
 	}
 }
 
@@ -296,7 +294,8 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	}
 
 	// set up image destination buffers
-	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int) *this -> m_pxd.GetWidth(this -> m_hFG) *this -> m_pxd.GetHeight(this -> m_hFG));
+	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int)
+		* this -> m_pxd.GetWidth(this -> m_hFG) * this -> m_pxd.GetHeight(this -> m_hFG));
 	if (NULL == this -> m_avgSumFrame)  {
 		throw new camera_init_error("Unable to create average/sum image buffer.");
 	}

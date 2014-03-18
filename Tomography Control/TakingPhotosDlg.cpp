@@ -80,7 +80,7 @@ void CTakingPhotosDlg::OnBnClickedCancel()
 
 afx_msg LRESULT CTakingPhotosDlg::OnFrameCaptured(WPARAM wParam, LPARAM lParam)
 {
-	int position = (int)lParam;
+	u_int position = (u_int)lParam;
 
 	this -> m_progress.SetPos(position + 1);
 
