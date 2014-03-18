@@ -96,7 +96,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE, "Unable to acquire image: %d",
 				this -> m_pxd.CheckError(this -> m_hFG));
 
-      		throw new camera_acquisition_error(this -> m_errorBuffer);
+      		throw camera_acquisition_error(this -> m_errorBuffer);
 		}
 
 		// Verify the beam is still active, by checking pixel average against last value for
@@ -167,7 +167,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			(*current_position)++;
 			break;
 		default:
-			throw new bad_frame_saving_options_error("Unknown frame saving options specified.");
+			throw bad_frame_saving_options_error("Unknown frame saving options specified.");
 		}
 
 		capturedImages++;
@@ -211,7 +211,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 
 			break;
 		default:
-			throw new bad_frame_saving_options_error("Unknown frame saving options specified.");
+			throw bad_frame_saving_options_error("Unknown frame saving options specified.");
 		}
 
 		// Write out the current frame buffer

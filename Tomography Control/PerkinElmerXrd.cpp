@@ -171,7 +171,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
 
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1, "%s fail! Error Code %d, Board Error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
-		throw new camera_acquisition_error(this -> m_errorBuffer);
+		throw camera_acquisition_error(this -> m_errorBuffer);
 	}
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
 		frames, 0, // Frames, skip frames

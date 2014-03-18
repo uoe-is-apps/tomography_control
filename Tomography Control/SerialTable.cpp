@@ -24,14 +24,14 @@ SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
                     NULL);
 
     if (this -> m_hComm == INVALID_HANDLE_VALUE) {
-		throw new bad_serial_port_error("Could not open serial port.");
+		throw bad_serial_port_error("Could not open serial port.");
     }
 
 	// Set up the port details
     if (!BuildCommDCB("baud=19200 parity=N data=8 stop=1", &this -> m_dcb)) {   
         // Couldn't build the DCB. Usually a problem
         // with the communications specification string.
-        throw new bad_serial_port_error("Could not construct serial port configuration.");
+        throw bad_serial_port_error("Could not construct serial port configuration.");
     }
     else
 	{
@@ -40,7 +40,7 @@ SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 
 	if (SetCommState(this -> m_hComm, &this -> m_dcb) == 0)
 	{
-        throw new bad_serial_port_error("Could not set port state.");
+        throw bad_serial_port_error("Could not set port state.");
 	}
 	
 	this -> m_commTimeouts.ReadIntervalTimeout = MAXDWORD;

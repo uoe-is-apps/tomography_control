@@ -80,10 +80,10 @@ BOOL CTomographyControlApp::InitInstance()
 		m_pMainWnd = &controlDialogue;
 		INT_PTR nResponse = controlDialogue.DoModal();
 	}
-	catch(bad_serial_port_error *ex)
+	catch(bad_serial_port_error ex)
 	{
-		MessageBox(NULL, ex -> what(), "Tomography Control", MB_ICONERROR);
-		delete ex;
+		MessageBox(NULL, ex.what(), "Tomography Control", MB_ICONERROR);
+
 		return 0;
 	}
 

@@ -344,10 +344,9 @@ UINT captureRunFrames( LPVOID pParam )
 			dialog -> PostMessage(WM_USER_RUN_TURN_COMPLETED, 0, (LPARAM)&task -> m_turnCount);
 		}
 	}
-	catch (camera_acquisition_error *error)
+	catch (camera_acquisition_error error)
 	{
-		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
 	}
 	
 	// Send the table back to 0

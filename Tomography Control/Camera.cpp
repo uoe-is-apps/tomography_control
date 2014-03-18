@@ -56,7 +56,7 @@ char *Camera::GenerateImageFilename(FrameType frameType, u_int frame, char* file
 		sprintf_s(this -> m_filenameBuffer, MAX_PATH - 1, "FF%04d.%s", frame, fileEnding);
 		break;
 	default:
-		throw new bad_frame_type_error("Unknown frame type.");
+		throw bad_frame_type_error("Unknown frame type.");
 	}
 
 	return this -> m_filenameBuffer;

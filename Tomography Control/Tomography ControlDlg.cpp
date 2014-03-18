@@ -99,7 +99,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
         0, 
         this -> m_directoryPathBuffer)))
 	{
-		throw new bad_directory_error("Could not retrieve user home directory.");
+		throw bad_directory_error("Could not retrieve user home directory.");
 	}
 	
 	PathAppend(this -> m_directoryPathBuffer, "..");
@@ -423,7 +423,7 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 			0, 
 			pixelMapFilename)))
 		{
-			throw new bad_directory_error("Could not retrieve user home directory.");
+			throw bad_directory_error("Could not retrieve user home directory.");
 		}
 	
 		PathAppend(pixelMapFilename, "Pixel Map");
@@ -438,7 +438,7 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 		camera = new DummyCamera(this -> m_directoryPathBuffer);
 		break;
 	default:
-		throw new bad_camera_type_error("Unrecognised camera type.");
+		throw bad_camera_type_error("Unrecognised camera type.");
 	}
 
 	return camera;
@@ -466,10 +466,10 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	try {
 		UpdateDirectoryPath();
 	}
-	catch(bad_directory_error *error)
+	catch(bad_directory_error error)
 	{
-		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(error.what(), "Tomography Control", MB_ICONERROR);
+
 		return;
 	}
 
@@ -501,10 +501,9 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	try {
 		runProgressDlg.m_camera = BuildSelectedCamera();
 	}
-	catch(camera_init_error *error)
+	catch(camera_init_error error)
 	{
-		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(error.what(), "Tomography Control", MB_ICONERROR);
 		return;
 	}
 	
@@ -554,20 +553,18 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 	try {
 		UpdateDirectoryPath();
 	}
-	catch(bad_directory_error *error)
+	catch(bad_directory_error error)
 	{
-		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(error.what(), "Tomography Control", MB_ICONERROR);
 		return;
 	}
 
 	try {
 		takingPhotosDlg.m_camera = BuildSelectedCamera();
 	}
-	catch(bad_camera_type_error *error)
+	catch(bad_camera_type_error error)
 	{
-		MessageBox(error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(error.what(), "Tomography Control", MB_ICONERROR);
 		return;
 	}
 
@@ -609,7 +606,7 @@ void CTomographyControlDlg::UpdateDirectoryPath()
         0, 
         this -> m_directoryPathBuffer)))
 	{
-		throw new bad_directory_error("Could not retrieve user home directory.");
+		throw bad_directory_error("Could not retrieve user home directory.");
 	}
 
 	PathAppend(this -> m_directoryPathBuffer, "CT_Scans");
@@ -619,7 +616,7 @@ void CTomographyControlDlg::UpdateDirectoryPath()
 	{
 		if (FAILED(CreateDirectory(this -> m_directoryPathBuffer, NULL)))
 		{
-			throw new bad_directory_error("Could not create outer directory.");
+			throw bad_directory_error("Could not create outer directory.");
 		}
 	}
 
@@ -641,7 +638,7 @@ void CTomographyControlDlg::UpdateDirectoryPath()
 	{
 		if (FAILED(CreateDirectory(this -> m_directoryPathBuffer, NULL)))
 		{
-			throw new bad_directory_error("Could not create directory to write images to.");
+			throw bad_directory_error("Could not create directory to write images to.");
 		}
 	}
 }
