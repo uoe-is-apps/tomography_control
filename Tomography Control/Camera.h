@@ -25,7 +25,8 @@ enum FrameSavingOptions { INDIVIDUAL, AVERAGE, SUM };
 class Camera
 {
 public:
-	Camera::Camera(char* directory);
+	Camera(char* directory);
+	virtual ~Camera();
 	
 	void AddFrameToBuffer(unsigned int *dest, unsigned short *src);
 	double CalculatePixelAverage(unsigned short *frameBuffer);

@@ -8,6 +8,10 @@
 	this -> m_directory = directory;
 }
 
+	Camera::~Camera()
+{
+}
+
 void Camera::AddFrameToBuffer(unsigned int *dest, unsigned short *src)
 {
 	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
