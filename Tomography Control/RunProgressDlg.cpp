@@ -8,6 +8,7 @@
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
+#define ROTATION_SLEEP_MILLIS 1000
 #define MAX_PROGRESS 1000
 #define TABLE_COMMAND_BUFFER_SIZE 128
 
@@ -96,13 +97,15 @@ BOOL CRunProgressDlg::OnInitDialog()
 }
 
 void CRunProgressDlg::CalculateTimeRemaining(CTimeSpan* dest) {
-	// TODO: Check this maths
-	__time64_t exposureTimePerStop = (int)(this -> m_exposureTimeSeconds * this -> m_framesPerStop);
-	__time64_t timePerStop = exposureTimePerStop + 1; // Add in rotation time
 	unsigned int totalStops = this -> m_stopsPerRotation * this -> m_turnsTotal;
-	unsigned int stopsCompletedTotal = (this -> m_stopsPerRotation * this -> m_turnsCompleted) + this -> m_stopsCompleted;
+	unsigned int stopsCompleted = (this -> m_stopsPerRotation * this -> m_turnsCompleted) + this -> m_stopsCompleted;
+	unsigned int stopsRemaining = totalStops - stopsCompleted;
 
-	*dest = exposureTimePerStop * (totalStops - stopsCompletedTotal);
+	unsigned int exposureTimePerStopMillis = (unsigned int)(this -> m_exposureTimeSeconds * this -> m_framesPerStop * 1000);
+	unsigned int timePerStopMillis = exposureTimePerStopMillis + ROTATION_SLEEP_MILLIS; // Add in rotation time
+	unsigned int timeRemainingMillis = timePerStopMillis * stopsRemaining;
+
+	*dest = timeRemainingMillis / 1000;
 }
 
 
@@ -256,7 +259,7 @@ UINT captureRunFrames( LPVOID pParam )
 
 				task -> m_table -> SendTableCommand(tableCommandBuffer);
 				// TODO: See if we can get a verification of state from the table instead of just waiting blindly
-				Sleep(1000);
+				Sleep(ROTATION_SLEEP_MILLIS);
 
 				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
 
