@@ -29,7 +29,7 @@ void Table::PulseMessageReceived()
 	}
 }
 
-void Table::SendTableCommand(LPCTSTR command)
+void Table::SendToTable(LPCTSTR command)
 {
 	this -> m_bufferLock.Lock();
 	m_inputBuffer += command;

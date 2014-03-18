@@ -13,7 +13,7 @@ public:
 
 	virtual void DoIO() = 0;
 	virtual void PulseMessageReceived();
-	virtual void SendTableCommand(LPCTSTR command);
+	virtual void SendToTable(LPCTSTR command);
 	
 	CEvent m_inputEvent;
 	BOOL m_running;

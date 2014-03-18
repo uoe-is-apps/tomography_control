@@ -265,7 +265,7 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 			}
 		}
 
-		this -> m_table -> SendTableCommand(command);
+		this -> m_table -> SendToTable(command);
 
         return TRUE; // this doesn't need processing anymore
     }
@@ -360,7 +360,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 
 	CloseHandle(initialisationFileHandle);
 
-	this -> m_table -> SendTableCommand(fileBuffer);
+	this -> m_table -> SendToTable(fileBuffer);
 
 	free(fileBuffer);
 }
@@ -380,13 +380,13 @@ void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
-	this -> m_table -> SendTableCommand("nreset\r\n");
+	this -> m_table -> SendToTable("nreset\r\n");
 }
 
 
 void CTomographyControlDlg::OnBnClickedButtonTableNcal()
 {
-	this -> m_table -> SendTableCommand("ncal\r\n");
+	this -> m_table -> SendToTable("ncal\r\n");
 }
 
 LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr)
@@ -637,7 +637,7 @@ void CTomographyControlDlg::UpdateDirectoryPath()
 		directoryName.Append("_");
 	}
 	directoryName.Append(this -> m_timestamp);
-	PathAppend(this -> m_directoryPathBuffer, directoryName.GetBuffer());
+	PathAppend(this -> m_directoryPathBuffer, (LPCSTR)directoryName);
 
 	if (GetFileAttributesA(this -> m_directoryPathBuffer) == INVALID_FILE_ATTRIBUTES)
 	{

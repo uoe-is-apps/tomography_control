@@ -257,7 +257,7 @@ UINT captureRunFrames( LPVOID pParam )
 				float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
 				sprintf_s(tableCommandBuffer, TABLE_COMMAND_BUFFER_SIZE, "%.2f 1 nm\r\n", calculatedAngle);
 
-				task -> m_table -> SendTableCommand(tableCommandBuffer);
+				task -> m_table -> SendToTable(tableCommandBuffer);
 				// TODO: See if we can get a verification of state from the table instead of just waiting blindly
 				Sleep(ROTATION_SLEEP_MILLIS);
 
@@ -278,7 +278,7 @@ UINT captureRunFrames( LPVOID pParam )
 	}
 	
 	// Send the table back to 0
-	task -> m_table -> SendTableCommand("0.0 1 nm\r\n");
+	task -> m_table -> SendToTable("0.0 1 nm\r\n");
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 
