@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include <math.h>
+
 #include "Tomography Control.h"
 #include "Camera.h"
 #include "Exceptions.h"
@@ -18,9 +21,9 @@ ShadOCam::~ShadOCam()
 			GlobalFree(this -> m_pixMap);
 		}
 
-		if (NULL != m_avgSumFrame)
+		if (NULL != m_sumFrame)
 		{
-			free(this -> m_avgSumFrame);
+			this -> m_pxd.FreeFrame(this -> m_sumFrame);
 		}
 
 		if (NULL != m_currentFrame)
@@ -45,16 +48,30 @@ ShadOCam::~ShadOCam()
 		imagenation_CloseLibrary(&this -> m_pxd);
 	}
 }
-	
-void ShadOCam::AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame)
+
+void ShadOCam::AddFrameToBuffer(FRAME *destFrame, FRAME *currentFrame)
 {
 	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(currentFrame);
+	short *destFramePtr = (short *)this -> m_framelib.FrameBuffer(destFrame);
 
 	for (short row = 0; row < this -> GetImageHeight(); row++)
 	{
 		for (short col = 0; col < (this -> GetImageWidth() + 2); col++)
       	{
-      		*(dest++) += *(currentFramePtr++);
+      		*(destFramePtr++) += *(currentFramePtr++);
+      	}
+	}
+}
+
+void ShadOCam::ClearFrame(FRAME *destFrame)
+{
+	short *destFramePtr = (short *)this -> m_framelib.FrameBuffer(destFrame);
+
+	for (short row = 0; row < this -> GetImageHeight(); row++)
+	{
+		for (short col = 0; col < (this -> GetImageWidth() + 2); col++)
+      	{
+      		*(destFramePtr++) = 0;
       	}
 	}
 }
@@ -93,10 +110,9 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	currentFramePtr++; // point to first pixel in buffer1; 
 
 	// Clear the sum buffer
-	memset(this -> m_avgSumFrame, 0, sizeof(int)
-		* (this -> GetImageWidth() + 2) * this -> GetImageHeight());
+	ClearFrame(this -> m_sumFrame);
 
-	for (u_int frame = 0; frame < frames; frame++)
+	for (u_short frame = 0; frame < frames; frame++)
 	{
 		// grab
 		qh = this -> m_pxd.Grab(this -> m_hFG, this -> m_currentFrame,
@@ -137,30 +153,30 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
       	ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
 			this -> m_nWidth, (this -> m_nHeight/2),
 			SCCAMTYPE_4K , TRUE);
-
-      	//pixel map correction
-      	ScPixelCorrection(currentFramePtr,
-			this -> m_nWidth + 2, this -> m_nHeight,
-			this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
-		
-		currentTempPtr = currentFramePtr;
-		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
-		{
-      		for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
-      		{
-         		// swap bytes
-   				*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
-				currentTempPtr++;
-        	}
-		}
       
 		switch (frameSavingOptions)
 		{
 		case SUM:
 		case AVERAGE:
-			this -> AddFrameToBuffer(this -> m_avgSumFrame, this -> m_currentFrame);
+			this -> AddFrameToBuffer(this -> m_sumFrame, this -> m_currentFrame);
 			break;
 		case INDIVIDUAL:
+      		//pixel map correction
+      		ScPixelCorrection(currentFramePtr,
+				this -> m_nWidth + 2, this -> m_nHeight,
+				this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
+		
+			currentTempPtr = currentFramePtr;
+			for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+			{
+      			for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
+      			{
+         			// swap bytes
+   					*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
+					currentTempPtr++;
+        		}
+			}
+
 			filename = GenerateImageFilename(frameType, *current_position);
 			filepath = GenerateImagePath(filename);
 
@@ -186,34 +202,63 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		return;
 	}
 	
-	unsigned int *avgSumFramePtr = this -> m_avgSumFrame;
+	short *sumFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_sumFrame);
 
 	currentTempPtr = currentFramePtr;
 	
-	// Copy average/sum into working frame buffer
+	switch (frameSavingOptions)
+	{
+	case INDIVIDUAL:
+		return;
+
+	case SUM:
+		// Copy average/sum into working frame buffer
+		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		{
+			for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
+			{
+				// Copy sum into the current frame buffer
+				*currentTempPtr = *sumFramePtr;
+
+				currentTempPtr++;
+				sumFramePtr++;
+			}
+		}
+		break;
+
+	case AVERAGE:
+		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		{
+			for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
+			{
+				double sum = *sumFramePtr;
+				// Calculate averages and write them into the current frame buffer
+				*currentTempPtr = (short)(sum / capturedImages);
+
+				currentTempPtr++;
+				sumFramePtr++;
+			}
+		}
+		break;
+
+	default:
+		throw bad_frame_saving_options_error("Unknown frame saving options specified.");
+	}
+
+	//pixel map correction
+    ScPixelCorrection(currentFramePtr,
+		this -> m_nWidth + 2, this -> m_nHeight,
+		this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
+		
+	currentTempPtr = currentFramePtr;
 	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 	{
-		for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
-		{
-			switch (frameSavingOptions)
-			{
-			case SUM:
-				// Copy sum into the current frame buffer
-				*currentTempPtr = *avgSumFramePtr;
-				break;
-
-			case AVERAGE:
-				// Calculate averages and write them into the current frame buffer
-				*currentTempPtr = (short)(*avgSumFramePtr / capturedImages);
-				break;
-
-			default:
-				throw bad_frame_saving_options_error("Unknown frame saving options specified.");
-			}
-
+      	for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
+      	{
+         	// swap bytes
+   			*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
 			currentTempPtr++;
-			avgSumFramePtr++;
-		}
+        }
 	}
 
 	// Write out the current frame buffer
@@ -249,7 +294,7 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	this -> m_bFrameGrabberAllocated = FALSE;
 	
 	this -> m_currentFrame = NULL;
-	this -> m_avgSumFrame = NULL;
+	this -> m_sumFrame = NULL;
 
 	// Load the image capture libraries
 	if ( !imagenation_OpenLibrary("pxd_32.dll", &this -> m_pxd, sizeof(PXD)) )  {
@@ -299,10 +344,9 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	}
 
 	// set up image destination buffers
-	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int)
-		* this -> m_pxd.GetWidth(this -> m_hFG) * this -> m_pxd.GetHeight(this -> m_hFG));
-	if (NULL == this -> m_avgSumFrame)  {
-		throw camera_init_error("Unable to create average/sum image buffer.");
+	if ( !(this -> m_sumFrame = this -> m_pxd.AllocateBuffer(
+		this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG), PBITS_Y16)) )  {
+		throw camera_init_error("Unable to create sum image buffer.");
 	}
 
     this -> m_pixMap = (PIXMAPENTRY*)GlobalAlloc(0, SCMAXPIXMAPSIZE* sizeof(PIXMAPENTRY));

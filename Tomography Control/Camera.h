@@ -102,7 +102,7 @@ protected:
 	float m_exposureTimeSeconds;
 
 	/* Common buffer used when doing an acquisition for summed frames. */
-	unsigned int *m_avgSumFrame;
+	unsigned int *m_sumFrame;
 };
 
 class PerkinElmerXrd : public Camera
@@ -118,7 +118,7 @@ public:
 	virtual void SetupCamera(float exposureTime);
 
 	/* Common buffer used when doing an acquisition for summed frames. */
-	unsigned int *m_avgSumFrame;
+	unsigned int *m_sumFrame;
 
 protected:	
 	u_int m_nWidth;			// width of image
@@ -145,7 +145,8 @@ public:
 	ShadOCam(CString directory, char* camFilePath, char* pixMapFilePath);
 	~ShadOCam();
 	
-	void AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame);
+	void AddFrameToBuffer(FRAME *dest, FRAME *currentFrame);
+	void ClearFrame(FRAME *dest);
 	
 	double CalculatePixelAverage(FRAME *frameBuffer);
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
@@ -174,7 +175,7 @@ protected:
 	CAMERA_TYPE* m_camType;	// pointer to camera object
 	
 	FRAME* m_currentFrame;	// pointer to FRAME object
-	unsigned int* m_avgSumFrame;	// pointer to average/sum frame
+	FRAME* m_sumFrame;	// pointer to average/sum frame
 
 	BOOL m_bPxdLoaded;
 	BOOL m_bFramelibLoaded;
