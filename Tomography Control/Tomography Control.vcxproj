@@ -123,6 +123,7 @@
     <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="PerkinElmerXrd.cpp" />
     <ClCompile Include="RunProgressDlg.cpp" />
+    <ClCompile Include="SerialTable.cpp" />
     <ClCompile Include="ShadOCam.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
