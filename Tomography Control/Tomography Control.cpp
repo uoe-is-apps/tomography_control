@@ -71,10 +71,14 @@ BOOL CTomographyControlApp::InitInstance()
 	// such as the name of your company or organization
 	SetRegistryKey(_T("University of Edinburgh"));
 	
-	CTomographyControlDlg controlDialogue;
-
 	try {
-		controlDialogue.m_table = new SerialTable("COM1");
+		CTomographyControlDlg controlDialogue;
+		SerialTable table(&controlDialogue, "COM1");
+
+		controlDialogue.m_table = &table;
+
+		m_pMainWnd = &controlDialogue;
+		INT_PTR nResponse = controlDialogue.DoModal();
 	}
 	catch(bad_serial_port_error *ex)
 	{
@@ -82,14 +86,6 @@ BOOL CTomographyControlApp::InitInstance()
 		delete ex;
 		return 0;
 	}
-	controlDialogue.m_table -> SetMessageReceiver(&controlDialogue);
-	controlDialogue.m_table -> Start();
-
-	m_pMainWnd = &controlDialogue;
-	INT_PTR nResponse = controlDialogue.DoModal();
-
-	controlDialogue.m_table -> Stop();
-	delete controlDialogue.m_table;
 
 	// Delete the shell manager created above.
 	if (pShellManager != NULL)

@@ -8,12 +8,12 @@
 class Table
 {
 public:
+	Table(CWnd* wnd);
+	virtual ~Table();
+
 	virtual void DoIO() = 0;
 	virtual void PulseMessageReceived();
 	virtual void SendTableCommand(LPCTSTR command);
-	virtual void SetMessageReceiver(CWnd* wnd);
-	virtual void Start();
-	virtual void Stop();
 	
 	CEvent m_inputEvent;
 	BOOL m_running;
@@ -25,12 +25,14 @@ protected:
 
 	CWinThread* m_thread;
 	CWnd* m_messageReceiver;
+
+	void Start();
 };
 
 class SerialTable : public Table
 {
 public:
-	SerialTable(LPCTSTR gszPort);
+	SerialTable(CWnd* wnd, LPCTSTR gszPort);
 	~SerialTable();
 	void DoIO();
 
@@ -46,7 +48,7 @@ protected:
 class DummyTable : public Table
 {
 public:
-	DummyTable();
+	DummyTable(CWnd* wnd);
 	~DummyTable();
 	void DoIO();
 

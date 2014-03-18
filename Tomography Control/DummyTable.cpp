@@ -7,12 +7,14 @@
 
 // Virtually identical to the regular table, except with a loopback
 // in place of serial communications
-DummyTable::DummyTable() 
+DummyTable::DummyTable(CWnd* wnd) : Table(wnd) 
 {
 	this -> m_running = TRUE;
 	this -> m_inputEvent.ResetEvent();
 	this -> m_inputBuffer.Empty();
 	this -> m_outputBuffer.Empty();
+
+	this -> Start();
 }
 
 DummyTable::~DummyTable() 

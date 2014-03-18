@@ -6,7 +6,7 @@
 
 #define BUFFER_SIZE 2000
 
-SerialTable::SerialTable(LPCSTR gszPort) 
+SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 {
 	this -> m_inputEvent.ResetEvent();
 	this -> m_inputBuffer.Empty();
@@ -51,7 +51,7 @@ SerialTable::SerialTable(LPCSTR gszPort)
 	this -> m_commTimeouts.WriteTotalTimeoutConstant = 0;
 
 	SetCommTimeouts(this -> m_hComm, &this -> m_commTimeouts);
-
+	this -> Start();
 }
 
 SerialTable::~SerialTable() 
@@ -126,6 +126,23 @@ void SerialTable::DoWrite()
 	this -> m_bufferLock.Unlock();
 }
 
+Table::Table(CWnd* wnd)
+{
+	this -> m_messageReceiver = wnd;
+	this -> m_thread = NULL;
+}
+
+Table::~Table()
+{
+	this -> m_running = FALSE;
+	if (NULL != this -> m_thread)
+	{
+		// Give the thread 5 seconds to exit
+		::WaitForSingleObject(this -> m_thread -> m_hThread, 5000);
+		delete this -> m_thread;
+	}
+}
+
 void Table::PulseMessageReceived()
 {
 	if (NULL != this -> m_messageReceiver
@@ -143,11 +160,6 @@ void Table::SendTableCommand(LPCTSTR command)
 	this -> m_inputEvent.PulseEvent();
 }
 
-void Table::SetMessageReceiver(CWnd* wnd)
-{
-	this -> m_messageReceiver = wnd;
-}
-
 void Table::Start()
 {
 	this -> m_running = TRUE;
@@ -155,14 +167,6 @@ void Table::Start()
 		0, CREATE_SUSPENDED);
 	this -> m_thread -> m_bAutoDelete = FALSE;
 	this -> m_thread -> ResumeThread();
-}
-
-void Table::Stop()
-{
-	this -> m_running = FALSE;
-	// Give the thread 5 seconds to exit
-	::WaitForSingleObject(this -> m_thread -> m_hThread, 5000);
-	delete this -> m_thread;
 }
 
 UINT communicateWithTable( LPVOID pParam )
