@@ -9,7 +9,7 @@
 
 SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 {
-	this -> m_inputEvent.ResetEvent();
+	this -> m_inputToSendToTableEvent.ResetEvent();
 	
     FillMemory(&this -> m_dcb, sizeof(this -> m_dcb), 0);
     FillMemory(&this -> m_commTimeouts, sizeof(this -> m_commTimeouts), 0);
@@ -78,9 +78,15 @@ void SerialTable::DoRead()
 	
 	if (!ReadFile(this -> m_hComm, tempBuffer, BUFFER_SIZE - 1, &bytesRead, NULL))
 	{
+		DWORD dw = GetLastError();
 		char errorBuffer[ERROR_BUFFER_SIZE];
 
-		sprintf_s(errorBuffer, ERROR_BUFFER_SIZE - 1, "Error reading from table: %d", GetLastError());
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			this -> m_hComm,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)errorBuffer,
+			ERROR_BUFFER_SIZE - 1, NULL);
 
 		MessageBox(NULL, errorBuffer, "Tomography Control", MB_ICONERROR);
 		return;
@@ -93,11 +99,13 @@ void SerialTable::DoRead()
 		this -> m_bufferLock.Lock();
 
 		tempBuffer[bytesRead] = NULL;
-		this -> m_outputBuffer += tempBuffer;
+		this -> m_displayBuffer += tempBuffer;
 		
 		this -> PumpOutputUpdated();
 
 		this -> m_bufferLock.Unlock();
+
+		this -> m_outputReceivedFromTableEvent.PulseEvent();
 	}
 }
 
@@ -128,7 +136,7 @@ void SerialTable::DoWrite()
 		WriteFile(this -> m_hComm, this -> m_inputBuffer, lineEnding + 2, &bytesWritten, NULL);
 
 		// Copy the input to the output buffer as if we'd just read it in
-		this -> m_outputBuffer += this -> m_inputBuffer.Left(bytesWritten);
+		this -> m_displayBuffer += this -> m_inputBuffer.Left(bytesWritten);
 
 		// Clear the written bytes from the output buffer
 		this -> m_inputBuffer.Delete(0, bytesWritten);

@@ -10,21 +10,24 @@ class Table
 public:
 	Table(CWnd* wnd);
 	virtual ~Table();
+	
+	BOOL m_running;
+	CString m_displayBuffer; // Input sent to the table, plus anything received from the table
+	CEvent m_inputToSendToTableEvent;
+	CEvent m_outputReceivedFromTableEvent;
+	CCriticalSection m_bufferLock;
 
 	virtual void DoIO() = 0;
+	virtual void ClearDisplay();
 	virtual void PumpOutputUpdated();
 	virtual void SendToTable(LPCTSTR command);
-	
-	CEvent m_inputEvent;
-	BOOL m_running;
-	CCriticalSection m_bufferLock;
-	CString m_inputBuffer; // Communication waiting to be sent to the table
-	CString m_outputBuffer; // Communication back from the table
 
 protected:
 
 	CWinThread* m_thread;
 	CWnd* m_messageReceiver;
+	
+	CString m_inputBuffer; // Communication waiting to be sent to the table
 	
 	void Start();
 	void Stop();

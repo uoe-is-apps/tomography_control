@@ -368,9 +368,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 
 void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 {
-	this -> m_table -> m_bufferLock.Lock();
-	this -> m_table -> m_outputBuffer.Empty();
-	this -> m_table -> m_bufferLock.Unlock();
+	this -> m_table -> ClearDisplay();
 	
 	UpdateData(TRUE);
 	this -> m_tableCommandOutput.Empty();
@@ -395,8 +393,8 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 
 	UpdateData(TRUE);
 	table -> m_bufferLock.Lock();
-	this -> m_tableCommandOutput += table -> m_outputBuffer;
-	table -> m_outputBuffer.Empty();
+	this -> m_tableCommandOutput += table -> m_displayBuffer;
+	table -> m_displayBuffer.Empty();
 	table -> m_bufferLock.Unlock();
 	UpdateData(FALSE);
 

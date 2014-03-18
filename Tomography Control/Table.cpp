@@ -20,6 +20,13 @@ Table::~Table()
 	}
 }
 
+void Table::ClearDisplay()
+{
+	this -> m_bufferLock.Lock();
+	this -> m_displayBuffer.Empty();
+	this -> m_bufferLock.Unlock();
+}
+
 void Table::PumpOutputUpdated()
 {
 	if (NULL != this -> m_messageReceiver
@@ -34,7 +41,7 @@ void Table::SendToTable(LPCTSTR command)
 	this -> m_bufferLock.Lock();
 	m_inputBuffer += command;
 	this -> m_bufferLock.Unlock();
-	this -> m_inputEvent.PulseEvent();
+	this -> m_inputToSendToTableEvent.PulseEvent();
 }
 
 /* Start the background thread for a table. This is intended to be called
@@ -70,7 +77,7 @@ UINT communicateWithTable( LPVOID pParam )
 	{
 		table -> DoIO();
 
-		::WaitForSingleObject(table -> m_inputEvent.m_hObject, TABLE_IO_DELAY_MILLIS);
+		::WaitForSingleObject(table -> m_inputToSendToTableEvent.m_hObject, TABLE_IO_DELAY_MILLIS);
 	}
 
 	return 0;
