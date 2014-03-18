@@ -67,20 +67,19 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
 	, m_exposureTimeSeconds(0.5f)
-	, m_framesPerStop(10)
+	, m_framesPerStop(1)
 	, m_stopsPerRotation(100)
 	, m_turnsTotal(1)
 	, m_delayBetweenTurnsSeconds(1)
 	, m_tableInitialisationFile(_T(""))
-	, m_manualCameraControl(_T(""))
 	, m_cameraType(0)
 	, m_tableType(0)
 	, m_frameSavingOptions(0)
 	, m_researcherName(_T(""))
 	, m_sampleName(_T(""))
 	, m_timestamp(_T(""))
-	, m_numImages(10)
-	, m_numAvSumImages(1)
+	, m_numImages(1)
+	, m_perkinElmerMode(0)
 {
 	// Fill in a sensible timestamp
 	time_t rawtime;
@@ -122,17 +121,15 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_360, m_stopsPerRotation);
 	DDX_Text(pDX, IDC_EDIT_NUM_STOPS_361, m_turnsTotal);
 	DDX_Text(pDX, IDC_EDIT_TURN_INTERVAL, m_delayBetweenTurnsSeconds);
-	DDX_Control(pDX, IDC_BUTTON_RUN_LOOP, m_runLoopButton);
 	DDX_Text(pDX, IDC_BROWSE_TABLE_INI, m_tableInitialisationFile);
-	DDX_Text(pDX, IDC_BROWSE_CAMERA_INI, m_manualCameraControl);
 	DDX_Radio(pDX, IDC_RADIO_SHAD_O_CAM, m_cameraType);
 	DDX_Radio(pDX, IDC_RADIO_SAVE_EACH_FRAME, m_frameSavingOptions);
 	DDX_Text(pDX, IDC_EDIT_RESEARCHER_NAME, m_researcherName);
 	DDX_Text(pDX, IDC_EDIT_SAMPLE_NAME, m_sampleName);
 	DDX_Text(pDX, IDC_EDIT_TIMESTAMP, m_timestamp);
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES, m_numImages);
-	DDX_Text(pDX, IDC_EDIT_NUM_AVSUM, m_numAvSumImages);
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableOutputControl);
+	DDX_Text(pDX, IDC_EDIT_PE_MODE, m_perkinElmerMode);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -143,7 +140,6 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NRESET, &CTomographyControlDlg::OnBnClickedButtonTableNreset)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
-	ON_BN_CLICKED(IDC_BUTTON_RESET_TABLE, &CTomographyControlDlg::OnBnClickedButtonResetTable)
 	ON_BN_CLICKED(IDC_BUTTON_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonRunLoop)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_WRITE_INITIAL, &CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
@@ -354,14 +350,6 @@ void CTomographyControlDlg::OnBnClickedButtonClearTableDisplay()
 }
 
 
-void CTomographyControlDlg::OnBnClickedButtonResetTable()
-{
-	this -> m_tableCommandOutput.Empty();
-	this -> UpdateData(FALSE);
-	this -> m_table -> SendTableCommand("nreset\r\n");
-}
-
-
 void CTomographyControlDlg::OnBnClickedButtonTableNreset()
 {
 	this -> m_table -> SendTableCommand("nreset\r\n");
@@ -518,20 +506,20 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
  */
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
-	this -> RunManualImageTask(SINGLE);
+	this -> RunManualImageTask(GetFrameSavingOptions(), SINGLE);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
-	this -> RunManualImageTask(DARK);
+	this -> RunManualImageTask(GetFrameSavingOptions(), DARK);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
-	this -> RunManualImageTask(FLAT_FIELD);
+	this -> RunManualImageTask(GetFrameSavingOptions(), FLAT_FIELD);
 }
 
-void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
+void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType)
 {
 	this -> UpdateData(TRUE);
 
@@ -560,15 +548,15 @@ void CTomographyControlDlg::RunManualImageTask(FrameType taskType)
 	switch (taskType)
 	{
 	case SINGLE:
-		takingPhotosDlg.m_totalImages = 1;
+		takingPhotosDlg.m_totalImages = this -> m_numImages;
 		break;
 	case FLAT_FIELD:
 	case DARK:
-		takingPhotosDlg.m_totalImages = this -> m_numAvSumImages;
+		takingPhotosDlg.m_totalImages = this -> m_framesPerStop;
 		break;
 	}
 	
-	takingPhotosDlg.m_frameSavingOptions = GetFrameSavingOptions();
+	takingPhotosDlg.m_frameSavingOptions = frameSavingOptions;
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	takingPhotosDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;

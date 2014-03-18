@@ -33,7 +33,6 @@ public:
 	afx_msg void OnBnClickedButtonTableNreset();
 	afx_msg void OnBnClickedButtonTableNcal();
 	afx_msg void OnBnClickedButtonClearTableDisplay();
-	afx_msg void OnBnClickedButtonResetTable();
 	afx_msg void OnBnClickedButtonRunLoop();
 	afx_msg void OnBnClickedButtonCameraWriteInitial();
 	afx_msg void OnBnClickedButtonCameraTakeSingle();
@@ -44,9 +43,7 @@ public:
 	afx_msg LRESULT OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr);
 
 	// Camera controls
-	CString m_manualCameraControl;
 	int m_numImages;
-	int m_numAvSumImages;
 	int m_cameraType;
 	
 	// Table controls
@@ -56,7 +53,6 @@ public:
 	CString m_tableInitialisationFile;
 
 	// Run controls
-	CButton m_runLoopButton;
 	BOOL m_running; // Not set from the UI, just used by the background thread
 
 	// Run inputs
@@ -83,11 +79,12 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	void RunManualImageTask(FrameType taskType);
+	void RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType);
 	Camera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
 public:
 	CEdit m_tableOutputControl;
+	int m_perkinElmerMode;
 };
 
 
