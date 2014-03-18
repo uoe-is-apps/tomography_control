@@ -252,24 +252,24 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 
 	// Load the image capture libraries
 	if ( !imagenation_OpenLibrary("pxd_32.dll", &this -> m_pxd, sizeof(PXD)) )  {
-		throw new camera_init_error("Frame grabber library not loaded.");
+		throw camera_init_error("Frame grabber library not loaded.");
 	}
 	this -> m_bPxdLoaded = TRUE;
 	
 	if ( !imagenation_OpenLibrary("frame_32.dll", &this -> m_framelib, sizeof(FRAMELIB)) )  {
-		throw new camera_init_error("Frame library not loaded.");
+		throw camera_init_error("Frame library not loaded.");
 	}
 	this -> m_bFramelibLoaded = TRUE;
 
 	// request access to frame grabber
 	if ( !(this -> m_hFG = this -> m_pxd.AllocateFG(-1)) )  {
-		throw new camera_init_error("PXD frame grabber not found.");
+		throw camera_init_error("PXD frame grabber not found.");
 	}
 	this -> m_bFrameGrabberAllocated = TRUE;
 
 	// initialize camera configuration
 	if ( !(this -> m_camType = this -> m_pxd.LoadConfig(this -> m_camFilePath)) )  {
-		throw new camera_init_error("Camera configuration not loaded.");
+		throw camera_init_error("Camera configuration not loaded.");
 	}
 	this -> m_bCamTypeLoaded = TRUE;
 
@@ -294,14 +294,14 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 	// set up image destination buffers
 	if ( !(this -> m_currentFrame = this -> m_pxd.AllocateBuffer(
 		this -> m_pxd.GetWidth(this -> m_hFG), this -> m_pxd.GetHeight(this -> m_hFG), PBITS_Y16)) )  {
-		throw new camera_init_error("Unable to create image buffer.");
+		throw camera_init_error("Unable to create image buffer.");
 	}
 
 	// set up image destination buffers
 	this -> m_avgSumFrame = (unsigned int *)malloc(sizeof(unsigned int)
 		* this -> m_pxd.GetWidth(this -> m_hFG) * this -> m_pxd.GetHeight(this -> m_hFG));
 	if (NULL == this -> m_avgSumFrame)  {
-		throw new camera_init_error("Unable to create average/sum image buffer.");
+		throw camera_init_error("Unable to create average/sum image buffer.");
 	}
 
     this -> m_pixMap = (PIXMAPENTRY*)GlobalAlloc(0, SCMAXPIXMAPSIZE* sizeof(PIXMAPENTRY));

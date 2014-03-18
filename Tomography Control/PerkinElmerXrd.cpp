@@ -27,19 +27,19 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
-		throw new camera_init_error(this -> m_errorBuffer);
+		throw camera_init_error(this -> m_errorBuffer);
 	}
 				
 	if(ulNumSensors == 0)
 	{
-		throw new camera_init_error("Could not detect any cameras.");
+		throw camera_init_error("Could not detect any cameras.");
 	}
 
 	if (ulNumSensors > 1)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"Found %l cameras, expected only 1.", ulNumSensors);
-		throw new camera_init_error(this -> m_errorBuffer);
+		throw camera_init_error(this -> m_errorBuffer);
 	}
 
 	// get device params of GbIF Detectors in Subnet
@@ -50,7 +50,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
-		throw new camera_init_error(this -> m_errorBuffer);
+		throw camera_init_error(this -> m_errorBuffer);
 	}
 
 	memset(&this -> m_hAcqDesc, 0, sizeof(HACQDESC));
@@ -70,7 +70,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
-		throw new camera_init_error(this -> m_errorBuffer);
+		throw camera_init_error(this -> m_errorBuffer);
 	}
 
 	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
@@ -84,7 +84,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	{
 		if (Acquisition_GbIF_SetPacketDelay(this -> m_hAcqDesc, lPacketDelay) != HIS_ALL_OK)
 		{
-			throw new camera_init_error("Could not set packet delay.");
+			throw camera_init_error("Could not set packet delay.");
 		}
 	}
 
@@ -101,7 +101,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s fail! Error Code %d, Board Error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
-		throw new camera_init_error(this -> m_errorBuffer);
+		throw camera_init_error(this -> m_errorBuffer);
 	}
 	
 	this -> m_nHeight = headInfo.dwNrRows;
@@ -110,7 +110,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 
 	if (NULL == this -> m_avgSumFrame)
 	{
-		throw new camera_init_error("Could not allocate buffer to hold average/sum data.");
+		throw camera_init_error("Could not allocate buffer to hold average/sum data.");
 	}
 
 	Acquisition_SetCallbacksAndMessages(this -> m_hAcqDesc,

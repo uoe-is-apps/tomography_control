@@ -286,10 +286,9 @@ UINT captureRunFrames( LPVOID pParam )
 	try {
 		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
 	}
-	catch(camera_init_error *error)
+	catch(camera_init_error error)
 	{
-		MessageBox(*task -> m_dialog, error -> what(), "Tomography Control", MB_ICONERROR);
-		delete error;
+		MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
 		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 		return 0;
 	}
