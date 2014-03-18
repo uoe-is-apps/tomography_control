@@ -3,7 +3,7 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	ShadOCam::ShadOCam(char* directory, char* camFilePath, char *pixMapFilePath) : Camera(directory)
+	ShadOCam::ShadOCam(CString directory, char* camFilePath, char *pixMapFilePath) : Camera(directory)
 {
 	strcpy(this -> m_camFilePath, camFilePath);
 	strcpy(this -> m_pixMapFilePath, pixMapFilePath);
@@ -84,6 +84,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	long qh; // handle for grab; only needed to confirm image was taken
 			 // successfully, does not reserve memory for the grab.
 	char *filename;
+	char *filepath;
 
 	for (u_int frame = 0; frame < frames; frame++)
 	{
@@ -155,10 +156,12 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			break;
 		case INDIVIDUAL:
 			filename = GenerateImageFilename(frameType, *current_position);
-			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+			filepath = GenerateImagePath(filename);
+
+			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 			//save file
-			this -> m_framelib.WriteBin(this -> m_currentFrame, filename, 1);
+			this -> m_framelib.WriteBin(this -> m_currentFrame, filepath, 1);
 
 			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 			(*current_position)++;
@@ -177,9 +180,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	}
 	else
 	{
-		// Write out sum/average files
-		filename = GenerateImageFilename(frameType, *current_position);
-	
+		// Write out sum/average files	
 		short *averageBufferPtr = (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame);
 		unsigned int *sourceFramePtr = this -> m_avgSumFrame;
 
@@ -214,9 +215,12 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		}
 
 		// Write out the current frame buffer
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+		filename = GenerateImageFilename(frameType, *current_position);
+		filepath = GenerateImagePath(filename);
 
-		this -> WriteTiff(filename, this -> m_avgSumFrame);
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		this -> WriteTiff(filepath, this -> m_avgSumFrame);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 		(*current_position)++;

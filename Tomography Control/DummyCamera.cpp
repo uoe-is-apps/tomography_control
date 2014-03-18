@@ -6,7 +6,7 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-	DummyCamera::DummyCamera(char *directory) : Camera(directory)
+	DummyCamera::DummyCamera(CString directory) : Camera(directory)
 {
 	this -> m_nWidth = 1024;
 	this -> m_nHeight = 2048;
@@ -25,6 +25,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 {
 	unsigned short capturedImages = 0;
 	char *filename;
+	char *filepath;
 	BOOL lastPixelAverageValid = FALSE;
 	double lastPixelAverage;
 	unsigned short *frameBuffer = (unsigned short *)calloc(sizeof(unsigned short), this -> GetImageWidth() * this -> GetImageHeight());
@@ -63,11 +64,13 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 		default:
 			filename = GenerateImageFilename(frameType, *current_position);
 			// Notify the dialog of the updated filename
-			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+			strcpy_s(this -> m_filepathBuffer, MAX_PATH, this -> m_directory);
+			PathAppend(this -> m_filepathBuffer, filename);
 
 			Sleep((DWORD)(this -> m_exposureTimeSeconds * 1000));
 
-			this -> WriteTiff(filename, frameBuffer);
+			this -> WriteTiff(this -> m_filepathBuffer, frameBuffer);
 
 			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 			break;
@@ -77,13 +80,15 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 	
 	// Generate filename for end of capture file, incase we need it
 	filename = GenerateImageFilename(frameType, *current_position);
+	filepath = GenerateImagePath(filename);
+
 	switch (captureType)
 	{
 	case SUM:
 		// Notify the dialog of the updated filename
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		this -> WriteTiff(filename, this -> m_avgSumFrame);
+		this -> WriteTiff(filepath, this -> m_avgSumFrame);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 		(*current_position)++;
@@ -91,7 +96,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 		break;
 	case AVERAGE:
 		// Notify the dialog of the updated filename
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(this -> GetDirectory()) + 1));
+		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 		unsigned int *sourceBufferPtr = this -> m_avgSumFrame;
 		unsigned short *averageBuffer = frameBuffer;
@@ -107,7 +112,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 			}
 		}
 
-		this -> WriteTiff(filename, averageBuffer);
+		this -> WriteTiff(filepath, averageBuffer);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 		(*current_position)++;

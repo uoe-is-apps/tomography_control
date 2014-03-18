@@ -25,7 +25,7 @@ enum FrameSavingOptions { INDIVIDUAL, AVERAGE, SUM };
 class Camera
 {
 public:
-	Camera(char* directory);
+	Camera(CString directory);
 	virtual ~Camera();
 	
 	void AddFrameToBuffer(unsigned int *dest, unsigned short *src);
@@ -39,7 +39,9 @@ public:
 	 * frameType: the type of frame, used to determine filename.
 	 * window: the dialog window to notify of progress.
 	 */
-	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window) = 0;
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType,
+		FrameType frameType, CWnd* window) = 0;
+
 	/* Construct a filename for an image to be written to disk. Returns an pointer
 	 * to a buffer containing the filename. This buffer is overwritten when this method
 	 * is called next.
@@ -49,8 +51,25 @@ public:
 	 * fileEnding: the ending of the filename, to indicate file type (i.e. "tiff", "raw")
 	 */
 	char *GenerateImageFilename(FrameType frameType, u_int frame, char* fileEnding);
+
+	/* Construct a filename for an image to be written to disk. Returns an pointer
+	 * to a buffer containing the filename. This buffer is overwritten when this method
+	 * is called next.
+	 *
+	 * frameType: the type of frame to capture (single, dark, flat_field)
+	 * frame: the number of the frame, within a captured set
+	 */
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame) = 0;
-	char *GetDirectory();
+	
+	/* Construct the full path for an image file, based on the filename
+	 * of the image. Returns an pointer to a buffer containing the file path.
+	 * This buffer is overwritten when this method is called next.
+	 *
+	 * framename: the name of the file within the directory
+	 */
+	char *GenerateImagePath(char *filename);
+
+	CString GetDirectory();
 	virtual u_short GetImageHeight() = 0;
 	virtual u_short GetImageWidth() = 0;
 	virtual void SetupCamera(float exposureTime) = 0;
@@ -59,14 +78,15 @@ public:
 	void WriteTiff(char* filename, unsigned int *buffer);
 
 protected:
-	char *m_directory; // Directory to write images to
-	char filenameBuffer[MAX_PATH];
+	CString m_directory; // Directory to write images to
+	char m_filenameBuffer[MAX_PATH];
+	char m_filepathBuffer[MAX_PATH];
 };
 
 class DummyCamera : public Camera
 {
 public:
-	DummyCamera(char* directory);
+	DummyCamera(CString directory);
 	~DummyCamera();
 	
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
@@ -88,7 +108,7 @@ protected:
 class PerkinElmerXrd : public Camera
 {
 public:
-	PerkinElmerXrd(char* directory);
+	PerkinElmerXrd(CString directory);
 	~PerkinElmerXrd();
 	
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
@@ -122,7 +142,7 @@ public:
 	 * "directory" - where to write images to.
 	 * "camFilePath" - the location on disk of the camera configuration file ("xxxx.CAM")
 	 */
-	ShadOCam(char* directory, char* camFilePath, char* pixMapFilePath);
+	ShadOCam(CString directory, char* camFilePath, char* pixMapFilePath);
 	~ShadOCam();
 	
 	void AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame);

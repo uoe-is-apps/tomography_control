@@ -3,7 +3,7 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	Camera::Camera(char* directory)
+	Camera::Camera(CString directory)
 {
 	this -> m_directory = directory;
 }
@@ -38,7 +38,7 @@ double Camera::CalculatePixelAverage(unsigned short *frameBuffer)
 	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
 }
 	
-char *Camera::GetDirectory()
+CString Camera::GetDirectory()
 {
 	return this -> m_directory;
 }
@@ -47,21 +47,28 @@ char *Camera::GenerateImageFilename(FrameType frameType, u_int frame, char* file
 	switch (frameType)
 	{
 	case SINGLE:
-		sprintf_s(this -> filenameBuffer, MAX_PATH - 1, "%s\\IMAGE%04d.%s", this -> m_directory, frame, fileEnding);
+		sprintf_s(this -> m_filenameBuffer, MAX_PATH - 1, "IMAGE%04d.%s", frame, fileEnding);
 		break;
 	case DARK:
-		sprintf_s(this -> filenameBuffer, MAX_PATH - 1, "%s\\DC%04d.%s", this -> m_directory, frame, fileEnding);
+		sprintf_s(this -> m_filenameBuffer, MAX_PATH - 1, "DC%04d.%s", frame, fileEnding);
 		break;
 	case FLAT_FIELD:
-		sprintf_s(this -> filenameBuffer, MAX_PATH - 1, "%s\\FF%04d.%s", this -> m_directory, frame, fileEnding);
+		sprintf_s(this -> m_filenameBuffer, MAX_PATH - 1, "FF%04d.%s", frame, fileEnding);
 		break;
 	default:
 		throw new bad_frame_type_error("Unknown frame type.");
 	}
 
-	return this -> filenameBuffer;
+	return this -> m_filenameBuffer;
 }
 
+char *Camera::GenerateImagePath(char *filename)
+{
+	strcpy_s(this -> m_filepathBuffer, MAX_PATH - 1, this -> GetDirectory());
+	PathAppend(this -> m_filepathBuffer, filename);
+
+	return this -> m_filepathBuffer;
+}
 
 void Camera::WriteTiff(char* filename, unsigned short *frameBuffer)
 {

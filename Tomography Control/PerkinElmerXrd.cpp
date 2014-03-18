@@ -7,7 +7,7 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(char* directory) : Camera(directory)
+PerkinElmerXrd::PerkinElmerXrd(CString directory) : Camera(directory)
 {
 }	
 
@@ -202,6 +202,7 @@ char *PerkinElmerXrd::GenerateImageFilename(FrameType frameType, u_int frame) {
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 {
 	char *filename;
+	char *filepath;
 	DWORD dwAcqData;
 	PerkinElmerXrd *camera;
 	PerkinElmerAcquisition *task;
@@ -211,14 +212,15 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	camera = task -> camera;
 	
 	filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
+	filepath = camera -> GenerateImagePath(filename);
 
 	switch (task -> captureType)
 	{
 	case SUM:
 		// Notify the dialog of the updated filename
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		camera -> WriteTiff(filename, camera -> m_avgSumFrame);
+		camera -> WriteTiff(filepath, camera -> m_avgSumFrame);
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
@@ -239,9 +241,9 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 		}
 		
 		// Notify the dialog of the updated filename
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		camera -> WriteTiff(filename, averageBuffer);
+		camera -> WriteTiff(filepath, averageBuffer);
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
@@ -257,6 +259,7 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 {
 	char *filename;
+	char *filepath;
 	DWORD dwAcqData, dwActFrame, dwSecFrame;
 	PerkinElmerXrd *camera;
 	PerkinElmerAcquisition *task;
@@ -302,10 +305,12 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 		break;
 	default:
 		filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
-		// Notify the dialog of the updated filename
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)(filename + strlen(camera -> GetDirectory()) + 1));
+		filepath = camera -> GenerateImagePath(filename);
 
-		camera -> WriteTiff(filename, frameBuffer);
+		// Notify the dialog of the updated filename
+		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+
+		camera -> WriteTiff(filepath, frameBuffer);
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
