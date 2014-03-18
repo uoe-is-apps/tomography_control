@@ -145,7 +145,7 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
-	ON_MESSAGE(WM_USER_TABLE_MESSAGE_RECEIVED, &CTomographyControlDlg::OnTableMessageReceived)
+	ON_MESSAGE(WM_USER_TABLE_OUTPUT_UPDATED, &CTomographyControlDlg::OnTableMessageReceived)
 END_MESSAGE_MAP()
 
 

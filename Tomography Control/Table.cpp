@@ -20,12 +20,12 @@ Table::~Table()
 	}
 }
 
-void Table::PulseMessageReceived()
+void Table::PumpOutputUpdated()
 {
 	if (NULL != this -> m_messageReceiver
 		&& ::IsWindow(this -> m_messageReceiver -> m_hWnd))
 	{
-		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_MESSAGE_RECEIVED, 0, (LPARAM)this);
+		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_OUTPUT_UPDATED, 0, (LPARAM)this);
 	}
 }
 

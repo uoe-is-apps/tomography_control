@@ -95,7 +95,7 @@ void SerialTable::DoRead()
 		tempBuffer[bytesRead] = NULL;
 		this -> m_outputBuffer += tempBuffer;
 		
-		this -> PulseMessageReceived();
+		this -> PumpOutputUpdated();
 
 		this -> m_bufferLock.Unlock();
 	}
@@ -134,7 +134,7 @@ void SerialTable::DoWrite()
 		this -> m_inputBuffer.Delete(0, bytesWritten);
 
 		// Notify the window to refresh the display
-		this -> PulseMessageReceived();
+		this -> PumpOutputUpdated();
 	}
 
 	this -> m_bufferLock.Unlock();

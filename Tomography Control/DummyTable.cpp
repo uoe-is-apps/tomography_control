@@ -36,7 +36,7 @@ void DummyTable::DoIO()
 		// Clear the input buffer
 		this -> m_inputBuffer.IsEmpty();
 
-		this -> PulseMessageReceived();
+		this -> PumpOutputUpdated();
 	}
 
 	this -> m_bufferLock.Unlock();

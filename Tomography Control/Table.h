@@ -12,7 +12,7 @@ public:
 	virtual ~Table();
 
 	virtual void DoIO() = 0;
-	virtual void PulseMessageReceived();
+	virtual void PumpOutputUpdated();
 	virtual void SendToTable(LPCTSTR command);
 	
 	CEvent m_inputEvent;
