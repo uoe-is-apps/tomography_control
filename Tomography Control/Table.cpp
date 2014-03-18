@@ -14,11 +14,8 @@ Table::Table(CWnd* wnd)
 
 Table::~Table()
 {
-	this -> m_running = FALSE;
 	if (NULL != this -> m_thread)
 	{
-		// Give the thread 5 seconds to exit
-		::WaitForSingleObject(this -> m_thread -> m_hThread, 5000);
 		delete this -> m_thread;
 	}
 }
@@ -50,6 +47,19 @@ void Table::Start()
 		0, CREATE_SUSPENDED);
 	this -> m_thread -> m_bAutoDelete = FALSE;
 	this -> m_thread -> ResumeThread();
+}
+
+/* Stop the background thread for the table. This is intended to be called at the
+ * start of the destructor for a subclass.
+ */
+void Table::Stop()
+{
+	this -> m_running = FALSE;
+	if (NULL != this -> m_thread)
+	{
+		// Give the thread 5 seconds to exit
+		::WaitForSingleObject(this -> m_thread -> m_hThread, 5000);
+	}
 }
 
 UINT communicateWithTable( LPVOID pParam )

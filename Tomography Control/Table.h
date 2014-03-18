@@ -25,8 +25,9 @@ protected:
 
 	CWinThread* m_thread;
 	CWnd* m_messageReceiver;
-
+	
 	void Start();
+	void Stop();
 };
 
 class SerialTable : public Table
@@ -43,6 +44,9 @@ protected:
 	HANDLE m_hComm;
     DCB m_dcb;
 	COMMTIMEOUTS m_commTimeouts;
+
+	// Time when a line was last sent to the table, for flow-control purposes
+	DWORD m_lastWriteTicks;
 };
 
 class DummyTable : public Table

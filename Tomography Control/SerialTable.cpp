@@ -5,12 +5,11 @@
 #include "Exceptions.h"
 
 #define BUFFER_SIZE 2000
+#define TABLE_MIN_WRITE_INTERVAL_TICKS 400
 
 SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 {
 	this -> m_inputEvent.ResetEvent();
-	this -> m_inputBuffer.Empty();
-	this -> m_outputBuffer.Empty();
 	
     FillMemory(&this -> m_dcb, sizeof(this -> m_dcb), 0);
     FillMemory(&this -> m_commTimeouts, sizeof(this -> m_commTimeouts), 0);
@@ -51,11 +50,15 @@ SerialTable::SerialTable(CWnd* wnd, LPCSTR gszPort) : Table(wnd)
 	this -> m_commTimeouts.WriteTotalTimeoutConstant = 0;
 
 	SetCommTimeouts(this -> m_hComm, &this -> m_commTimeouts);
+
+	this -> m_lastWriteTicks = GetTickCount();
+
 	this -> Start();
 }
 
 SerialTable::~SerialTable() 
 {
+	this -> Stop();
     CloseHandle(this -> m_hComm);
 }
 
@@ -112,6 +115,15 @@ void SerialTable::DoWrite()
 	// If we have input to be sent, take a copy then release the locks on the buffers
 	if (lineEnding >= 0)
 	{
+		// Ensure there's a pacing delay between writing to the table, as it does
+		// not do its own flow control
+		DWORD timeSinceLastWrite = GetTickCount() - this -> m_lastWriteTicks;
+
+		if (timeSinceLastWrite < TABLE_MIN_WRITE_INTERVAL_TICKS)
+		{
+			Sleep(TABLE_MIN_WRITE_INTERVAL_TICKS - timeSinceLastWrite);
+		}
+
 		// Write the contents of the temp buffer out to serial
 		WriteFile(this -> m_hComm, this -> m_inputBuffer, lineEnding + 2, &bytesWritten, NULL);
 
@@ -127,9 +139,5 @@ void SerialTable::DoWrite()
 
 	this -> m_bufferLock.Unlock();
 
-	// Pause 500ms for each line written
-	if (lineEnding >= 0)
-	{
-		Sleep(500);
-	}
+	this -> m_lastWriteTicks = GetTickCount();
 }

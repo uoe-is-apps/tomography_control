@@ -19,6 +19,7 @@ DummyTable::DummyTable(CWnd* wnd) : Table(wnd)
 
 DummyTable::~DummyTable() 
 {
+	this -> Stop();
 }
 
 
