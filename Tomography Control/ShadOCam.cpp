@@ -45,26 +45,6 @@ ShadOCam::~ShadOCam()
 		imagenation_CloseLibrary(&this -> m_pxd);
 	}
 }
-
-void ShadOCam::WriteTiff(char* filename, short *frameBuffer)
-{
-	TIFF* tif = TIFFOpen(filename, "w");
-	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, this -> GetImageWidth() + 2);
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, this -> GetImageHeight());
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, this -> GetImageHeight());
-	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, sizeof(short) * 8);
-	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
-	unsigned int frameSize = (this -> GetImageWidth() + 2) * this -> GetImageHeight();
-	TIFFWriteRawStrip(tif, 0, frameBuffer,
-		frameSize * sizeof(short));
-
-    TIFFClose(tif);
-}
 	
 void ShadOCam::AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame)
 {
@@ -73,7 +53,7 @@ void ShadOCam::AddFrameToBuffer(unsigned int *dest, FRAME *currentFrame)
 	for (short row = 0; row < this -> GetImageHeight(); row++)
 	{
 		for (short col = 0; col < (this -> GetImageWidth() + 2); col++)
-      	{	
+      	{
       		*(dest++) += *(currentFramePtr++);
       	}
 	}
@@ -187,7 +167,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
 			//save file
-			this -> WriteTiff(filepath, (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame));
+			this -> m_framelib.WriteBin(this -> m_currentFrame, filepath, 1);
 
 			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 			(*current_position)++;
@@ -199,62 +179,57 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		capturedImages++;
 	}
 
-	unsigned int *avgSumFramePtr = this -> m_avgSumFrame;
-
 	// For average/sum images, we haven't been writing them as we go along,
 	// but instead write them at the end
-	switch (frameSavingOptions)
+	if (frameSavingOptions == INDIVIDUAL)
 	{
-	case INDIVIDUAL:
-		break;
-
-	case SUM:
-		// Write out the current frame buffer
-		filename = GenerateImageFilename(frameType, *current_position);
-		filepath = GenerateImagePath(filename);
-
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-		
-		this -> Camera::WriteTiff(filepath, this -> m_avgSumFrame);
-	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
-		(*current_position)++;
-		break;
-
-	case AVERAGE:
-		// Calculate averages and write them into the current frame buffer
-
-		currentTempPtr = currentFramePtr;
-
-		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
-		{
-			for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
-			{
-				short sum = *(avgSumFramePtr++);
-
-				*(currentTempPtr++) = (short)(sum / capturedImages);
-			}
-		}
-
-		// Write out the current frame buffer
-		filename = GenerateImageFilename(frameType, *current_position);
-		filepath = GenerateImagePath(filename);
-
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-		
-		this -> WriteTiff(filepath, (short *)this -> m_framelib.FrameBuffer(this -> m_currentFrame));
-	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
-		(*current_position)++;
-		break;
-
-	default:
-		throw bad_frame_saving_options_error("Unknown frame saving options specified.");
+		return;
 	}
+	
+	unsigned int *avgSumFramePtr = this -> m_avgSumFrame;
+
+	currentTempPtr = currentFramePtr;
+	
+	// Copy average/sum into working frame buffer
+	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+	{
+		for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
+		{
+			switch (frameSavingOptions)
+			{
+			case SUM:
+				// Copy sum into the current frame buffer
+				*currentTempPtr = *avgSumFramePtr;
+				break;
+
+			case AVERAGE:
+				// Calculate averages and write them into the current frame buffer
+				*currentTempPtr = (short)(*avgSumFramePtr / capturedImages);
+				break;
+
+			default:
+				throw bad_frame_saving_options_error("Unknown frame saving options specified.");
+			}
+
+			currentTempPtr++;
+			avgSumFramePtr++;
+		}
+	}
+
+	// Write out the current frame buffer
+	filename = GenerateImageFilename(frameType, *current_position);
+	filepath = GenerateImagePath(filename);
+
+	window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		
+	this -> m_framelib.WriteBin(this -> m_currentFrame, filepath, 1);
+	
+	window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
+	(*current_position)++;
 }
 
 char *ShadOCam::GenerateImageFilename(FrameType frameType, u_int frame) {
-	return Camera::GenerateImageFilename(frameType, frame, "tiff");
+	return Camera::GenerateImageFilename(frameType, frame, "raw");
 }
 
 u_short ShadOCam::GetImageHeight() {
