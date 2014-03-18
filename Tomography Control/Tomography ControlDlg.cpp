@@ -242,16 +242,14 @@ BOOL CTomographyControlDlg::PreTranslateMessage(MSG* pMsg)
 		this -> UpdateData(TRUE);
 
 		// Take a copy of the command, then wipe the field
-		DWORD commandLen = sizeof(char) * (this -> m_tableCommand.GetLength() + 3);
-		char *command = (char*)alloca(commandLen);
-		strcpy_s(command, commandLen, (LPCTSTR)m_tableCommand);
-		strcat_s(command, commandLen, "\r\n");
+		CString command = m_tableCommand + "\r\n";
+
 		this -> m_tableCommand.Empty();
 
 		this -> UpdateData(FALSE);
 		
 		// Check if the command ends with the "nm" command
-		if (strstr(command, " nm\r\n") > 0)
+		if (command.Find(" nm\r\n") > 0)
 		{
 			float angle;
 			int axis;
@@ -287,54 +285,84 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		return;
 	}
 
-	switch (_access(m_tableInitialisationFile, ACCESS_MODE_READ_ONLY))
+	HANDLE initialisationFileHandle = CreateFile(m_tableInitialisationFile,
+		GENERIC_READ, FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if (initialisationFileHandle == INVALID_HANDLE_VALUE)
 	{
-	case 0:
-		// File exists and we can read it
-		break;
-	case EACCES:
-		MessageBox("You do not have permission to read the table initialisation file.", "Tomography Control", MB_ICONERROR);
+		DWORD dw = GetLastError();
+		char buffer[ERROR_BUFFER_SIZE];
+
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			initialisationFileHandle,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)buffer,
+			ERROR_BUFFER_SIZE - 1, NULL );
+
+		MessageBox(buffer, "Tomography Control", MB_ICONERROR);
+
 		return;
-	case ENOENT:
-		MessageBox("Table initialisation file does not exist.", "Tomography Control", MB_ICONERROR);
-		return;
-	default:
-		// Leave further diagnosis to opening the file
-		break;
 	}
 
-	FILE* initialisationFileHandle;
-	errno_t fileErrno = fopen_s(&initialisationFileHandle, m_tableInitialisationFile, "r");
+	DWORD fileSize = GetFileSize(initialisationFileHandle, NULL);
+	char *fileBuffer;
 
-	if (0 != fileErrno)
+	if (fileSize == INVALID_FILE_SIZE)
 	{
-		MessageBox(strerror(fileErrno), "Tomography Control", MB_ICONERROR);
+		DWORD dw = GetLastError();
+		char buffer[ERROR_BUFFER_SIZE];
+
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			initialisationFileHandle,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)buffer,
+			ERROR_BUFFER_SIZE - 1, NULL );
+
+		MessageBox(buffer, "Tomography Control", MB_ICONERROR);
+
+		return;
+	}
+
+	fileBuffer = (char *)malloc(sizeof(char) * (fileSize + 1));
+	if (NULL == fileBuffer)
+	{
+		MessageBox("Could not allocate memory for table initialisation file.", "Tomography Control", MB_ICONERROR);
 		return;
 	}
 	
-	// Load file from disk, line by line
-	char buffer[FILE_BUFFER_SIZE];
-	// Leave two free characters, one for injecting a '\r' if needed, one for the NULL terminator
-	char* line = fgets(buffer, FILE_BUFFER_SIZE - 2, initialisationFileHandle);
-
-	while (NULL != line
-		&& !feof(initialisationFileHandle))
+	DWORD bytesRead;
+	if (!ReadFile(initialisationFileHandle, fileBuffer,
+		fileSize, &bytesRead,
+		NULL
+		))
 	{
-		// If the line ends with just "\n", change it to "\r\n"
-		char *lastChar = line + strlen(line) - 1;
+		DWORD dw = GetLastError();
+		char buffer[ERROR_BUFFER_SIZE];
 
-		if (*(lastChar - 1) != '\r')
-		{
-			*lastChar = '\r';
-			*(lastChar + 1) = '\n';
-			*(lastChar + 2) = NULL;
-		}
+		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+			initialisationFileHandle,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)buffer,
+			ERROR_BUFFER_SIZE - 1, NULL );
 
-		this -> m_table -> SendTableCommand(line);
-		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
+		MessageBox(buffer, "Tomography Control", MB_ICONERROR);
+
+		return;
 	}
 
-	fclose(initialisationFileHandle);
+	CloseHandle(initialisationFileHandle);
+
+	this -> m_table -> SendTableCommand(fileBuffer);
+
+	free(fileBuffer);
 }
 
 
