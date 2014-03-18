@@ -335,7 +335,6 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		}
 
 		this -> m_table -> SendTableCommand(line);
-		Sleep(TABLE_IO_DELAY_MILLIS * 2);
 		line = fgets(buffer, FILE_BUFFER_SIZE - 1, initialisationFileHandle);
 	}
 

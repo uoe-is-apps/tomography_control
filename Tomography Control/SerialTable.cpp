@@ -100,28 +100,36 @@ void SerialTable::DoRead()
 
 void SerialTable::DoWrite()
 {
+	DWORD bytesWritten;
+	int lineEnding;
+
 	// Lock the IO buffers while we exchange data with them
 	this -> m_bufferLock.Lock();
 
+	// Only send whole lines
+	lineEnding = this -> m_inputBuffer.Find("\r\n");
+
 	// If we have input to be sent, take a copy then release the locks on the buffers
-	if (!this -> m_inputBuffer.IsEmpty())
+	if (lineEnding >= 0)
 	{
-		LPCSTR input = this -> m_inputBuffer;
-		DWORD bytesWritten;
-
 		// Write the contents of the temp buffer out to serial
-		WriteFile(this -> m_hComm, input, strlen(input), &bytesWritten, NULL);
-		
-		CString copiedChars = this -> m_inputBuffer.Left(bytesWritten);
+		WriteFile(this -> m_hComm, this -> m_inputBuffer, lineEnding + 2, &bytesWritten, NULL);
 
-		// Copy the input to the temporary buffer as if we'd just read it in
-		this -> m_outputBuffer += copiedChars;
+		// Copy the input to the output buffer as if we'd just read it in
+		this -> m_outputBuffer += this -> m_inputBuffer.Left(bytesWritten);
 
-		// Clear the input buffer
+		// Clear the written bytes from the output buffer
 		this -> m_inputBuffer.Delete(0, bytesWritten);
 
+		// Notify the window to refresh the display
 		this -> PulseMessageReceived();
 	}
 
 	this -> m_bufferLock.Unlock();
+
+	// Pause 500ms for each line written
+	if (lineEnding >= 0)
+	{
+		Sleep(500);
+	}
 }

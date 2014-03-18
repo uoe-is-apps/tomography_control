@@ -40,6 +40,9 @@ void Table::SendTableCommand(LPCTSTR command)
 	this -> m_inputEvent.PulseEvent();
 }
 
+/* Start the background thread for a table. This is intended to be called
+ * at the end of a constructor for a subclass.
+ */
 void Table::Start()
 {
 	this -> m_running = TRUE;
