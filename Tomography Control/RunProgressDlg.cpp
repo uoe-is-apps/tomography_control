@@ -234,7 +234,7 @@ void CRunProgressDlg::WriteSettings(CString dest)
 	settings += setting;
 
 	HANDLE settingsFileHandle = CreateFile(dest,
-		GENERIC_READ, FILE_SHARE_WRITE,
+		GENERIC_WRITE, 0,
 		NULL,
 		CREATE_ALWAYS,
 		FILE_ATTRIBUTE_NORMAL,
@@ -243,7 +243,7 @@ void CRunProgressDlg::WriteSettings(CString dest)
 
 	if (settingsFileHandle == INVALID_HANDLE_VALUE)
 	{
-		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 			settingsFileHandle,
 			GetLastError(),
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -253,14 +253,14 @@ void CRunProgressDlg::WriteSettings(CString dest)
 		throw file_error(this -> m_errorBuffer);
 	}
 	
-	/* DWORD bytesWritten;
+	DWORD bytesWritten;
 	if (!WriteFile(settingsFileHandle, (LPCSTR)settings, settings.GetLength(),
 		&bytesWritten, NULL))
 	{
 		CloseHandle(settingsFileHandle);
 
 		memset(this -> m_errorBuffer, 0, ERROR_BUFFER_SIZE);
-		FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 			settingsFileHandle,
 			GetLastError(),
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -268,7 +268,7 @@ void CRunProgressDlg::WriteSettings(CString dest)
 			ERROR_BUFFER_SIZE - 1, NULL );
 
 		throw file_error(this -> m_errorBuffer);
-	} */
+	}
 
 	CloseHandle(settingsFileHandle);
 }
