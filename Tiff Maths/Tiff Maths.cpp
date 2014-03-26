@@ -4,6 +4,7 @@
 #include "stdafx.h"
 
 #include <stdlib.h>
+#include <math.h>
 
 #include "TiffImage.h"
 
@@ -34,7 +35,14 @@ int _tmain(int argc, _TCHAR* argv[])
 			*(sumBuffer + pixel) += *(image2.buffer + pixel);
 			*(sumBuffer + pixel) += *(image3.buffer + pixel);
 
-			printf("Pixel %d, result %d, expected %d.\n", pixel, *(sumBuffer + pixel), *(expectedSum.buffer + pixel));
+			double temp = *(sumBuffer + pixel);
+
+			temp /= 3.0;
+
+			unsigned short average = (unsigned short)floor(temp + 0.50);
+			
+			printf("Pixel sum %d, result %d, expected %d.\n", pixel, *(sumBuffer + pixel), *(expectedSum.buffer + pixel));
+			printf("Pixel average %d, result %d, expected %d.\n", pixel, average, *(expectedAvg.buffer + pixel));
 		}
 	}
 
