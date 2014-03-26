@@ -227,42 +227,11 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 		switch (task -> captureType)
 		{
 		case SUM:
-			// Find the largest value, to find how much we need to shift the
-			// data to fit it in 16 bits.
-			sourceBufferPtr = camera -> m_sumFrame;
-			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
-			{
-				unsigned int sum = *(sourceBufferPtr++);
-
-				if (sum > maxSum)
-				{
-					maxSum = sum;
-				}
-			}
-
-			while ((maxSum >> rightShift) & 0xff00)
-			{
-				rightShift++;
-			}
-
-			// Put the shifted data into the image buffer
-			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
-			{
-				unsigned int sum = *(sourceBufferPtr++);
-
-				*(sumAverageBufferPtr++) = (unsigned short)(sum >> rightShift);
-			}
+			camera -> CalculatePixelSums(sumAverageBuffer, camera -> m_sumFrame);
 
 			break;
 		case AVERAGE:
-			sourceBufferPtr = camera -> m_sumFrame;
-			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
-			{
-				double sum = *(sourceBufferPtr++);
-				double average = sum / task -> capturedImages;
-
-				*(sumAverageBufferPtr++) = (unsigned short)floor(average + 0.50);
-			}
+			camera -> CalculatePixelAverages(sumAverageBuffer, camera -> m_sumFrame,  task -> capturedImages);
 
 			break;
 		}

@@ -53,27 +53,59 @@ void ShadOCam::AddFrameToBuffer(FRAME *destFrame, FRAME *currentFrame)
 {
 	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(currentFrame);
 	short *destFramePtr = (short *)this -> m_framelib.FrameBuffer(destFrame);
+	
+	int pixelCount = GetImageHeight() * GetImageWidth();
 
-	for (short row = 0; row < this -> GetImageHeight(); row++)
+	for (int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		for (short col = 0; col < (this -> GetImageWidth() + 2); col++)
-      	{
-      		*(destFramePtr++) += *(currentFramePtr++);
-      	}
+      	*(destFramePtr++) += *(currentFramePtr++);
+	}
+}
+
+/* Calculate the average of every pixel in a frame, based on a frame containing
+ * pixel sums, and number of captured images.
+ */
+void ShadOCam::CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short capturedImages)
+{
+	int pixelCount = GetImageHeight() * GetImageWidth();
+	short *destBufferPtr = (short *)this -> m_framelib.FrameBuffer(dest);
+	short *sourceBufferPtr = (short *)this -> m_framelib.FrameBuffer(src);
+
+	for (int pixel = 0; pixel < pixelCount; pixel++)
+	{
+		double sum = *(sourceBufferPtr++);
+		double average = sum / capturedImages;
+
+		*(destBufferPtr++) = (unsigned short)floor(average + 0.50);
+	}
+}
+
+/* Calculate the average of every pixel in a frame, based on a frame containing
+ * pixel sums, and number of captured images.
+ */
+void ShadOCam::CalculatePixelSums(FRAME *dest, FRAME *src)
+{
+	int pixelCount = GetImageHeight() * GetImageWidth();
+	short *destBufferPtr = (short *)this -> m_framelib.FrameBuffer(dest);
+	short *sourceBufferPtr = (short *)this -> m_framelib.FrameBuffer(src);
+
+	// Put the shifted data into the image buffer
+	for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+	{
+		*(destBufferPtr++) = *(sourceBufferPtr++);
 	}
 }
 
 void ShadOCam::ClearFrame(FRAME *destFrame)
 {
 	short *destFramePtr = (short *)this -> m_framelib.FrameBuffer(destFrame);
+	
+	int pixelCount = GetImageHeight() * GetImageWidth();
 
-	for (short row = 0; row < this -> GetImageHeight(); row++)
+	for (int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		for (short col = 0; col < (this -> GetImageWidth() + 2); col++)
-      	{
-      		*(destFramePtr++) = 0;
-      	}
-	}
+      	*(destFramePtr++) = 0;
+    }
 }
 
 double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
@@ -81,12 +113,11 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 	long pixelSum = 0;
 	short *currentFramePtr = (short *)this -> m_framelib.FrameBuffer(currentFrame);
 	
-	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+	int pixelCount = GetImageHeight() * GetImageWidth();
+
+	for (int pixel = 0; pixel < pixelCount; pixel++)
 	{
-      	for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
-      	{
-			pixelSum += *(currentFramePtr++);
-		}
+		pixelSum += *(currentFramePtr++);
 	}
 
 	return ((double)pixelSum) / (this -> GetImageHeight() * this -> GetImageWidth());
@@ -98,6 +129,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	unsigned short capturedImages = 0;
 	BOOL lastPixelAverageValid = FALSE;
 	double lastPixelAverage = 0.0;
+	int pixelCount = GetImageHeight() * GetImageWidth();
 	long qh; // handle for grab; only needed to confirm image was taken
 			 // successfully, does not reserve memory for the grab.
 	char *filename;
@@ -167,14 +199,12 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			break;
 		case INDIVIDUAL:		
 			currentTempPtr = currentFramePtr;
-			for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+
+			for (int pixel = 0; pixel < pixelCount; pixel++)
 			{
-      			for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
-      			{
-         			// swap bytes
-   					*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
-					currentTempPtr++;
-        		}
+         		// swap bytes
+   				*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
+				currentTempPtr++;
 			}
 
 			filename = GenerateImageFilename(frameType, *current_position);
@@ -202,38 +232,17 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		return;
 	}
 	
-	short *sumFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_sumFrame);
-		unsigned int pixelCount = GetImageHeight() * GetImageWidth();
-
-	currentTempPtr = currentFramePtr;
-	
 	switch (frameSavingOptions)
 	{
 	case INDIVIDUAL:
 		return;
 
 	case SUM:
-		// Copy average/sum into working frame buffer
-		for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
-		{
-			// Copy sum into the current frame buffer
-			*currentTempPtr = *sumFramePtr;
-
-			currentTempPtr++;
-			sumFramePtr++;
-		}
+		this -> CalculatePixelSums(this -> m_currentFrame, this -> m_sumFrame);
 		break;
 
 	case AVERAGE:
-		for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
-		{
-			double sum = *sumFramePtr;
-			// Calculate averages and write them into the current frame buffer
-			*currentTempPtr = (short)(sum / capturedImages);
-
-			currentTempPtr++;
-			sumFramePtr++;
-		}
+		this -> CalculatePixelAverages(this -> m_currentFrame, this -> m_sumFrame, capturedImages);
 		break;
 
 	default:
@@ -241,14 +250,12 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	}
 		
 	currentTempPtr = currentFramePtr;
-	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+
+	for (int pixel = 0; pixel < pixelCount; pixel++)
 	{
-      	for (unsigned short col = 0; col < this -> GetImageWidth() + 2; col++)
-      	{
-         	// swap bytes
-   			*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
-			currentTempPtr++;
-        }
+        // swap bytes
+   		*currentTempPtr = (*currentTempPtr >> 8) + (((unsigned char)*currentTempPtr)<<8);
+		currentTempPtr++;
 	}
 
 	// Write out the current frame buffer

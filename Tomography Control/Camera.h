@@ -30,6 +30,9 @@ public:
 	
 	void AddFrameToBuffer(unsigned int *dest, unsigned short *src);
 	double CalculatePixelAverage(unsigned short *frameBuffer);
+	
+	void CalculatePixelAverages(unsigned short *dest, unsigned int *src, unsigned short frameCount);
+	void CalculatePixelSums(unsigned short *dest, unsigned int *src);
 
 	/* Captures a series of frames and write them to disk.
 	 *
@@ -100,8 +103,11 @@ public:
 protected:
 	float m_exposureTimeSeconds;
 
-	/* Common buffer used when doing an acquisition for summed frames. */
+	/* Buffer used when doing an acquisition for summed frames. */
 	unsigned int *m_sumFrame;
+
+	/* Buffer used when holding sum/average data for writing out. */
+	unsigned short *m_sumAvgFrame;
 };
 
 class PerkinElmerXrd : public Camera
@@ -116,8 +122,11 @@ public:
 	virtual u_short GetImageWidth();
 	virtual void SetupCamera(float exposureTime);
 
-	/* Common buffer used when doing an acquisition for summed frames. */
+	/* Buffer used when doing an acquisition for summed frames. */
 	unsigned int *m_sumFrame;
+
+	/* Buffer used when holding sum/average data for writing out. */
+	unsigned short *m_sumAvgFrame;
 
 protected:	
 	u_int m_nWidth;			// width of image
@@ -145,6 +154,8 @@ public:
 	~ShadOCam();
 	
 	void AddFrameToBuffer(FRAME *dest, FRAME *currentFrame);
+	void CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short frameCount);
+	void CalculatePixelSums(FRAME *dest, FRAME *src);
 	void ClearFrame(FRAME *dest);
 	
 	double CalculatePixelAverage(FRAME *frameBuffer);
@@ -174,7 +185,8 @@ protected:
 	CAMERA_TYPE* m_camType;	// pointer to camera object
 	
 	FRAME* m_currentFrame;	// pointer to FRAME object
-	FRAME* m_sumFrame;	// pointer to average/sum frame
+	FRAME* m_sumFrame;		// pointer to sum frame for holding totals while acquiring data
+	FRAME* m_avgSumFrame;	// pointer to average/sum frame for writing to disk
 
 	BOOL m_bPxdLoaded;
 	BOOL m_bFramelibLoaded;
