@@ -46,6 +46,12 @@ public:
     explicit camera_init_error(const char *message);
 };
 
+class camera_setting_error : public std::logic_error
+{
+public:
+    explicit camera_setting_error(const char *message);
+};
+
 class file_error : public std::logic_error
 {
 public:

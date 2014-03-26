@@ -82,7 +82,6 @@ BOOL CRunProgressDlg::OnInitDialog()
 	this -> m_task -> m_turnsTotal = this -> m_turnsTotal;
 	this -> m_task -> m_stopsPerTurn = this -> m_stopsPerRotation;
 	this -> m_task -> m_framesPerStop = this -> m_framesPerStop;
-	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
 	this -> m_workerThread = AfxBeginThread(captureRunFrames, this -> m_task, THREAD_PRIORITY_NORMAL, 
@@ -284,7 +283,7 @@ UINT captureRunFrames( LPVOID pParam )
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
 	try {
-		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+		task -> m_camera -> SetupCamera();
 	}
 	catch(camera_init_error error)
 	{

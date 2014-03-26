@@ -79,7 +79,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	, m_sampleName(_T(""))
 	, m_timestamp(_T(""))
 	, m_numImages(1)
-	, m_perkinElmerMode(0)
+	, m_perkinElmerMode(1)
 {
 	// Fill in a sensible timestamp
 	time_t rawtime;
@@ -405,7 +405,10 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 }
 
 /* Get a camera object, depending on the currently selected type.
- * Throws bad_camera_type_error in case of a problem.
+ *
+ * Throws bad_camera_type_error in case of a problem with the camera type.
+ * Throws camera_init_error if there's an error with the camera.
+ * Throws camera_settings_error if there's a problem with the values sent to the camera.
  */
 Camera* CTomographyControlDlg::BuildSelectedCamera()
 {
@@ -428,14 +431,13 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	
 		PathAppend(pixelMapFilename, "Pixel Map");
 
-		camera = new ShadOCam(this -> m_directoryPathBuffer,
-			SHAD_O_CAM_CONFIG_FILE, pixelMapFilename);
+		camera = new ShadOCam(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds, SHAD_O_CAM_CONFIG_FILE, pixelMapFilename);
 		break;
 	case 1:
-		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer);
+		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer, this -> m_perkinElmerMode);
 		break;
 	case 2:
-		camera = new DummyCamera(this -> m_directoryPathBuffer);
+		camera = new DummyCamera(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
 		break;
 	default:
 		throw bad_camera_type_error("Unrecognised camera type.");
@@ -472,10 +474,16 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 
 		return;
 	}
-
+	
 	if (this -> m_exposureTimeSeconds < 0.000)
 	{
 		MessageBox("Exposure time must be a positive number of seconds.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
+	if (this -> m_perkinElmerMode < 0
+		|| this -> m_perkinElmerMode > 7)
+	{
+		MessageBox("Perkin-Elmer camera capture mode must be between 0 and 7.", "Tomography Control", MB_ICONERROR);
 		return;
 	}
 	if (this -> m_framesPerStop < 1)

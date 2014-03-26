@@ -6,10 +6,12 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	ShadOCam::ShadOCam(CString directory, char* camFilePath, char *pixMapFilePath) : Camera(directory)
+	ShadOCam::ShadOCam(CString directory, float exposureTimeSeconds, char* camFilePath, char *pixMapFilePath) : Camera(directory)
 {
 	strcpy(this -> m_camFilePath, camFilePath);
 	strcpy(this -> m_pixMapFilePath, pixMapFilePath);
+
+	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 
 ShadOCam::~ShadOCam()
@@ -282,7 +284,7 @@ u_short ShadOCam::GetImageWidth() {
 	return this -> m_nWidth;
 }
 
-void ShadOCam::SetupCamera(float exposureTimeSeconds)
+void ShadOCam::SetupCamera()
 {
 	this -> m_pixMap = NULL;
 	this -> m_bPxdLoaded = FALSE;
@@ -321,7 +323,7 @@ void ShadOCam::SetupCamera(float exposureTimeSeconds)
 
 	//set exposure time
 	float ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
-	this -> m_pxd.SetFramePeriod(this -> m_camType, exposureTimeSeconds);
+	this -> m_pxd.SetFramePeriod(this -> m_camType, this -> m_exposureTimeSeconds);
 	ft = this -> m_pxd.GetFramePeriod(this -> m_camType);
 
 	this -> m_pxd.SetCameraConfig(this -> m_hFG, this -> m_camType);

@@ -6,10 +6,14 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-	DummyCamera::DummyCamera(CString directory) : Camera(directory)
+	DummyCamera::DummyCamera(CString directory, float exposureTimeSeconds) : Camera(directory)
 {
 	this -> m_nWidth = 1024;
 	this -> m_nHeight = 2048;
+
+	assert (exposureTimeSeconds > 0.000);
+
+	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
 
 DummyCamera::~DummyCamera()
@@ -81,7 +85,6 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 	if (captureType == SUM
 		|| captureType == AVERAGE)
 	{
-		unsigned int *sourceBufferPtr;
 		unsigned short *sumAverageBuffer = frameBuffer;
 		unsigned short *sumAverageBufferPtr = sumAverageBuffer;
 		unsigned int pixelCount = GetImageHeight() * GetImageWidth();
@@ -127,12 +130,14 @@ u_short DummyCamera::GetImageWidth() {
 	return this -> m_nWidth;
 }
 
-void DummyCamera::SetupCamera(float exposureTimeSeconds)
+void DummyCamera::SetupCamera()
 {
-	assert (exposureTimeSeconds > 0.000);
-
-	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 	this -> m_sumFrame = (unsigned int *)malloc(sizeof(unsigned int) * this -> GetImageWidth() * this -> GetImageHeight());
 
 	// Report error if we can't allocate buffer
+
+	if (NULL == this -> m_sumFrame)
+	{
+		throw camera_init_error("Could not allocate image sum buffer.");
+	}
 }

@@ -19,7 +19,6 @@ struct RunTask
 	u_int m_turnsTotal;
 	u_int m_stopsPerTurn;
 	u_int m_framesPerStop;
-	float m_exposureTimeSeconds;
 
 	u_int m_turnCount;
 	u_int m_stopCount;

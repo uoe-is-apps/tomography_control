@@ -75,7 +75,7 @@ public:
 	CString GetDirectory();
 	virtual u_short GetImageHeight() = 0;
 	virtual u_short GetImageWidth() = 0;
-	virtual void SetupCamera(float exposureTime) = 0;
+	virtual void SetupCamera() = 0;
 
 	void WriteTiff(char* filename, unsigned short *buffer);
 
@@ -88,14 +88,14 @@ protected:
 class DummyCamera : public Camera
 {
 public:
-	DummyCamera(CString directory);
+	DummyCamera(CString directory, float exposureTime);
 	~DummyCamera();
 	
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
-	virtual void SetupCamera(float exposureTime);
+	virtual void SetupCamera();
 	
 	u_short m_nWidth;
 	u_short m_nHeight;
@@ -113,14 +113,14 @@ protected:
 class PerkinElmerXrd : public Camera
 {
 public:
-	PerkinElmerXrd(CString directory);
+	PerkinElmerXrd(CString directory, u_int mode);
 	~PerkinElmerXrd();
 	
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
-	virtual void SetupCamera(float exposureTime);
+	virtual void SetupCamera();
 
 	/* Buffer used when doing an acquisition for summed frames. */
 	unsigned int *m_sumFrame;
@@ -128,9 +128,11 @@ public:
 	/* Buffer used when holding sum/average data for writing out. */
 	unsigned short *m_sumAvgFrame;
 
-protected:	
+protected:
 	u_int m_nWidth;			// width of image
 	u_int m_nHeight;		// height of image
+
+	u_int m_cameraMode;
 	
 	char		m_errorBuffer[ERROR_BUFFER_SIZE];
 	float		m_exposureTimeSeconds;
@@ -147,10 +149,10 @@ class ShadOCam : public Camera
 public:
 	/* Construct an abstraction layer around a Shad-o-Cam and image capture.
 	 *
-	 * "directory" - where to write images to.
-	 * "camFilePath" - the location on disk of the camera configuration file ("xxxx.CAM")
+	 * directory: where to write images to.
+	 * camFilePath: the location on disk of the camera configuration file ("xxxx.CAM")
 	 */
-	ShadOCam(CString directory, char* camFilePath, char* pixMapFilePath);
+	ShadOCam(CString directory, float exposureTimeSeconds, char* camFilePath, char* pixMapFilePath);
 	~ShadOCam();
 	
 	void AddFrameToBuffer(FRAME *dest, FRAME *currentFrame);
@@ -163,10 +165,12 @@ public:
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
-	virtual void SetupCamera(float exposureTime);
+	virtual void SetupCamera();
 
 protected:
 	char		m_errorBuffer[ERROR_BUFFER_SIZE];
+
+	float		m_exposureTimeSeconds;
 
 	u_short m_nWidth;			// width of image
 	u_short m_nHeight;			// height of image

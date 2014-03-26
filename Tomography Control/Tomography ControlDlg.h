@@ -61,6 +61,7 @@ public:
 	CString m_timestamp;
 	int m_frameSavingOptions;
 	float m_exposureTimeSeconds;
+	int m_perkinElmerMode;
 	int m_framesPerStop;
 	int m_stopsPerRotation;
 	int m_turnsTotal;
@@ -84,7 +85,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CEdit m_tableOutputControl;
-	int m_perkinElmerMode;
 };
 
 

@@ -7,11 +7,19 @@
 
 #include "Exceptions.h"
 
-PerkinElmerXrd::PerkinElmerXrd(CString directory) : Camera(directory)
+PerkinElmerXrd::PerkinElmerXrd(CString directory, u_int cameraMode) : Camera(directory)
 {
+	if (cameraMode > 7)
+	{
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"Camera mode must be between 0 and 7 inclusive; provided mode was %d.", cameraMode);
+		throw camera_setting_error(this -> m_errorBuffer);
+	}
+
+	this -> m_cameraMode = cameraMode;
 }	
 
-void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
+void PerkinElmerXrd::SetupCamera()
 {
 	BOOL bEnableIRQ = TRUE;
 	int iRet;							// Return value
@@ -26,7 +34,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	if (iRet != HIS_ALL_OK)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
-			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
+			"%s failed with error code %d\t\t\t\t\n","Acquisition_GbIF_GetDetectorCnt", iRet);
 		throw camera_init_error(this -> m_errorBuffer);
 	}
 				
@@ -49,7 +57,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	if (iRet != HIS_ALL_OK)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
-			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
+			"%s failed with error code %d\t\t\t\t\n","Acquisition_GbIF_GetDeviceList",iRet);
 		throw camera_init_error(this -> m_errorBuffer);
 	}
 
@@ -69,14 +77,12 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	if (iRet != HIS_ALL_OK)
 	{
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
-			"%s fail! Error Code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
+			"%s failed with error code %d\t\t\t\t\n","Acquisition_GbIF_Init",iRet);
 		throw camera_init_error(this -> m_errorBuffer);
 	}
 
-	this -> m_exposureTimeSeconds = exposureTimeSeconds; // TODO: Set this on the camera
-
 	CHwHeaderInfo headInfo;
-	unsigned short usTiming=0;
+	unsigned short usTiming = 0;
 	unsigned short usNetworkLoadPercent=80;
 	
 	// Calibrate connection
@@ -84,12 +90,36 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 	{
 		if (Acquisition_GbIF_SetPacketDelay(this -> m_hAcqDesc, lPacketDelay) != HIS_ALL_OK)
 		{
-			throw camera_init_error("Could not set packet delay.");
+			DWORD hisError;
+			DWORD boardError;
+			Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
+
+			sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+				"%s failed with error code %d, board error %d\n", "Acquisition_GbIF_SetPacketDelay", hisError, boardError);
+			throw camera_init_error(this -> m_errorBuffer);
 		}
 	}
 
-	Acquisition_SetCameraMode(this-> m_hAcqDesc, 1);
-	Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING);
+	if (Acquisition_SetCameraMode(this-> m_hAcqDesc, this -> m_cameraMode) != HIS_ALL_OK)
+	{
+		DWORD hisError;
+		DWORD boardError;
+		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
+
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s failed with error code %d, board error %d\n", "Acquisition_SetCameraMode", hisError, boardError);
+		throw camera_init_error(this -> m_errorBuffer);
+	}
+	if (Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING) != HIS_ALL_OK)
+	{
+		DWORD hisError;
+		DWORD boardError;
+		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
+
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
+			"%s failed with error code %d, board error %d\n", "Acquisition_SetFrameSyncMode", hisError, boardError);
+		throw camera_init_error(this -> m_errorBuffer);
+	}
 
 	this -> m_detectorInitialised = TRUE;
 
@@ -100,7 +130,7 @@ void PerkinElmerXrd::SetupCamera(float exposureTimeSeconds)
 		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
 
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
-			"%s fail! Error Code %d, Board Error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
+			"%s failed with error code %d, board error %d\n","Acquisition_GetHwHeaderInfo", hisError, boardError);
 		throw camera_init_error(this -> m_errorBuffer);
 	}
 	
@@ -158,8 +188,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	task.acquisitionBuffer = (unsigned short*)calloc(this -> m_nWidth * this -> m_nHeight * frames, sizeof(unsigned short));
 	if (NULL == task.acquisitionBuffer)
 	{
-		// TODO: Throw an exception
-		return;
+		throw camera_acquisition_error("Could not allocate image acquisition buffer.");
 	}
 	
 	if (Acquisition_DefineDestBuffers(this -> m_hAcqDesc,
@@ -170,7 +199,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 		DWORD boardError;
 		Acquisition_GetErrorCode(this -> m_hAcqDesc, &hisError, &boardError);
 
-		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1, "%s fail! Error Code %d, Board Error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
+		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1, "%s failed with error code %d, board error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
 		throw camera_acquisition_error(this -> m_errorBuffer);
 	}
 	Acquisition_Acquire_Image(this -> m_hAcqDesc,
@@ -217,7 +246,6 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	if (task -> captureType == SUM
 		|| task -> captureType == AVERAGE)
 	{
-		unsigned int *sourceBufferPtr;
 		unsigned short *sumAverageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
 		unsigned short *sumAverageBufferPtr = sumAverageBuffer;
 		unsigned int pixelCount = camera -> GetImageHeight() * camera -> GetImageWidth();

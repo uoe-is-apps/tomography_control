@@ -115,7 +115,7 @@ UINT takeManualImages( LPVOID pParam )
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
 	
 	try {
-		task -> m_camera -> SetupCamera(task -> m_exposureTimeSeconds);
+		task -> m_camera -> SetupCamera();
 	}
 	catch(camera_init_error error)
 	{
