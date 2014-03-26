@@ -153,6 +153,11 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
       	ScDeinterlace(currentFramePtr, this -> m_framelib.FrameWidth(this -> m_currentFrame),
 			this -> m_nWidth, (this -> m_nHeight/2),
 			SCCAMTYPE_4K , TRUE);
+
+      	//pixel map correction
+      	ScPixelCorrection(currentFramePtr,
+			this -> m_nWidth + 2, this -> m_nHeight,
+			this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
       
 		switch (frameSavingOptions)
 		{
@@ -160,12 +165,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		case AVERAGE:
 			this -> AddFrameToBuffer(this -> m_sumFrame, this -> m_currentFrame);
 			break;
-		case INDIVIDUAL:
-      		//pixel map correction
-      		ScPixelCorrection(currentFramePtr,
-				this -> m_nWidth + 2, this -> m_nHeight,
-				this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
-		
+		case INDIVIDUAL:		
 			currentTempPtr = currentFramePtr;
 			for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
 			{
@@ -203,6 +203,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	}
 	
 	short *sumFramePtr = (short *)this -> m_framelib.FrameBuffer(this -> m_sumFrame);
+		unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 
 	currentTempPtr = currentFramePtr;
 	
@@ -213,42 +214,31 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 
 	case SUM:
 		// Copy average/sum into working frame buffer
-		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
 		{
-			for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
-			{
-				// Copy sum into the current frame buffer
-				*currentTempPtr = *sumFramePtr;
+			// Copy sum into the current frame buffer
+			*currentTempPtr = *sumFramePtr;
 
-				currentTempPtr++;
-				sumFramePtr++;
-			}
+			currentTempPtr++;
+			sumFramePtr++;
 		}
 		break;
 
 	case AVERAGE:
-		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
 		{
-			for (unsigned short col = 0; col < (this -> GetImageWidth() + 2); col++)
-			{
-				double sum = *sumFramePtr;
-				// Calculate averages and write them into the current frame buffer
-				*currentTempPtr = (short)(sum / capturedImages);
+			double sum = *sumFramePtr;
+			// Calculate averages and write them into the current frame buffer
+			*currentTempPtr = (short)(sum / capturedImages);
 
-				currentTempPtr++;
-				sumFramePtr++;
-			}
+			currentTempPtr++;
+			sumFramePtr++;
 		}
 		break;
 
 	default:
 		throw bad_frame_saving_options_error("Unknown frame saving options specified.");
 	}
-
-	//pixel map correction
-    ScPixelCorrection(currentFramePtr,
-		this -> m_nWidth + 2, this -> m_nHeight,
-		this -> m_pixMap, this -> m_pixMapEntries, SCMETHOD_INTERPOLATE);
 		
 	currentTempPtr = currentFramePtr;
 	for (unsigned short row = 0; row < this -> GetImageHeight(); row++)

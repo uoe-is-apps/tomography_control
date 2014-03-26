@@ -78,46 +78,69 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 		capturedImages++;
 	}
 	
-	// Generate filename for end of capture file, incase we need it
-	filename = GenerateImageFilename(frameType, *current_position);
-	filepath = GenerateImagePath(filename);
-
-	switch (captureType)
+	if (captureType == SUM
+		|| captureType == AVERAGE)
 	{
-	case SUM:
+		unsigned int *sourceBufferPtr;
+		unsigned short *sumAverageBuffer = frameBuffer;
+		unsigned short *sumAverageBufferPtr = sumAverageBuffer;
+		unsigned int pixelCount = GetImageHeight() * GetImageWidth();
+		unsigned int maxSum = 0;
+		unsigned int rightShift = 0;
+
+		// Generate filename for end of capture file, incase we need it
+		filename = GenerateImageFilename(frameType, *current_position);
+		filepath = GenerateImagePath(filename);
+
 		// Notify the dialog of the updated filename
 		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		this -> WriteTiff(filepath, this -> m_sumFrame);
-	
-		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
-		(*current_position)++;
-
-		break;
-	case AVERAGE:
-		// Notify the dialog of the updated filename
-		window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
-
-		unsigned int *sourceBufferPtr = this -> m_sumFrame;
-		unsigned short *averageBuffer = frameBuffer;
-		unsigned short *averageBufferPtr = averageBuffer;
-
-		for (unsigned short row = 0; row < this -> GetImageHeight(); row++)
+		switch (captureType)
 		{
-			for (unsigned short col = 0; col < this -> GetImageWidth(); col++)
+		case SUM:
+			// Find the largest value, to find how much we need to shift the
+			// data to fit it in 16 bits.
+			sourceBufferPtr = this -> m_sumFrame;
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+			{
+				unsigned int sum = *(sourceBufferPtr++);
+
+				if (sum > maxSum)
+				{
+					maxSum = sum;
+				}
+			}
+
+			while ((maxSum >> rightShift) & 0xff00)
+			{
+				rightShift++;
+			}
+			
+			sourceBufferPtr = this -> m_sumFrame;
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+			{
+				unsigned int sum = *(sourceBufferPtr++);
+
+				*(sumAverageBufferPtr++) = (unsigned short)(sum >> rightShift);
+			}
+
+			break;
+		case AVERAGE:
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
 			{
 				double sum = *(sourceBufferPtr++);
+				double average = sum / capturedImages;
 
-				*(averageBufferPtr++) = (unsigned short)(sum / capturedImages);
+				*(sumAverageBufferPtr++) = (unsigned short)floor(average + 0.5);
 			}
+
+			break;
 		}
 
-		this -> WriteTiff(filepath, averageBuffer);
+		this -> WriteTiff(filepath, sumAverageBuffer);
 	
 		window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 		(*current_position)++;
-
-		break;
 	}
 
 	free(frameBuffer);

@@ -75,7 +75,6 @@ public:
 	virtual void SetupCamera(float exposureTime) = 0;
 
 	void WriteTiff(char* filename, unsigned short *buffer);
-	void WriteTiff(char* filename, unsigned int *buffer);
 
 protected:
 	CString m_directory; // Directory to write images to

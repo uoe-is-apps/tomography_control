@@ -214,43 +214,68 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
 	filepath = camera -> GenerateImagePath(filename);
 
-	switch (task -> captureType)
+	if (task -> captureType == SUM
+		|| task -> captureType == AVERAGE)
 	{
-	case SUM:
-		// Notify the dialog of the updated filename
-		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
+		unsigned int *sourceBufferPtr;
+		unsigned short *sumAverageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
+		unsigned short *sumAverageBufferPtr = sumAverageBuffer;
+		unsigned int pixelCount = camera -> GetImageHeight() * camera -> GetImageWidth();
+		unsigned int maxSum = 0;
+		unsigned int rightShift = 0;
 
-		camera -> WriteTiff(filepath, camera -> m_sumFrame);
-	
-		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
-		(*task -> imageCount)++;
-		break;
-	case AVERAGE:
-		unsigned int *sourceBufferPtr = camera -> m_sumFrame;
-		unsigned short *averageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
-		unsigned short *averageBufferPtr = averageBuffer;
-
-		for (unsigned short row = 0; row < camera -> GetImageHeight(); row++)
+		switch (task -> captureType)
 		{
-			for (unsigned short col = 0; col < camera -> GetImageWidth(); col++)
+		case SUM:
+			// Find the largest value, to find how much we need to shift the
+			// data to fit it in 16 bits.
+			sourceBufferPtr = camera -> m_sumFrame;
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+			{
+				unsigned int sum = *(sourceBufferPtr++);
+
+				if (sum > maxSum)
+				{
+					maxSum = sum;
+				}
+			}
+
+			while ((maxSum >> rightShift) & 0xff00)
+			{
+				rightShift++;
+			}
+
+			// Put the shifted data into the image buffer
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+			{
+				unsigned int sum = *(sourceBufferPtr++);
+
+				*(sumAverageBufferPtr++) = (unsigned short)(sum >> rightShift);
+			}
+
+			break;
+		case AVERAGE:
+			sourceBufferPtr = camera -> m_sumFrame;
+			for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
 			{
 				double sum = *(sourceBufferPtr++);
+				double average = sum / task -> capturedImages;
 
-				*(averageBufferPtr++) = (unsigned short)(sum / task -> capturedImages);
+				*(sumAverageBufferPtr++) = (unsigned short)floor(average + 0.50);
 			}
+
+			break;
 		}
 		
 		// Notify the dialog of the updated filename
 		task -> window -> PostMessage(WM_USER_CAPTURING_FRAME, 0, (LPARAM)filename);
 
-		camera -> WriteTiff(filepath, averageBuffer);
+		camera -> WriteTiff(filepath, sumAverageBuffer);
 	
 		task -> window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*task -> imageCount));
 		(*task -> imageCount)++;
 
-		free(averageBuffer);
-
-		break;
+		free(sumAverageBuffer);
 	}
 
 	task -> endAcquisitionEvent.PulseEvent();
