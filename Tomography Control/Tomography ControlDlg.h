@@ -42,6 +42,9 @@ public:
 	// Called when the worker thread completes image captures within a rotation of the table
 	afx_msg LRESULT OnTableMessageReceived(WPARAM wParam, LPARAM tablePtr);
 
+	// Called when commands sent to the table have finished being sent
+	afx_msg LRESULT OnTableOutputFinished(WPARAM wParam, LPARAM tablePtr);
+
 	// Camera controls
 	int m_numImages;
 	int m_cameraType;
@@ -51,6 +54,8 @@ public:
 	CString m_tableCommandOutput;
 	CEdit m_tableCommandControl;
 	CString m_tableInitialisationFile;
+	CEdit m_tableOutputControl;
+	CButton m_tableReady;
 
 	// Run controls
 	BOOL m_running; // Not set from the UI, just used by the background thread
@@ -83,8 +88,6 @@ protected:
 	void RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType);
 	Camera* BuildSelectedCamera();
 	DECLARE_MESSAGE_MAP()
-public:
-	CEdit m_tableOutputControl;
 };
 
 

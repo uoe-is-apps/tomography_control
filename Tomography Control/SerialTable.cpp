@@ -101,7 +101,7 @@ void SerialTable::DoRead()
 		tempBuffer[bytesRead] = NULL;
 		this -> m_displayBuffer += tempBuffer;
 		
-		this -> PumpOutputUpdated();
+		this -> PumpInputReceived();
 
 		this -> m_bufferLock.Unlock();
 
@@ -111,38 +111,49 @@ void SerialTable::DoRead()
 
 void SerialTable::DoWrite()
 {
-	DWORD bytesWritten;
-	int lineEnding;
-
 	// Lock the IO buffers while we exchange data with them
 	this -> m_bufferLock.Lock();
-
-	// Only send whole lines
-	lineEnding = this -> m_inputBuffer.Find("\r\n");
-
-	// If we have input to be sent, take a copy then release the locks on the buffers
-	if (lineEnding >= 0)
+	
+	if (!this -> m_sendBuffer.IsEmpty())
 	{
-		// Ensure there's a pacing delay between writing to the table, as it does
-		// not do its own flow control
-		DWORD timeSinceLastWrite = GetTickCount() - this -> m_lastWriteTicks;
+		DWORD bytesWritten;
+		char linefeedsAtEndOfLine = strlen("\r\n");
+		// Only send whole lines
+		int lineEnding = this -> m_sendBuffer.Find("\r\n");
 
-		if (timeSinceLastWrite < TABLE_MIN_WRITE_INTERVAL_TICKS)
+		// If we have input to be sent, take a copy then release the locks on the buffers
+		if (lineEnding >= 0)
 		{
-			Sleep(TABLE_MIN_WRITE_INTERVAL_TICKS - timeSinceLastWrite);
+			// Ensure there's a pacing delay between writing to the table, as it does
+			// not do its own flow control
+			DWORD timeSinceLastWrite = GetTickCount() - this -> m_lastWriteTicks;
+
+			if (timeSinceLastWrite < TABLE_MIN_WRITE_INTERVAL_TICKS)
+			{
+				Sleep(TABLE_MIN_WRITE_INTERVAL_TICKS - timeSinceLastWrite);
+			}
+
+			// Write the contents of the temp buffer out to serial
+			WriteFile(this -> m_hComm, this -> m_sendBuffer,
+				lineEnding + linefeedsAtEndOfLine, &bytesWritten, NULL);
+
+			// Copy the input to the output buffer as if we'd just read it in
+			this -> m_displayBuffer += this -> m_sendBuffer.Left(bytesWritten);
+
+			// Clear the written bytes from the output buffer
+			this -> m_sendBuffer.Delete(0, bytesWritten);
+
+			// Notify the window to refresh the display as we've copied
+			// the output to the display
+			this -> PumpInputReceived();
 		}
 
-		// Write the contents of the temp buffer out to serial
-		WriteFile(this -> m_hComm, this -> m_inputBuffer, lineEnding + 2, &bytesWritten, NULL);
-
-		// Copy the input to the output buffer as if we'd just read it in
-		this -> m_displayBuffer += this -> m_inputBuffer.Left(bytesWritten);
-
-		// Clear the written bytes from the output buffer
-		this -> m_inputBuffer.Delete(0, bytesWritten);
-
-		// Notify the window to refresh the display
-		this -> PumpOutputUpdated();
+		if (this -> m_sendBuffer.IsEmpty())
+		{
+			// Notify the window to refresh the display as we've copied
+			// the output to the display
+			this -> PumpOutputFinished();
+		}
 	}
 
 	this -> m_bufferLock.Unlock();

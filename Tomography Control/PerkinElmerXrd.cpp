@@ -7,6 +7,9 @@
 
 #include "Exceptions.h"
 
+/* Timeout captures after 6 minutes */
+#define DEFAULT_TIMEOUT 300000
+
 PerkinElmerXrd::PerkinElmerXrd(CString directory, u_int cameraMode) : Camera(directory)
 {
 	if (cameraMode > 7)
@@ -100,7 +103,7 @@ void PerkinElmerXrd::SetupCamera()
 		}
 	}
 
-	if (Acquisition_SetCameraMode(this-> m_hAcqDesc, this -> m_cameraMode) != HIS_ALL_OK)
+	/* if (Acquisition_SetCameraMode(this-> m_hAcqDesc, this -> m_cameraMode) != HIS_ALL_OK)
 	{
 		DWORD hisError;
 		DWORD boardError;
@@ -109,7 +112,7 @@ void PerkinElmerXrd::SetupCamera()
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s failed with error code %d, board error %d\n", "Acquisition_SetCameraMode", hisError, boardError);
 		throw camera_init_error(this -> m_errorBuffer);
-	}
+	} */
 	if (Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING) != HIS_ALL_OK)
 	{
 		DWORD hisError;
@@ -167,6 +170,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
+	PerkinElmerAcquisition *taskPtr = &task;
 	
 	task.camera = this;
 	task.endAcquisitionEvent.ResetEvent();
@@ -178,7 +182,8 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	task.capturedImages = 0;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
-	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)&task);
+
+	Acquisition_SetAcqData(this -> m_hAcqDesc, (DWORD)taskPtr);
 
 	// Clear the average/sum buffer
 	memset(this -> m_sumFrame, 0, sizeof(unsigned int) * this -> m_nWidth * this -> m_nHeight);
@@ -209,9 +214,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	);
 
 	// TODO: Handle timeout on acquisition
-	long millisPerFrame = (long)(this -> m_exposureTimeSeconds * 1000);
-	long expectedTimeMillis = millisPerFrame * frames;
-	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, expectedTimeMillis * 2);
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, DEFAULT_TIMEOUT);
 
 	free(task.acquisitionBuffer);
 }
@@ -287,10 +290,15 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 	PerkinElmerAcquisition *task;
 
 	Acquisition_GetAcqData(hAcqDesc, &dwAcqData);
-	Acquisition_GetActFrame(hAcqDesc, &dwActFrame, &dwSecFrame);
-	
+
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
+
+	if (Acquisition_GetActFrame(hAcqDesc, &dwActFrame, &dwSecFrame) != HIS_ALL_OK)
+	{
+		throw camera_acquisition_error("Error getting active frame.");
+	}
+	
 	
 	// Find the start of the current frame
 	unsigned int frameSize = camera -> GetImageWidth() * camera -> GetImageHeight();

@@ -27,19 +27,28 @@ void Table::ClearDisplay()
 	this -> m_bufferLock.Unlock();
 }
 
-void Table::PumpOutputUpdated()
+void Table::PumpInputReceived()
 {
 	if (NULL != this -> m_messageReceiver
 		&& ::IsWindow(this -> m_messageReceiver -> m_hWnd))
 	{
-		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_OUTPUT_UPDATED, 0, (LPARAM)this);
+		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_INPUT_RECEIVED, 0, (LPARAM)this);
+	}
+}
+
+void Table::PumpOutputFinished()
+{
+	if (NULL != this -> m_messageReceiver
+		&& ::IsWindow(this -> m_messageReceiver -> m_hWnd))
+	{
+		this -> m_messageReceiver -> PostMessage(WM_USER_TABLE_OUTPUT_FINISHED, 0, (LPARAM)this);
 	}
 }
 
 void Table::SendToTable(LPCTSTR command)
 {
 	this -> m_bufferLock.Lock();
-	m_inputBuffer += command;
+	m_sendBuffer += command;
 	this -> m_bufferLock.Unlock();
 	this -> m_inputToSendToTableEvent.PulseEvent();
 }

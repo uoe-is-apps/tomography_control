@@ -11,7 +11,7 @@ DummyTable::DummyTable(CWnd* wnd) : Table(wnd)
 {
 	this -> m_running = TRUE;
 	this -> m_inputToSendToTableEvent.ResetEvent();
-	this -> m_inputBuffer.Empty();
+	this -> m_sendBuffer.Empty();
 	this -> m_displayBuffer.Empty();
 
 	this -> Start();
@@ -28,20 +28,27 @@ void DummyTable::DoIO()
 	// Lock the IO buffers while we exchange data between them
 	this -> m_bufferLock.Lock();
 	
-	if (!this -> m_inputBuffer.IsEmpty())
+	if (!this -> m_sendBuffer.IsEmpty())
 	{
 		// Copy the input to the temporary buffer as if we'd just read it in
-		this -> m_displayBuffer += this -> m_inputBuffer;
+		this -> m_displayBuffer += this -> m_sendBuffer;
 
 		// Clear the input buffer
-		this -> m_inputBuffer.IsEmpty();
+		this -> m_sendBuffer.Empty();
 
-		this -> PumpOutputUpdated();
+		this -> PumpInputReceived();
 
 		// Automatically notify any waiting threads that the table
 		// has responded, as the table doesn't produce any status
 		// output by itself
 		this -> m_outputReceivedFromTableEvent.PulseEvent();
+
+		if (this -> m_sendBuffer.Trim().IsEmpty())
+		{
+			// Notify the window to refresh the display as we've copied
+			// the output to the display
+			this -> PumpOutputFinished();
+		}
 	}
 
 	this -> m_bufferLock.Unlock();

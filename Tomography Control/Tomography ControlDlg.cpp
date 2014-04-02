@@ -66,7 +66,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
-	, m_exposureTimeSeconds(0.5f)
+	, m_exposureTimeSeconds(1.5f)
 	, m_framesPerStop(1)
 	, m_stopsPerRotation(100)
 	, m_turnsTotal(1)
@@ -130,6 +130,7 @@ void CTomographyControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_NUM_FRAMES, m_numImages);
 	DDX_Control(pDX, IDC_EDIT_TABLE_COMMANDS, m_tableOutputControl);
 	DDX_Text(pDX, IDC_EDIT_PE_MODE, m_perkinElmerMode);
+	DDX_Control(pDX, IDC_CHECK_TABLE_READY, m_tableReady);
 }
 
 BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
@@ -145,7 +146,8 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
-	ON_MESSAGE(WM_USER_TABLE_OUTPUT_UPDATED, &CTomographyControlDlg::OnTableMessageReceived)
+	ON_MESSAGE(WM_USER_TABLE_INPUT_RECEIVED, &CTomographyControlDlg::OnTableMessageReceived)
+	ON_MESSAGE(WM_USER_TABLE_OUTPUT_FINISHED, &CTomographyControlDlg::OnTableOutputFinished)
 END_MESSAGE_MAP()
 
 
@@ -330,7 +332,7 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 		return;
 	}
 
-	fileBuffer = (char *)malloc(sizeof(char) * (fileSize + 1));
+	fileBuffer = (char *)malloc(sizeof(char) * (fileSize + 3)); // 3 spare characters for "\r\n\0"
 	if (NULL == fileBuffer)
 	{
 		MessageBox("Could not allocate memory for table initialisation file.", "Tomography Control", MB_ICONERROR);
@@ -360,6 +362,13 @@ void CTomographyControlDlg::OnBnClickedButtonInitialiseTable()
 
 	CloseHandle(initialisationFileHandle);
 
+	char *endOfBuffer = (fileBuffer + fileSize);
+
+	// Ensure the buffer ends with CRLF
+	*(endOfBuffer++) = '\r';
+	*(endOfBuffer++) = '\n';
+	// Null terminate the buffer
+	*(endOfBuffer) = NULL;
 	this -> m_table -> SendToTable(fileBuffer);
 
 	free(fileBuffer);
@@ -400,6 +409,14 @@ LRESULT CTomographyControlDlg::OnTableMessageReceived(WPARAM wParam, LPARAM tabl
 
 	// Scroll to the end of the buffer
 	this -> m_tableOutputControl.LineScroll(m_tableOutputControl.GetLineCount());
+
+	return TRUE;
+}
+
+LRESULT CTomographyControlDlg::OnTableOutputFinished(WPARAM wParam, LPARAM tablePtr)
+{
+	this -> m_tableReady.SetCheck(BST_CHECKED);
+	UpdateData(FALSE);
 
 	return TRUE;
 }
@@ -457,7 +474,7 @@ FrameSavingOptions CTomographyControlDlg::GetFrameSavingOptions()
 	case 2:
 		return SUM;
 	default:
-		return INDIVIDUAL;
+		throw bad_frame_saving_options_error("Unknown frame saving option type.");
 	}
 }
 
@@ -539,23 +556,27 @@ void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
  */
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle()
 {
+	this -> UpdateData(TRUE);
+
 	this -> RunManualImageTask(GetFrameSavingOptions(), SINGLE);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeDark()
 {
+	this -> UpdateData(TRUE);
+
 	this -> RunManualImageTask(GetFrameSavingOptions(), DARK);
 }
 
 void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 {
+	this -> UpdateData(TRUE);
+
 	this -> RunManualImageTask(GetFrameSavingOptions(), FLAT_FIELD);
 }
 
 void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType)
 {
-	this -> UpdateData(TRUE);
-
 	CTakingPhotosDlg takingPhotosDlg;
 	
 	try {
@@ -576,17 +597,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 		return;
 	}
 
-	switch (taskType)
-	{
-	case SINGLE:
-		takingPhotosDlg.m_totalImages = this -> m_numImages;
-		break;
-	case FLAT_FIELD:
-	case DARK:
-		takingPhotosDlg.m_totalImages = this -> m_framesPerStop;
-		break;
-	}
-	
+	takingPhotosDlg.m_totalImages = this -> m_numImages;
 	takingPhotosDlg.m_frameSavingOptions = frameSavingOptions;
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;

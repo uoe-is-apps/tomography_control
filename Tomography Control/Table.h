@@ -19,7 +19,8 @@ public:
 
 	virtual void DoIO() = 0;
 	virtual void ClearDisplay();
-	virtual void PumpOutputUpdated();
+	virtual void PumpInputReceived();
+	virtual void PumpOutputFinished();
 	virtual void SendToTable(LPCTSTR command);
 
 protected:
@@ -27,7 +28,7 @@ protected:
 	CWinThread* m_thread;
 	CWnd* m_messageReceiver;
 	
-	CString m_inputBuffer; // Communication waiting to be sent to the table
+	CString m_sendBuffer; // Communication waiting to be sent to the table
 	
 	void Start();
 	void Stop();

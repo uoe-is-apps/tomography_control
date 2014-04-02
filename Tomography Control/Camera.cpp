@@ -14,26 +14,26 @@
 
 void Camera::AddFrameToBuffer(unsigned int *dest, unsigned short *src)
 {
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 
-	for (int pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++, dest++, src++)
 	{
-      	*(dest++) += *(src++);
+      	*dest += *src;
 	}
 }
 
 /* Calculate the single average value for all pixels in a frame. */
 double Camera::CalculatePixelAverage(unsigned short *frameBuffer)
 {
-	long pixelSum = 0;
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned double pixelSum = 0;
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 
-	for (int pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
-      	pixelSum += *(frameBuffer++);
+      	pixelSum += *(frameBuffer + pixel);
 	}
 
-	return pixelSum / (double)(GetImageWidth() * GetImageHeight());
+	return pixelSum / pixelCount;
 }
 
 /* Calculate the average of every pixel in a frame, based on a frame containing
@@ -41,11 +41,11 @@ double Camera::CalculatePixelAverage(unsigned short *frameBuffer)
  */
 void Camera::CalculatePixelAverages(unsigned short *dest, unsigned int *sourceBufferPtr, unsigned short capturedImages)
 {
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 
-	for (int pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++, sourceBufferPtr++)
 	{
-		double sum = *(sourceBufferPtr++);
+		double sum = *sourceBufferPtr;
 		double average = sum / capturedImages;
 
 		*(dest++) = (unsigned short)floor(average + 0.50);
@@ -55,35 +55,43 @@ void Camera::CalculatePixelAverages(unsigned short *dest, unsigned int *sourceBu
 /* Calculate the average of every pixel in a frame, based on a frame containing
  * pixel sums, and number of captured images.
  */
-void Camera::CalculatePixelSums(unsigned short *dest, unsigned int *sourceBufferPtr)
+void Camera::CalculatePixelSums(unsigned short *destBufferPtr, unsigned int *sourceBufferPtr)
 {
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 	unsigned int maxSum = 0;
 	unsigned char rightShift = 0;
 
 	// Find the largest value, to find how much we need to shift the
 	// data to fit it in 16 bits.
-	for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		unsigned int sum = *(sourceBufferPtr++);
+		unsigned int sum = *(sourceBufferPtr + pixel);
 
 		if (sum > maxSum)
 		{
 			maxSum = sum;
 		}
+		// Copy unshifted data in case it's all below 0xff
+		*(destBufferPtr + pixel) = (unsigned short)sum;
 	}
 
-	while ((maxSum >> rightShift) & 0xff00)
+	// Don't shift data if we don't have to
+	if (maxSum <= 0xff)
+	{
+		return;
+	}
+
+	while ((maxSum >> rightShift) > 0xffff)
 	{
 		rightShift++;
 	}
 
 	// Put the shifted data into the image buffer
-	for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		unsigned int sum = *(sourceBufferPtr++);
+		unsigned int sum = *(sourceBufferPtr + pixel);
 
-		*(dest++) = (unsigned short)(sum >> rightShift);
+		*(destBufferPtr + pixel) = (unsigned short)(sum >> rightShift);
 	}
 }
 	

@@ -69,32 +69,31 @@ void ShadOCam::AddFrameToBuffer(FRAME *destFrame, FRAME *currentFrame)
  */
 void ShadOCam::CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short capturedImages)
 {
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 	short *destBufferPtr = (short *)this -> m_framelib.FrameBuffer(dest);
 	short *sourceBufferPtr = (short *)this -> m_framelib.FrameBuffer(src);
 
-	for (int pixel = 0; pixel < pixelCount; pixel++)
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		double sum = *(sourceBufferPtr++);
+		double sum = *(sourceBufferPtr + pixel);
 		double average = sum / capturedImages;
 
 		*(destBufferPtr++) = (unsigned short)floor(average + 0.50);
 	}
 }
 
-/* Calculate the average of every pixel in a frame, based on a frame containing
- * pixel sums, and number of captured images.
+/* Copies the sum data into the standard buffer, ready to write out to disk.
  */
 void ShadOCam::CalculatePixelSums(FRAME *dest, FRAME *src)
 {
-	int pixelCount = GetImageHeight() * GetImageWidth();
+	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 	short *destBufferPtr = (short *)this -> m_framelib.FrameBuffer(dest);
 	short *sourceBufferPtr = (short *)this -> m_framelib.FrameBuffer(src);
 
-	// Put the shifted data into the image buffer
-	for (unsigned short pixel = 0; pixel < pixelCount; pixel++)
+	// Copy the sum data into the image buffer
+	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
-		*(destBufferPtr++) = *(sourceBufferPtr++);
+		*(destBufferPtr + pixel) = *(sourceBufferPtr + pixel);
 	}
 }
 
