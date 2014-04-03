@@ -50,3 +50,8 @@ file_error::file_error(const char *message) : logic_error(message)
 {
 
 }
+
+xray_beam_failure_error::xray_beam_failure_error(const char *message) : camera_acquisition_error(message)
+{
+
+}

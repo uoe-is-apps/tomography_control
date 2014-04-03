@@ -319,6 +319,8 @@ UINT captureRunFrames( LPVOID pParam )
 	}
 
 	task -> m_currentPosition = 1;
+
+	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
 	
 	try {
 		for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
@@ -335,8 +337,12 @@ UINT captureRunFrames( LPVOID pParam )
 					ROTATION_MAX_SLEEP_MILLIS);
 
 				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
+				
+	
+				CTime startTime = CTime::GetCurrentTime();
+				CTime timeoutAt = startTime + timeoutSpan;
 
-				task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog);
+				task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog, timeoutAt);
 			
 				dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 			}

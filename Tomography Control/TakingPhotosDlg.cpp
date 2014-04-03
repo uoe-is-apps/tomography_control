@@ -125,10 +125,13 @@ UINT takeManualImages( LPVOID pParam )
 	}
 
 	u_int frameCount = 1;
+	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
+	CTime startTime = CTime::GetCurrentTime();
+	CTime timeoutAt = startTime + timeoutSpan;
 	
 	try {
 		task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_frameSavingOptions,
-			task -> m_taskType, dialog);
+			task -> m_taskType, dialog, timeoutAt);
 	}
 	catch (camera_acquisition_error error)
 	{

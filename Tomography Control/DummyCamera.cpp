@@ -25,9 +25,10 @@ DummyCamera::~DummyCamera()
 }
 
 void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
-	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
+	FrameSavingOptions captureType, FrameType frameType, CWnd* window,
+	CTime timeoutAt)
 {
-	unsigned short capturedImages = 0;
+	unsigned short capturedFrames = 0;
 	char *filename;
 	char *filepath;
 	BOOL lastPixelAverageValid = FALSE;
@@ -79,7 +80,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 			window -> PostMessage(WM_USER_FRAME_CAPTURED, 0, (LPARAM)(*current_position));
 			break;
 		}
-		capturedImages++;
+		capturedFrames++;
 	}
 	
 	if (captureType == SUM
@@ -104,7 +105,7 @@ void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
 			CalculatePixelSums(sumAverageBuffer, this -> m_sumFrame);
 			break;
 		case AVERAGE:
-			CalculatePixelAverages(sumAverageBuffer, this -> m_sumFrame, capturedImages);
+			CalculatePixelAverages(sumAverageBuffer, this -> m_sumFrame, capturedFrames);
 			break;
 		}
 

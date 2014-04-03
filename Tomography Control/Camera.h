@@ -9,7 +9,13 @@
 #include "tiffio.h"
 #include "tiff.h"
 
+// 2 minute timeout on image capture
+#define DEFAULT_CAPTURE_TIMEOUT (2 * 60 * 1000)
+
+// 10% margin for differences between captured images
 #define PIXEL_AVERAGE_TOLERANCE 0.1
+
+// Camera configuration file for the PXD1000 frame grabber
 #define SHAD_O_CAM_CONFIG_FILE "C:\\Program Files\\Imagenation PXD1000\\Bin\\DEFAULT.CAM"
 
 enum FrameType { SINGLE, DARK, FLAT_FIELD };
@@ -41,9 +47,10 @@ public:
 	 * as images are written to disk.
 	 * frameType: the type of frame, used to determine filename.
 	 * window: the dialog window to notify of progress.
+	 * timeoutAt: when to timeout (indicates too many frame re-captures due to beam failure).
 	 */
 	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType,
-		FrameType frameType, CWnd* window) = 0;
+		FrameType frameType, CWnd* window, CTime timeoutAt) = 0;
 
 	/* Construct a filename for an image to be written to disk. Returns an pointer
 	 * to a buffer containing the filename. This buffer is overwritten when this method
@@ -91,7 +98,7 @@ public:
 	DummyCamera(CString directory, float exposureTime);
 	~DummyCamera();
 	
-	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window, CTime timeoutAt);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -116,7 +123,7 @@ public:
 	PerkinElmerXrd(CString directory, u_int mode);
 	~PerkinElmerXrd();
 	
-	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window, CTime timeoutAt);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -161,7 +168,7 @@ public:
 	void ClearFrame(FRAME *dest);
 	
 	double CalculatePixelAverage(FRAME *frameBuffer);
-	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window);
+	virtual void CaptureFrames(u_int frames, u_int *imageCount, FrameSavingOptions captureType, FrameType frameType, CWnd* window, CTime timeoutAt);
 	virtual char *GenerateImageFilename(FrameType frameType, u_int frame);
 	virtual u_short GetImageHeight();
 	virtual u_short GetImageWidth();
@@ -214,6 +221,7 @@ struct PerkinElmerAcquisition {
 	BOOL lastPixelAverageValid;
 	double lastPixelAverage;
 	u_int *imageCount;
+	u_int frames;
 	u_int capturedFrames;
 	unsigned short *acquisitionBuffer;
 };

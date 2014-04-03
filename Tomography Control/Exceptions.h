@@ -57,3 +57,9 @@ class file_error : public std::logic_error
 public:
     explicit file_error(const char *message);
 };
+
+class xray_beam_failure_error : public camera_acquisition_error
+{
+public:
+    explicit xray_beam_failure_error(const char *message);
+};
