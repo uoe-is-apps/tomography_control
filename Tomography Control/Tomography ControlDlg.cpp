@@ -435,7 +435,7 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	case 0:
 		char pixelMapFilename[MAX_PATH];
 
-		// Guess at location of airtable file
+		// Guess at location of pixel map file
 		if (FAILED(SHGetFolderPath(NULL, 
 			CSIDL_PERSONAL|CSIDL_FLAG_CREATE, 
 			NULL, 
