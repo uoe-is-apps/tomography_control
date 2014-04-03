@@ -33,8 +33,10 @@ void CTakingPhotosDlg::DoDataExchange(CDataExchange* pDX)
 BOOL CTakingPhotosDlg::OnInitDialog()
 {
 	BOOL retVal = CDialogEx::OnInitDialog();
+	u_int totalFrames = this -> m_stopsPerRotation * this -> m_framesPerStop;
 
-	this -> m_task = new ManualCameraTask(this -> m_taskType, this -> m_frameSavingOptions, this -> m_totalImages);
+	this -> m_task = new ManualCameraTask(this -> m_taskType, this -> m_frameSavingOptions,
+		this -> m_stopsPerRotation, this -> m_framesPerStop);
 	
 	// this -> m_task -> m_directoryPath = this -> m_directoryPath;
 	this -> m_task -> m_dialog = this;
@@ -42,7 +44,7 @@ BOOL CTakingPhotosDlg::OnInitDialog()
 	this -> m_task -> m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
 	this -> m_task -> m_running = TRUE;
 
-	this -> m_progress.SetRange(0, this -> m_task -> m_totalImages - 1);
+	this -> m_progress.SetRange(0, totalFrames - 1);
 
 	this -> m_workerThread = AfxBeginThread(takeManualImages, this -> m_task, THREAD_PRIORITY_NORMAL, 
 		0, CREATE_SUSPENDED);
@@ -101,11 +103,13 @@ afx_msg LRESULT CTakingPhotosDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
 
 // Helper class for tracking details of the task
 
-ManualCameraTask::ManualCameraTask(FrameType taskType, FrameSavingOptions captureType, unsigned short totalImages)
+ManualCameraTask::ManualCameraTask(FrameType taskType, FrameSavingOptions captureType,
+	unsigned short stopsPerRotation, unsigned short framesPerStop)
 {
 	this -> m_frameSavingOptions = captureType;
 	this -> m_taskType = taskType;
-	this -> m_totalImages = totalImages;
+	this -> m_stopsPerRotation = stopsPerRotation;
+	this -> m_framesPerStop = framesPerStop;
 }
 
 // Worker function for taking a set of manual images from an X-ray camera
@@ -113,6 +117,8 @@ UINT takeManualImages( LPVOID pParam )
 {
 	ManualCameraTask* task = (ManualCameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
+	u_int frameCount = 1;
+	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
 	
 	try {
 		task -> m_camera -> SetupCamera();
@@ -123,21 +129,22 @@ UINT takeManualImages( LPVOID pParam )
 		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 		return 0;
 	}
-
-	u_int frameCount = 1;
-	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
-	CTime startTime = CTime::GetCurrentTime();
-	CTime timeoutAt = startTime + timeoutSpan;
 	
-	try {
-		task -> m_camera -> CaptureFrames(task -> m_totalImages, &frameCount, task -> m_frameSavingOptions,
-			task -> m_taskType, dialog, timeoutAt);
-	}
-	catch (camera_acquisition_error error)
+	for (u_short stopCount = 0; stopCount < task -> m_stopsPerRotation; stopCount++)
 	{
-		MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
-		dialog -> PostMessage(WM_USER_THREAD_FINISHED);
-		return 0;
+		CTime startTime = CTime::GetCurrentTime();
+		CTime timeoutAt = startTime + timeoutSpan;
+	
+		try {
+			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &frameCount, task -> m_frameSavingOptions,
+				task -> m_taskType, dialog, timeoutAt);
+		}
+		catch (camera_acquisition_error error)
+		{
+			MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
+			dialog -> PostMessage(WM_USER_THREAD_FINISHED);
+			return 0;
+		}
 	}
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);

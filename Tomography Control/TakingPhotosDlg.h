@@ -8,7 +8,8 @@ class ManualCameraTask
 {
 public:
 
-	ManualCameraTask(FrameType taskType, FrameSavingOptions captureType, unsigned short totalImages);
+	ManualCameraTask(FrameType taskType, FrameSavingOptions captureType,
+		unsigned short stopsPerRotation, unsigned short framesPerStop);
 	
 	FrameSavingOptions m_frameSavingOptions;
 	FrameType m_taskType;
@@ -20,7 +21,8 @@ public:
 
 	float m_exposureTimeSeconds;
 	unsigned short m_currentImages;
-	unsigned short m_totalImages;
+	unsigned short m_stopsPerRotation;
+	unsigned short m_framesPerStop;
 	BOOL m_running;
 };
 // CTakingPhotosDlg dialog
@@ -39,7 +41,8 @@ public:
 
 	ManualCameraTask *m_task;
 	CWinThread* m_workerThread;
-	unsigned short m_totalImages;
+	unsigned short m_stopsPerRotation;
+	unsigned short m_framesPerStop;
 	float m_exposureTimeSeconds;
 	char *m_directoryPath;
 	Camera* m_camera;

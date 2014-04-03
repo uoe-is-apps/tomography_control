@@ -605,13 +605,21 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 		MessageBox(error.what(), "Tomography Control", MB_ICONERROR);
 		return;
 	}
-
-	takingPhotosDlg.m_totalImages = this -> m_numImages;
+	
+	takingPhotosDlg.m_stopsPerRotation = this -> m_numImages;
+	switch (taskType)
+	{
+	case INDIVIDUAL:
+		takingPhotosDlg.m_framesPerStop = 1;
+		break;
+	default:
+		takingPhotosDlg.m_framesPerStop = this -> m_framesPerStop;
+		break;
+	}
 	takingPhotosDlg.m_frameSavingOptions = frameSavingOptions;
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	takingPhotosDlg.m_exposureTimeSeconds = exposureTimeSeconds;
-	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
 }
