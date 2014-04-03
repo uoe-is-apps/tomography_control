@@ -8,7 +8,7 @@
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
 
-#define ROTATION_EST_SLEEP_MILLIS 800
+#define ROTATION_EST_SLEEP_MILLIS 200
 #define ROTATION_MAX_SLEEP_MILLIS (5 * ROTATION_EST_SLEEP_MILLIS)
 #define MAX_PROGRESS 1000
 #define TABLE_COMMAND_BUFFER_SIZE 128
