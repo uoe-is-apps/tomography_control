@@ -179,7 +179,7 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	task.frameType = frameType;
 	task.imageCount = current_position;
 	task.lastPixelAverageValid = FALSE;
-	task.capturedImages = 0;
+	task.capturedFrames = 0;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 
@@ -262,7 +262,7 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 
 			break;
 		case AVERAGE:
-			camera -> CalculatePixelAverages(sumAverageBuffer, camera -> m_sumFrame,  task -> capturedImages);
+			camera -> CalculatePixelAverages(sumAverageBuffer, camera -> m_sumFrame,  task -> capturedFrames);
 
 			break;
 		}
@@ -347,5 +347,5 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 		(*task -> imageCount)++;
 		break;
 	}
-	task -> capturedImages++;
+	task -> capturedFrames++;
 }

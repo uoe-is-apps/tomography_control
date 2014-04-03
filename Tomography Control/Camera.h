@@ -214,6 +214,6 @@ struct PerkinElmerAcquisition {
 	BOOL lastPixelAverageValid;
 	double lastPixelAverage;
 	u_int *imageCount;
-	u_int capturedImages;
+	u_int capturedFrames;
 	unsigned short *acquisitionBuffer;
 };

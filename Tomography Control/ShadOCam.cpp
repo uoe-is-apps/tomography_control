@@ -67,7 +67,7 @@ void ShadOCam::AddFrameToBuffer(FRAME *destFrame, FRAME *currentFrame)
 /* Calculate the average of every pixel in a frame, based on a frame containing
  * pixel sums, and number of captured images.
  */
-void ShadOCam::CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short capturedImages)
+void ShadOCam::CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short capturedFrames)
 {
 	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 	short *destBufferPtr = (short *)this -> m_framelib.FrameBuffer(dest);
@@ -76,7 +76,7 @@ void ShadOCam::CalculatePixelAverages(FRAME *dest, FRAME *src, unsigned short ca
 	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)
 	{
 		double sum = *(sourceBufferPtr + pixel);
-		double average = sum / capturedImages;
+		double average = sum / capturedFrames;
 
 		*(destBufferPtr++) = (unsigned short)floor(average + 0.50);
 	}
@@ -127,7 +127,7 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	FrameSavingOptions frameSavingOptions, FrameType frameType, CWnd* window)
 {
-	unsigned short capturedImages = 0;
+	unsigned short capturedFrames = 0;
 	BOOL lastPixelAverageValid = FALSE;
 	double lastPixelAverage = 0.0;
 	int pixelCount = GetImageHeight() * GetImageWidth();
@@ -224,7 +224,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			throw bad_frame_saving_options_error("Unknown frame saving options specified.");
 		}
 
-		capturedImages++;
+		capturedFrames++;
 	}
 
 	// For average/sum images, we haven't been writing them as we go along,
@@ -244,7 +244,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		break;
 
 	case AVERAGE:
-		this -> CalculatePixelAverages(this -> m_currentFrame, this -> m_sumFrame, capturedImages);
+		this -> CalculatePixelAverages(this -> m_currentFrame, this -> m_sumFrame, capturedFrames);
 		break;
 
 	default:
