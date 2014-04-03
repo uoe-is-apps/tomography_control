@@ -65,7 +65,7 @@ public:
 	CString m_sampleName;
 	CString m_timestamp;
 	int m_frameSavingOptions;
-	float m_exposureTimeSeconds;
+	CString m_exposureTimeSeconds;
 	int m_perkinElmerMode;
 	int m_framesPerStop;
 	int m_stopsPerRotation;
@@ -86,7 +86,7 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	void RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType);
-	Camera* BuildSelectedCamera();
+	Camera* BuildSelectedCamera(float exposureTimeSeconds);
 	DECLARE_MESSAGE_MAP()
 };
 

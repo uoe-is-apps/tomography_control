@@ -66,7 +66,7 @@ CTomographyControlDlg::CTomographyControlDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTomographyControlDlg::IDD, pParent)
 	, m_tableCommandOutput(_T(""))
 	, m_tableCommand(_T(""))
-	, m_exposureTimeSeconds(1.5f)
+	, m_exposureTimeSeconds("1.5")
 	, m_framesPerStop(1)
 	, m_stopsPerRotation(100)
 	, m_turnsTotal(1)
@@ -426,7 +426,7 @@ LRESULT CTomographyControlDlg::OnTableOutputFinished(WPARAM wParam, LPARAM table
  * Throws camera_init_error if there's an error with the camera.
  * Throws camera_settings_error if there's a problem with the values sent to the camera.
  */
-Camera* CTomographyControlDlg::BuildSelectedCamera()
+Camera* CTomographyControlDlg::BuildSelectedCamera(float exposureTimeSeconds)
 {
 	Camera *camera;
 
@@ -447,13 +447,13 @@ Camera* CTomographyControlDlg::BuildSelectedCamera()
 	
 		PathAppend(pixelMapFilename, "Pixel Map");
 
-		camera = new ShadOCam(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds, SHAD_O_CAM_CONFIG_FILE, pixelMapFilename);
+		camera = new ShadOCam(this -> m_directoryPathBuffer, exposureTimeSeconds, SHAD_O_CAM_CONFIG_FILE, pixelMapFilename);
 		break;
 	case 1:
 		camera = new PerkinElmerXrd(this -> m_directoryPathBuffer, this -> m_perkinElmerMode);
 		break;
 	case 2:
-		camera = new DummyCamera(this -> m_directoryPathBuffer, this -> m_exposureTimeSeconds);
+		camera = new DummyCamera(this -> m_directoryPathBuffer, exposureTimeSeconds);
 		break;
 	default:
 		throw bad_camera_type_error("Unrecognised camera type.");
@@ -491,8 +491,16 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 
 		return;
 	}
+
+	float exposureTimeSeconds;
+
+	if (sscanf(m_exposureTimeSeconds, "%f", &exposureTimeSeconds) != 1)
+	{
+		MessageBox("Could not parse exposure time as a floating point number.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
 	
-	if (this -> m_exposureTimeSeconds < 0.000)
+	if (exposureTimeSeconds < 0.000)
 	{
 		MessageBox("Exposure time must be a positive number of seconds.", "Tomography Control", MB_ICONERROR);
 		return;
@@ -524,7 +532,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	runProgressDlg.m_table = this -> m_table;
 	
 	try {
-		runProgressDlg.m_camera = BuildSelectedCamera();
+		runProgressDlg.m_camera = BuildSelectedCamera(exposureTimeSeconds);
 	}
 	catch(camera_init_error error)
 	{
@@ -534,7 +542,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	
 	runProgressDlg.m_frameSavingOptions = GetFrameSavingOptions();
 	runProgressDlg.m_directoryPath = this -> m_directoryPathBuffer;
-	runProgressDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
+	runProgressDlg.m_exposureTimeSeconds = exposureTimeSeconds;
 	runProgressDlg.m_framesPerStop = this -> m_framesPerStop; // What about m_numImages?
 	runProgressDlg.m_stopsPerRotation = this -> m_stopsPerRotation;
 	runProgressDlg.m_turnsTotal = this -> m_turnsTotal;
@@ -572,6 +580,13 @@ void CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat()
 void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOptions, FrameType taskType)
 {
 	CTakingPhotosDlg takingPhotosDlg;
+	float exposureTimeSeconds;
+
+	if (sscanf(m_exposureTimeSeconds, "%f", &exposureTimeSeconds) != 1)
+	{
+		MessageBox("Could not parse exposure time as a floating point number.", "Tomography Control", MB_ICONERROR);
+		return;
+	}
 	
 	try {
 		UpdateDirectoryPath();
@@ -583,7 +598,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 	}
 
 	try {
-		takingPhotosDlg.m_camera = BuildSelectedCamera();
+		takingPhotosDlg.m_camera = BuildSelectedCamera(exposureTimeSeconds);
 	}
 	catch(bad_camera_type_error error)
 	{
@@ -595,7 +610,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 	takingPhotosDlg.m_frameSavingOptions = frameSavingOptions;
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
-	takingPhotosDlg.m_exposureTimeSeconds = this -> m_exposureTimeSeconds;
+	takingPhotosDlg.m_exposureTimeSeconds = exposureTimeSeconds;
 	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
