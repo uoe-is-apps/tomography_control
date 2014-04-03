@@ -173,6 +173,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 			if (variation >= PIXEL_AVERAGE_TOLERANCE)
 			{
 				// Likely beam failure, skip this image
+				// (*current_position)++;
 				continue;
 			}
 		}

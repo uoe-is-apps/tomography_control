@@ -103,7 +103,7 @@ void PerkinElmerXrd::SetupCamera()
 		}
 	}
 
-	/* if (Acquisition_SetCameraMode(this-> m_hAcqDesc, this -> m_cameraMode) != HIS_ALL_OK)
+	if (Acquisition_SetCameraMode(this-> m_hAcqDesc, this -> m_cameraMode) != HIS_ALL_OK)
 	{
 		DWORD hisError;
 		DWORD boardError;
@@ -112,7 +112,7 @@ void PerkinElmerXrd::SetupCamera()
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1,
 			"%s failed with error code %d, board error %d\n", "Acquisition_SetCameraMode", hisError, boardError);
 		throw camera_init_error(this -> m_errorBuffer);
-	} */
+	}
 	if (Acquisition_SetFrameSyncMode(this -> m_hAcqDesc, HIS_SYNCMODE_FREE_RUNNING) != HIS_ALL_OK)
 	{
 		DWORD hisError;
@@ -318,6 +318,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 		if (variation >= PIXEL_AVERAGE_TOLERANCE)
 		{
 			// Likely beam failure, skip
+			// (*current_position)++;
 			return;
 		}
 	}

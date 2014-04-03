@@ -142,7 +142,6 @@ BEGIN_MESSAGE_MAP(CTomographyControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_TABLE_NCAL, &CTomographyControlDlg::OnBnClickedButtonTableNcal)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR_TABLE_DISPLAY, &CTomographyControlDlg::OnBnClickedButtonClearTableDisplay)
 	ON_BN_CLICKED(IDC_BUTTON_RUN_LOOP, &CTomographyControlDlg::OnBnClickedButtonRunLoop)
-	ON_BN_CLICKED(IDC_BUTTON_CAMERA_WRITE_INITIAL, &CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_SINGLE, &CTomographyControlDlg::OnBnClickedButtonCameraTakeSingle)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_DARK, &CTomographyControlDlg::OnBnClickedButtonCameraTakeDark)
 	ON_BN_CLICKED(IDC_BUTTON_CAMERA_TAKE_FLAT, &CTomographyControlDlg::OnBnClickedButtonCameraTakeFlat)
@@ -483,6 +482,7 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	UpdateData(TRUE);
 	
 	try {
+		// Copy directory path into a buffer in the object for later reference.
 		UpdateDirectoryPath();
 	}
 	catch(bad_directory_error error)
@@ -543,12 +543,6 @@ void CTomographyControlDlg::OnBnClickedButtonRunLoop()
 	runProgressDlg.DoModal();
 
 	delete runProgressDlg.m_camera;
-}
-
-
-void CTomographyControlDlg::OnBnClickedButtonCameraWriteInitial()
-{
-	// TODO: Add your control notification handler code here
 }
 
 /* The following methods deal with manually taking images from the camera, on

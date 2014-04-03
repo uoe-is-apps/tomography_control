@@ -282,7 +282,8 @@ UINT captureRunFrames( LPVOID pParam )
 	const float tableResolution = 0.0005f; // Degrees
 	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
-	try {
+	try
+	{
 		task -> m_camera -> SetupCamera();
 	}
 	catch(camera_init_error error)
