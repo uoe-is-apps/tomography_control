@@ -10,6 +10,13 @@
 {
 	strcpy(this -> m_camFilePath, camFilePath);
 	strcpy(this -> m_pixMapFilePath, pixMapFilePath);
+	
+	this -> m_bPxdLoaded = FALSE;
+	this -> m_currentFrame = NULL;
+	this -> m_sumFrame = NULL;
+	this -> m_bCamTypeLoaded = FALSE;
+	this -> m_bFrameGrabberAllocated = FALSE;
+	this -> m_bFramelibLoaded = FALSE;
 
 	this -> m_exposureTimeSeconds = exposureTimeSeconds;
 }
@@ -47,7 +54,10 @@ ShadOCam::~ShadOCam()
 		{
 			imagenation_CloseLibrary(&this -> m_framelib);
 		}
-		imagenation_CloseLibrary(&this -> m_pxd);
+		if (this -> m_bPxdLoaded)
+		{
+			imagenation_CloseLibrary(&this -> m_pxd);
+		}
 	}
 }
 
