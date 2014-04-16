@@ -620,6 +620,7 @@ void CTomographyControlDlg::RunManualImageTask(FrameSavingOptions frameSavingOpt
 	takingPhotosDlg.m_taskType = taskType;
 	takingPhotosDlg.m_directoryPath = this -> m_directoryPathBuffer;
 	takingPhotosDlg.m_exposureTimeSeconds = exposureTimeSeconds;
+	takingPhotosDlg.DoModal();
 
 	delete takingPhotosDlg.m_camera;
 }
