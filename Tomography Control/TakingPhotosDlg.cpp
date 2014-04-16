@@ -104,7 +104,7 @@ afx_msg LRESULT CTakingPhotosDlg::OnThreadFinished(WPARAM wParam, LPARAM lParam)
 // Helper class for tracking details of the task
 
 ManualCameraTask::ManualCameraTask(FrameType taskType, FrameSavingOptions captureType,
-	unsigned short stopsPerRotation, unsigned short framesPerStop)
+	u_short stopsPerRotation, u_short framesPerStop)
 {
 	this -> m_frameSavingOptions = captureType;
 	this -> m_taskType = taskType;
@@ -118,7 +118,6 @@ UINT takeManualImages( LPVOID pParam )
 	ManualCameraTask* task = (ManualCameraTask*)pParam;
 	CTakingPhotosDlg* dialog = (CTakingPhotosDlg*)task -> m_dialog;
 	u_int frameCount = 1;
-	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
 	
 	try {
 		task -> m_camera -> SetupCamera();
@@ -132,12 +131,9 @@ UINT takeManualImages( LPVOID pParam )
 	
 	for (u_short stopCount = 0; stopCount < task -> m_stopsPerRotation; stopCount++)
 	{
-		CTime startTime = CTime::GetCurrentTime();
-		CTime timeoutAt = startTime + timeoutSpan;
-	
 		try {
 			task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &frameCount, task -> m_frameSavingOptions,
-				task -> m_taskType, dialog, timeoutAt);
+				task -> m_taskType, dialog);
 		}
 		catch (camera_acquisition_error error)
 		{

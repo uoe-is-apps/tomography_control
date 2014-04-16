@@ -170,8 +170,7 @@ PerkinElmerXrd::~PerkinElmerXrd()
 }
 
 void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
-	FrameSavingOptions captureType, FrameType frameType, CWnd* window,
-	CTime timeoutAt)
+	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	PerkinElmerAcquisition task;
 	PerkinElmerAcquisition *taskPtr = &task;
@@ -184,7 +183,6 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 	task.imageCount = current_position;
 	task.lastPixelAverageValid = FALSE;
 	task.capturedFrames = 0;
-	task.frames = frames;
 
 	// Warning - this will be break on a 64-bit system as it presumes a 32-bit pointer
 
@@ -212,24 +210,14 @@ void PerkinElmerXrd::CaptureFrames(u_int frames, u_int *current_position,
 		sprintf_s(this -> m_errorBuffer, ERROR_BUFFER_SIZE - 1, "%s failed with error code %d, board error %d\n", "Acquisition_DefineDestBuffers", hisError, boardError);
 		throw camera_acquisition_error(this -> m_errorBuffer);
 	}
-	while (task.capturedFrames < task.frames
-		&& CTime::GetCurrentTime() < timeoutAt)
-	{
-		Acquisition_Acquire_Image(this -> m_hAcqDesc,
-			task.capturedFrames - task.frames, 0, // Frames, skip frames
-			HIS_SEQ_ONE_BUFFER,
-			NULL, NULL, NULL // Offset, gain, pixel correction
-		);
+	Acquisition_Acquire_Image(this -> m_hAcqDesc,
+		frames, 0, // Frames, skip frames
+		HIS_SEQ_ONE_BUFFER,
+		NULL, NULL, NULL // Offset, gain, pixel correction
+	);
 
-		// TODO: Handle timeout on acquisition
-		::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, DEFAULT_TIMEOUT);
-	}
-
-	if (task.capturedFrames < task.frames)
-	{
-		// Timeout due to beam failure
-		throw xray_beam_failure_error("X-ray beam failure detected. Timed out while attempting recovery.");
-	}
+	// TODO: Handle timeout on acquisition
+	::WaitForSingleObject(task.endAcquisitionEvent.m_hObject, DEFAULT_TIMEOUT);
 
 	free(task.acquisitionBuffer);
 }
@@ -248,6 +236,8 @@ char *PerkinElmerXrd::GenerateImageFilename(FrameType frameType, u_int frame) {
 
 void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 {
+	char *filename;
+	char *filepath;
 	DWORD dwAcqData;
 	PerkinElmerXrd *camera;
 	PerkinElmerAcquisition *task;
@@ -256,19 +246,12 @@ void CALLBACK OnEndAcquisitionPEX(HACQDESC hAcqDesc)
 	task = (PerkinElmerAcquisition *)dwAcqData;
 	camera = task -> camera;
 	
-	if (task -> capturedFrames < task -> frames)
-	{
-		// Need more images, pass control back to the outer loop for recovery
-		task -> endAcquisitionEvent.PulseEvent();
-		return;
-	}
+	filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
+	filepath = camera -> GenerateImagePath(filename);
 
 	if (task -> captureType == SUM
 		|| task -> captureType == AVERAGE)
 	{
-		char *filename = camera -> GenerateImageFilename(task -> frameType, *task -> imageCount);
-		char *filepath = camera -> GenerateImagePath(filename);
-
 		unsigned short *sumAverageBuffer = (unsigned short *)malloc(camera -> GetImageWidth() * camera -> GetImageHeight() * sizeof(unsigned short));
 		unsigned short *sumAverageBufferPtr = sumAverageBuffer;
 		unsigned int pixelCount = camera -> GetImageHeight() * camera -> GetImageWidth();
@@ -337,8 +320,7 @@ void CALLBACK OnEndFramePEX(HACQDESC hAcqDesc)
 
 		if (variation >= PIXEL_AVERAGE_TOLERANCE)
 		{
-			// Likely beam failure, skip frame. Recovery is done by the control process
-			task -> window -> PostMessage(WM_USER_BEAM_FAILURE, 0, NULL);
+			// Likely beam failure, skip
 			return;
 		}
 	}

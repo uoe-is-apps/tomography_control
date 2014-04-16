@@ -9,7 +9,7 @@ class ManualCameraTask
 public:
 
 	ManualCameraTask(FrameType taskType, FrameSavingOptions captureType,
-		unsigned short stopsPerRotation, unsigned short framesPerStop);
+		u_short stopsPerRotation, u_short framesPerStop);
 	
 	FrameSavingOptions m_frameSavingOptions;
 	FrameType m_taskType;

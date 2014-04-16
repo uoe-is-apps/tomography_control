@@ -25,7 +25,7 @@ void Camera::AddFrameToBuffer(unsigned int *dest, unsigned short *src)
 /* Calculate the single average value for all pixels in a frame. */
 double Camera::CalculatePixelAverage(unsigned short *frameBuffer)
 {
-	double pixelSum = 0;
+	unsigned double pixelSum = 0;
 	unsigned int pixelCount = GetImageHeight() * GetImageWidth();
 
 	for (unsigned int pixel = 0; pixel < pixelCount; pixel++)

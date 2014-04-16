@@ -25,8 +25,7 @@ DummyCamera::~DummyCamera()
 }
 
 void DummyCamera::CaptureFrames(u_int frames, u_int *current_position,
-	FrameSavingOptions captureType, FrameType frameType, CWnd* window,
-	CTime timeoutAt)
+	FrameSavingOptions captureType, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedFrames = 0;
 	char *filename;

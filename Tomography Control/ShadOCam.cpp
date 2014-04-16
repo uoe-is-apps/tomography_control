@@ -6,7 +6,8 @@
 #include "Camera.h"
 #include "Exceptions.h"
 
-	ShadOCam::ShadOCam(CString directory, float exposureTimeSeconds, char* camFilePath, char *pixMapFilePath) : Camera(directory)
+	ShadOCam::ShadOCam(CString directory, float exposureTimeSeconds,
+		char* camFilePath, char *pixMapFilePath) : Camera(directory)
 {
 	strcpy(this -> m_camFilePath, camFilePath);
 	strcpy(this -> m_pixMapFilePath, pixMapFilePath);
@@ -135,8 +136,7 @@ double ShadOCam::CalculatePixelAverage(FRAME *currentFrame)
 }
 
 void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
-	FrameSavingOptions frameSavingOptions, FrameType frameType, CWnd* window,
-	CTime timeoutAt)
+	FrameSavingOptions frameSavingOptions, FrameType frameType, CWnd* window)
 {
 	unsigned short capturedFrames = 0;
 	BOOL lastPixelAverageValid = FALSE;
@@ -156,10 +156,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 	// Clear the sum buffer
 	ClearFrame(this -> m_sumFrame);
 
-
-	// Loop through the capture process until we acquire enough valid images.
-	while (capturedFrames < frames
-		&& CTime::GetCurrentTime() < timeoutAt)
+	for (u_short frame = 0; frame < frames; frame++)
 	{
 		// grab
 		qh = this -> m_pxd.Grab(this -> m_hFG, this -> m_currentFrame,
@@ -186,8 +183,7 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 
 			if (variation >= PIXEL_AVERAGE_TOLERANCE)
 			{
-				// Likely beam failure, skip frame. Recovery is done after main capture
-				window -> PostMessage(WM_USER_BEAM_FAILURE, 0, NULL);
+				// Likely beam failure, skip this image
 				continue;
 			}
 		}
@@ -239,12 +235,6 @@ void ShadOCam::CaptureFrames(u_int frames, u_int *current_position,
 		}
 
 		capturedFrames++;
-	}
-    
-	if (capturedFrames < frames)
-	{
-		// Timeout due to beam failure
-		throw xray_beam_failure_error("X-ray beam failure detected. Timed out while attempting recovery.");
 	}
 
 	// For average/sum images, we haven't been writing them as we go along,

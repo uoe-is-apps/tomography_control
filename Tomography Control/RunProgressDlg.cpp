@@ -280,10 +280,9 @@ UINT captureRunFrames( LPVOID pParam )
 	Table* table = task -> m_table;
 	CString tableCommandBuffer;
 	const float tableResolution = 0.0005f; // Degrees
-	int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
+	u_int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
 
-	try
-	{
+	try {
 		task -> m_camera -> SetupCamera();
 	}
 	catch(camera_init_error error)
@@ -319,13 +318,13 @@ UINT captureRunFrames( LPVOID pParam )
 	}
 
 	task -> m_currentPosition = 1;
-
-	CTimeSpan timeoutSpan = DEFAULT_CAPTURE_TIMEOUT;
 	
 	try {
 		for (task -> m_turnCount = 0; task -> m_turnCount < task -> m_turnsTotal && task -> m_running; task -> m_turnCount++)
 		{
-			for (task -> m_stopCount = 0; task -> m_stopCount < task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
+			// Note that we want to do a complete 360 loop, and return to 0
+			// for the last captured set
+			for (task -> m_stopCount = 0; task -> m_stopCount <= task -> m_stopsPerTurn && task -> m_running; task -> m_stopCount++)
 			{
 				float calculatedAngle = task -> m_stopCount * stepsPerStop * tableResolution;
 
@@ -337,12 +336,8 @@ UINT captureRunFrames( LPVOID pParam )
 					ROTATION_MAX_SLEEP_MILLIS);
 
 				dialog -> PostMessage(WM_USER_RUN_TABLE_ANGLE_CHANGED, 0, (LPARAM)&calculatedAngle);
-				
-	
-				CTime startTime = CTime::GetCurrentTime();
-				CTime timeoutAt = startTime + timeoutSpan;
 
-				task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog, timeoutAt);
+				task -> m_camera -> CaptureFrames(task -> m_framesPerStop, &task -> m_currentPosition, task -> m_frameSavingOptions, SINGLE, dialog);
 			
 				dialog -> PostMessage(WM_USER_RUN_STOP_COMPLETED, 0, (LPARAM)&task -> m_stopCount);
 			}
@@ -354,9 +349,6 @@ UINT captureRunFrames( LPVOID pParam )
 	{
 		MessageBox(*task -> m_dialog, error.what(), "Tomography Control", MB_ICONERROR);
 	}
-	
-	// Send the table back to 0
-	task -> m_table -> SendToTable("0.0 1 nm\r\n");
 
 	dialog -> PostMessage(WM_USER_THREAD_FINISHED);
 
