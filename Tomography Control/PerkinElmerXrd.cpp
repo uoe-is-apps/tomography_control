@@ -31,6 +31,9 @@ void PerkinElmerXrd::SetupCamera()
 	long lOpenMode = HIS_GbIF_IP;
 	long lPacketDelay = 256;
 	long ulNumSensors = 0;				// nr of GigE detector in network
+
+	this -> m_sumFrame = NULL;
+	this -> m_detectorInitialised = FALSE;
 	
 	// find GbIF Detectors in Subnet	
 	iRet = Acquisition_GbIF_GetDeviceCnt(&ulNumSensors);
