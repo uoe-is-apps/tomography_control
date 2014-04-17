@@ -1,0 +1,13 @@
+Tiff Maths/Debug/
+Debug/
+Tomography Control.opensdf
+Tomography Control.sdf
+Tomography Control/Debug/
+Tomography Control/*.dll
+Tomography Control/*.lib
+Tomography Control/Tomography Control.aps
+Tomography Control/iframe.h
+Tomography Control/Scilib20.h
+Tomography Control/pxd.h
+Tomography Control/xis
+ipch/
