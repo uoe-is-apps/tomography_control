@@ -1,6 +1,6 @@
 The project includes elements from LibTIFF, whose license is at the end of this
 file. The project references (but does not include) SDKs for the Rad-icon Shad-o-cam,
-Perkin-Elmer XIS and Imagenation PXD1000
+Perkin-Elmer XIS and Imagenation PXD1000.
 
 
 Tomography Control license:
