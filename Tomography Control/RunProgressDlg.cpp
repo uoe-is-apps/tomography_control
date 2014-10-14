@@ -7,6 +7,7 @@
 #include "Exceptions.h"
 #include "RunProgressDlg.h"
 #include "afxdialogex.h"
+#include <cmath>
 
 #define ROTATION_EST_SLEEP_MILLIS 200
 #define ROTATION_MAX_SLEEP_MILLIS (5 * ROTATION_EST_SLEEP_MILLIS)
@@ -280,7 +281,7 @@ UINT captureRunFrames( LPVOID pParam )
 	Table* table = task -> m_table;
 	CString tableCommandBuffer;
 	const float tableResolution = 0.0005f; // Degrees
-	u_int stepsPerStop = (int)((360.0f / task -> m_stopsPerTurn) / tableResolution);
+	u_int stepsPerStop = (int)floor(((360.0 / task -> m_stopsPerTurn) / tableResolution) + 0.5);
 
 	try {
 		task -> m_camera -> SetupCamera();
